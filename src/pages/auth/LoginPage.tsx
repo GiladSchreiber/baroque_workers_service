@@ -36,7 +36,7 @@ export function LoginPage() {
   return (
     <div className={styles.page}>
       <div className={styles.brand}>
-        <img src="/logo.png" alt="Baroque" className={styles.logo} />
+        <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Baroque" className={styles.logo} />
         <p className={styles.brandSub}>פורטל עובדים</p>
       </div>
 
