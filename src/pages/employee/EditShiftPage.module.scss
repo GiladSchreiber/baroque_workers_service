@@ -1,0 +1,29 @@
+@use '../../styles/variables' as v;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.content {
+  padding: v.$space-4;
+}
+
+.message {
+  padding: v.$space-8 v.$space-6;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+}
+
+.messageTitle {
+  font-size: v.$font-size-lg;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-text;
+}
+
+.messageSub {
+  font-size: v.$font-size-sm;
+  color: v.$color-text-muted;
+}

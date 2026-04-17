@@ -1,0 +1,23 @@
+@use '../../styles/variables' as v;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.content {
+  padding: v.$space-4;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-4;
+}
+
+.error {
+  font-size: v.$font-size-sm;
+  color: v.$color-danger;
+  margin: 0;
+}

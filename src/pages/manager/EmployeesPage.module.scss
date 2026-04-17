@@ -1,0 +1,127 @@
+@use '../../styles/variables' as v;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.tableWrapper {
+  padding: v.$space-4 0;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: v.$font-size-sm;
+
+  th {
+    padding: v.$space-3 v.$space-4;
+    text-align: right;
+    font-size: v.$font-size-xs;
+    font-weight: v.$font-weight-semibold;
+    color: v.$color-text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid v.$color-border;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: v.$space-3 v.$space-4;
+    border-bottom: 1px solid v.$color-border;
+    vertical-align: middle;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  tbody tr:active {
+    background-color: v.$color-surface-raised;
+  }
+}
+
+.inactiveRow {
+  opacity: 0.5;
+
+  .nameCell {
+    text-decoration: line-through;
+  }
+}
+
+.nameCell {
+  color: v.$color-text;
+  white-space: nowrap;
+  font-weight: v.$font-weight-medium;
+  min-width: 8rem;
+}
+
+.wageCell {
+  color: v.$color-text;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.roleManager {
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-primary;
+  background-color: rgba(200, 191, 160, 0.12);
+  padding: v.$space-1 v.$space-2;
+  border-radius: v.$radius-sm;
+  white-space: nowrap;
+}
+
+.roleEmployee {
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-text-muted;
+  background-color: rgba(122, 138, 154, 0.1);
+  padding: v.$space-1 v.$space-2;
+  border-radius: v.$radius-sm;
+  white-space: nowrap;
+}
+
+
+.actionCell {
+  width: 5rem;
+  text-align: center;
+  padding: v.$space-2 v.$space-3;
+  white-space: nowrap;
+}
+
+.editBtn {
+  background: none;
+  border: none;
+  color: v.$color-primary;
+  padding: v.$space-2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: v.$radius-sm;
+  cursor: pointer;
+  transition: opacity v.$transition-fast;
+
+  &:active {
+    opacity: 0.6;
+  }
+}
+
+.deactivateBtn {
+  background: none;
+  border: none;
+  color: v.$color-danger;
+  padding: v.$space-2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: v.$radius-sm;
+  cursor: pointer;
+  transition: opacity v.$transition-fast;
+
+  &:active {
+    opacity: 0.6;
+  }
+}

@@ -1,0 +1,65 @@
+@use '../../styles/variables' as v;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  padding: v.$space-4 0;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: v.$font-size-sm;
+
+  th {
+    padding: v.$space-3 v.$space-4;
+    text-align: right;
+    font-size: v.$font-size-xs;
+    font-weight: v.$font-weight-semibold;
+    color: v.$color-text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid v.$color-border;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: v.$space-3 v.$space-4;
+    border-bottom: 1px solid v.$color-border;
+    vertical-align: middle;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.dateCell {
+  color: v.$color-text-muted;
+  font-size: v.$font-size-xs;
+  white-space: nowrap;
+}
+
+.blockCell {
+  color: v.$color-text-muted;
+  white-space: nowrap;
+  font-size: v.$font-size-xs;
+}
+
+.nameCell {
+  color: v.$color-text;
+  font-weight: v.$font-weight-medium;
+  white-space: nowrap;
+}
+
+.numCell {
+  color: v.$color-text;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: center;
+}

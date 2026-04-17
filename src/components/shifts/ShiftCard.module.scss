@@ -1,0 +1,52 @@
+@use '../../styles/variables' as v;
+
+.card {
+  background-color: v.$color-surface;
+  border-radius: v.$radius-lg;
+  padding: v.$space-4;
+  box-shadow: v.$shadow-sm;
+  border: 1px solid v.$color-border;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-2;
+}
+
+.date {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-text;
+}
+
+.time {
+  font-size: v.$font-size-lg;
+  font-weight: v.$font-weight-medium;
+  color: v.$color-text;
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  font-size: v.$font-size-sm;
+  color: v.$color-text-muted;
+  line-height: v.$line-height-normal;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: v.$space-1;
+  border-top: 1px solid v.$color-border;
+  margin-top: v.$space-1;
+}
+
+.locked {
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+  padding: v.$space-2 0;
+}

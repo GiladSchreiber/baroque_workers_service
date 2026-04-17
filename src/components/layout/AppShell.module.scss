@@ -1,0 +1,13 @@
+@use '../../styles/variables' as v;
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.main {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: v.$bottom-nav-height;
+}

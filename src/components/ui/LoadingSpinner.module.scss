@@ -1,0 +1,21 @@
+@use '../../styles/variables' as v;
+
+.wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: v.$space-12;
+}
+
+.spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid v.$color-border;
+  border-top-color: v.$color-primary;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

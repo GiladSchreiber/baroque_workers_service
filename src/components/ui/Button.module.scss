@@ -1,0 +1,92 @@
+@use '../../styles/variables' as v;
+@use 'sass:color';
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: v.$space-2;
+  border: none;
+  border-radius: v.$radius-md;
+  font-weight: v.$font-weight-semibold;
+  transition: background-color v.$transition-fast, opacity v.$transition-fast;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &.fullWidth {
+    width: 100%;
+  }
+}
+
+.primary {
+  background-color: v.$color-primary;
+  color: v.$color-text-on-primary;
+
+  &:not(:disabled):active {
+    background-color: v.$color-primary-dark;
+  }
+}
+
+.secondary {
+  background-color: v.$color-surface;
+  color: v.$color-primary;
+  border: 1.5px solid v.$color-primary;
+
+  &:not(:disabled):active {
+    background-color: v.$color-bg;
+  }
+}
+
+.destructive {
+  background-color: v.$color-danger;
+  color: #fff;
+
+  &:not(:disabled):active {
+    background-color: color.adjust(v.$color-danger, $lightness: -10%);
+  }
+}
+
+.ghost {
+  background-color: transparent;
+  color: v.$color-text-muted;
+
+  &:not(:disabled):active {
+    background-color: v.$color-bg;
+  }
+}
+
+.sm {
+  font-size: v.$font-size-sm;
+  padding: v.$space-2 v.$space-3;
+  height: 2rem;
+}
+
+.md {
+  font-size: v.$font-size-base;
+  padding: v.$space-3 v.$space-5;
+  height: 2.75rem;
+}
+
+.lg {
+  font-size: v.$font-size-lg;
+  padding: v.$space-4 v.$space-6;
+  height: 3.25rem;
+}
+
+.spinner {
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

@@ -1,0 +1,146 @@
+@use '../../styles/variables' as v;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.content {
+  padding: v.$space-4;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-5;
+}
+
+
+.monthSelect {
+  width: 100%;
+  background: v.$color-surface-raised;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-sm;
+  color: v.$color-text;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+  padding: v.$space-2 v.$space-3;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  text-align: right;
+
+  &:focus {
+    outline: none;
+    border-color: v.$color-primary;
+  }
+
+  option {
+    background: v.$color-surface-raised;
+  }
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-3;
+}
+
+.cardFull {
+  grid-column: 1 / -1;
+}
+
+.card {
+  background: v.$color-surface-raised;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-lg;
+  padding: v.$space-4;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-1;
+}
+
+.cardLabel {
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.cardValue {
+  font-size: v.$font-size-2xl;
+  font-weight: v.$font-weight-bold;
+  color: v.$color-primary;
+  font-variant-numeric: tabular-nums;
+  line-height: v.$line-height-tight;
+}
+
+.cardSub {
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+}
+
+.lastShift {
+  background: v.$color-surface-raised;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-lg;
+  padding: v.$space-4;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+}
+
+.lastShiftLabel {
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.lastShiftRow {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+  flex-wrap: wrap;
+  padding-top: v.$space-2;
+
+  & + & {
+    border-top: 1px solid v.$color-border;
+  }
+}
+
+.lastShiftName {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-text;
+}
+
+.lastShiftType {
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+}
+
+.lastShiftHours {
+  font-size: v.$font-size-xs;
+  font-variant-numeric: tabular-nums;
+  color: v.$color-text-muted;
+}
+
+.lastShiftDate {
+  font-size: v.$font-size-sm;
+  color: v.$color-text-muted;
+}
+
+.lastShiftRevenue {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-primary;
+  font-variant-numeric: tabular-nums;
+}
+
+.lastShiftTime {
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+  margin-right: auto;
+  font-variant-numeric: tabular-nums;
+}

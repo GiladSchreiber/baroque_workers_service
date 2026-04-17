@@ -1,0 +1,129 @@
+@use '../../styles/variables' as v;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.filterBar {
+  padding: v.$space-3 v.$space-4;
+  border-bottom: 1px solid v.$color-border;
+}
+
+.filterSelect {
+  width: 100%;
+  background: v.$color-surface-raised;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-sm;
+  color: v.$color-text;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+  padding: v.$space-2 v.$space-3;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  text-align: right;
+
+  &:focus {
+    outline: none;
+    border-color: v.$color-primary;
+  }
+
+  option {
+    background: v.$color-surface-raised;
+  }
+}
+
+.tableWrapper {
+  padding: v.$space-4 0;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: v.$font-size-sm;
+
+  th {
+    padding: v.$space-3 v.$space-4;
+    text-align: right;
+    font-size: v.$font-size-xs;
+    font-weight: v.$font-weight-semibold;
+    color: v.$color-text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid v.$color-border;
+    white-space: nowrap;
+  }
+
+  th.numHeader { text-align: center; }
+
+  td {
+    padding: v.$space-3 v.$space-4;
+    border-bottom: 1px solid v.$color-border;
+    vertical-align: middle;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.dateCell {
+  color: v.$color-text-muted;
+  font-size: v.$font-size-xs;
+  white-space: nowrap;
+}
+
+.numCell {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: v.$color-text;
+}
+
+.actionCell {
+  width: 2.5rem;
+  text-align: center;
+  padding: v.$space-2 v.$space-3;
+}
+
+.editBtn {
+  background: none;
+  border: none;
+  color: v.$color-primary;
+  padding: v.$space-2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: v.$radius-sm;
+  cursor: pointer;
+  transition: opacity v.$transition-fast;
+
+  &:active { opacity: 0.6; }
+}
+
+.totalRow {
+  td {
+    border-top: 2px solid v.$color-border;
+    border-bottom: none;
+    padding-top: v.$space-4;
+  }
+}
+
+.totalLabel {
+  color: v.$color-text-muted;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.totalNum {
+  color: v.$color-primary;
+  font-weight: v.$font-weight-semibold;
+  font-size: v.$font-size-sm;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: nowrap;
+}

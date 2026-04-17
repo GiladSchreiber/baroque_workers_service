@@ -1,0 +1,45 @@
+@use '../../styles/variables' as v;
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+}
+
+.label {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: v.$color-text;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 5rem;
+  padding: v.$space-3 v.$space-4;
+  border: 1.5px solid v.$color-border;
+  border-radius: v.$radius-md;
+  font-size: v.$font-size-base;
+  color: v.$color-text;
+  background-color: v.$color-surface;
+  resize: vertical;
+  outline: none;
+  transition: border-color v.$transition-fast;
+  line-height: v.$line-height-normal;
+
+  &:focus {
+    border-color: v.$color-primary;
+  }
+
+  &::placeholder {
+    color: v.$color-text-muted;
+  }
+
+  &.hasError {
+    border-color: v.$color-danger;
+  }
+}
+
+.error {
+  font-size: v.$font-size-sm;
+  color: v.$color-danger;
+}

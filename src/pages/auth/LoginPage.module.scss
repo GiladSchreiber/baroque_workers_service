@@ -1,0 +1,82 @@
+@use '../../styles/variables' as v;
+
+.page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: v.$space-6;
+  gap: v.$space-6;
+  max-width: v.$max-content-width;
+  margin: 0 auto;
+}
+
+.brand {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$space-3;
+}
+
+.logo {
+  height: 4rem;
+  width: auto;
+  filter: invert(1);
+}
+
+.brandSub {
+  font-size: v.$font-size-sm;
+  color: v.$color-text-muted;
+  letter-spacing: 0.08em;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-4;
+
+  button[type='submit'] {
+    margin-top: v.$space-4;
+  }
+}
+
+.error {
+  font-size: v.$font-size-sm;
+  color: v.$color-danger;
+  text-align: center;
+}
+
+.hint {
+  text-align: center;
+  font-size: v.$font-size-sm;
+  color: v.$color-text-muted;
+
+  a {
+    color: v.$color-primary;
+    font-weight: v.$font-weight-medium;
+  }
+}
+
+.quickLogin {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-2;
+}
+
+.quickBtn {
+  background: none;
+  border: 1px dashed v.$color-border;
+  border-radius: v.$radius-sm;
+  color: v.$color-text-muted;
+  font-family: v.$font-family;
+  font-size: v.$font-size-xs;
+  padding: v.$space-2;
+  cursor: pointer;
+  transition: color v.$transition-fast, border-color v.$transition-fast;
+
+  &:active {
+    color: v.$color-primary;
+    border-color: v.$color-primary;
+  }
+}

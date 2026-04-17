@@ -1,0 +1,62 @@
+@use '../../styles/variables' as v;
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-5;
+}
+
+.timeRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-4;
+
+  > * {
+    min-width: 0;
+  }
+}
+
+.financialSection {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-3;
+  padding: v.$space-4;
+  background-color: v.$color-surface-raised;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-lg;
+  animation: slideDown 200ms ease both;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.financialTitle {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-primary;
+  letter-spacing: 0.04em;
+}
+
+.financialGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-4;
+
+  > * {
+    min-width: 0;
+  }
+}
+
+.submitError {
+  font-size: v.$font-size-sm;
+  color: v.$color-danger;
+  text-align: center;
+}

@@ -1,0 +1,57 @@
+@use '../../styles/variables' as v;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: v.$space-8 v.$space-6;
+  gap: v.$space-3;
+}
+
+.avatar {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: v.$radius-full;
+  background-color: v.$color-surface-raised;
+  border: 1.5px solid v.$color-border;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: v.$font-size-2xl;
+  font-weight: v.$font-weight-bold;
+  color: v.$color-primary;
+  margin-bottom: v.$space-2;
+}
+
+.name {
+  font-size: v.$font-size-xl;
+  font-weight: v.$font-weight-bold;
+  color: v.$color-text;
+}
+
+.email {
+  font-size: v.$font-size-sm;
+  color: v.$color-text-muted;
+  direction: ltr;
+}
+
+.role {
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-primary;
+  background-color: rgba(200, 191, 160, 0.12);
+  padding: v.$space-1 v.$space-3;
+  border-radius: v.$radius-full;
+  letter-spacing: 0.04em;
+}
+
+.actions {
+  width: 100%;
+  margin-top: v.$space-6;
+}

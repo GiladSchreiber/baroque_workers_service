@@ -1,0 +1,42 @@
+@use '../../styles/variables' as v;
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: v.$top-header-height;
+  padding: 0 v.$space-4;
+  background-color: v.$color-surface;
+  border-bottom: 1px solid v.$color-border;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: v.$color-primary;
+  padding: v.$space-1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: v.$radius-sm;
+}
+
+.title {
+  font-size: v.$font-size-xl;
+  font-weight: v.$font-weight-bold;
+  color: v.$color-text;
+}
+
+.action {
+  display: flex;
+  align-items: center;
+}
