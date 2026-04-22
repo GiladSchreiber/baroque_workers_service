@@ -141,6 +141,12 @@
 
 .chartWrap {
   direction: ltr;
+
+  // Remove focus ring on the SVG when tapped on mobile
+  svg, div {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 .chartLegend {

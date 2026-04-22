@@ -14,7 +14,8 @@ const ROLE_LABELS: Record<Role, string> = {
 
 export function EmployeesPage() {
   const navigate = useNavigate()
-  const { employees, isLoading, fetchAll } = useEmployeeStore()
+  const { employees: allEmployees, isLoading, fetchAll } = useEmployeeStore()
+  const employees = allEmployees.filter(e => e.isActive)
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
@@ -39,7 +40,7 @@ export function EmployeesPage() {
               {employees.map(emp => (
                 <tr
                   key={emp.id}
-                  className={`${styles.clickableRow} ${emp.isActive ? '' : styles.inactiveRow}`}
+                  className={styles.clickableRow}
                   onClick={() => navigate(`/manager/employees/${emp.id}`)}
                 >
                   <td className={styles.nameCell}>{emp.name}</td>

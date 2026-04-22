@@ -8,6 +8,7 @@ import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import {
   formatDateShort, formatMonth, isWithinEditWindow,
   splitShiftHours, calcSalary, currentMonthStr, fmtMoney, SHIFT_TYPE_LABELS,
+  computeTipDistribution,
 } from '../../lib/utils'
 import { Badge } from '../../components/ui/Badge'
 import styles from './MyShiftsPage.module.scss'
@@ -29,43 +30,65 @@ function fmtH(h: number): string {
 export function MyShiftsPage() {
   const navigate = useNavigate()
   const currentUser = useAuthStore(s => s.currentUser)
-  const { shifts, isLoading, fetchByEmployee } = useShiftStore()
+  const { shifts, isLoading, fetchAll } = useShiftStore()
   const [filterMonth, setFilterMonth] = useState(currentMonthStr())
 
   useEffect(() => {
-    if (currentUser) fetchByEmployee(currentUser.id)
-  }, [currentUser, fetchByEmployee])
+    fetchAll()
+  }, [fetchAll])
 
   const hourlyWage = currentUser?.hourlyWage ?? 0
+  const myId = currentUser?.id ?? ''
+
+  // All shifts for months the current user has worked (used for tip distribution across workers)
+  const myShifts = useMemo(
+    () => shifts.filter(s => s.employeeId === myId),
+    [shifts, myId]
+  )
 
   const monthOptions = useMemo(() => {
-    const months = Array.from(new Set(shifts.map(s => s.date.slice(0, 7))))
+    const months = Array.from(new Set(myShifts.map(s => s.date.slice(0, 7))))
       .sort((a, b) => b.localeCompare(a))
     return [
       { value: '', label: 'כל הזמן' },
       ...months.map(ym => ({ value: ym, label: formatMonth(ym) })),
     ]
-  }, [shifts])
+  }, [myShifts])
 
   const filtered = useMemo(
-    () => shifts
+    () => myShifts
       .filter(s => !filterMonth || s.date.startsWith(filterMonth))
       .sort((a, b) => b.date.localeCompare(a.date)),
-    [shifts, filterMonth],
+    [myShifts, filterMonth],
   )
+
+  // Build per-date tip distribution using ALL workers' shifts on each date I worked
+  const tipMap = useMemo(() => {
+    const myDates = new Set(filtered.map(s => s.date))
+    const byDate = new Map<string, ReturnType<typeof computeTipDistribution>>()
+    for (const date of myDates) {
+      const dayShifts = shifts.filter(s => s.date === date)
+      byDate.set(date, computeTipDistribution(dayShifts))
+    }
+    return byDate
+  }, [shifts, filtered])
 
   const totalSalary = useMemo(() => {
     let total = 0
+    let shiftCount = 0
     for (const s of filtered) {
-      if (s.type === 'global') {
+      if (s.type === 'global' || s.type === 'taxi') {
         total += s.amount ?? 0
       } else {
         const h = splitShiftHours(s.date, s.startTime, s.endTime, s.type)
-        total += calcSalary(h.regular, h.shabbat, h.support, s.tips ?? 0, hourlyWage)
+        const myTip = tipMap.get(s.date)?.get(myId) ?? 0
+        total += calcSalary(h.regular, h.shabbat, h.support, myTip, hourlyWage)
+        shiftCount++
       }
     }
+    total += shiftCount * 8 // נסיעות ₪8 per non-flat shift
     return total
-  }, [filtered, hourlyWage])
+  }, [filtered, hourlyWage, tipMap, myId])
 
   return (
     <div className={styles.page}>
@@ -107,21 +130,22 @@ export function MyShiftsPage() {
             </thead>
             <tbody>
               {filtered.map(shift => {
-                const isGlobal = shift.type === 'global'
-                const h = isGlobal ? { regular: 0, shabbat: 0, support: 0 } : splitShiftHours(shift.date, shift.startTime, shift.endTime, shift.type)
-                const salary = isGlobal
+                const isFlat = shift.type === 'global' || shift.type === 'taxi'
+                const h = isFlat ? { regular: 0, shabbat: 0, support: 0 } : splitShiftHours(shift.date, shift.startTime, shift.endTime, shift.type)
+                const myTip = isFlat ? 0 : (tipMap.get(shift.date)?.get(myId) ?? 0)
+                const salary = isFlat
                   ? (shift.amount ?? 0)
-                  : calcSalary(h.regular, h.shabbat, h.support, shift.tips ?? 0, hourlyWage)
+                  : calcSalary(h.regular, h.shabbat, h.support, myTip, hourlyWage)
                 return (
                   <tr key={shift.id}>
                     <td className={styles.dateCell}>{formatDateShort(shift.date)}</td>
                     <td><Badge type={shift.type} label={SHIFT_TYPE_LABELS[shift.type]} /></td>
-                    <td className={styles.numCell}>{isGlobal ? '—' : fmtH(h.regular)}</td>
-                    <td className={styles.numCell}>{isGlobal ? '—' : fmtH(h.shabbat)}</td>
-                    <td className={styles.numCell}>{isGlobal ? '—' : fmtH(h.support)}</td>
+                    <td className={styles.numCell}>{isFlat ? '—' : fmtH(h.regular)}</td>
+                    <td className={styles.numCell}>{isFlat ? '—' : fmtH(h.shabbat)}</td>
+                    <td className={styles.numCell}>{isFlat ? '—' : fmtH(h.support)}</td>
                     <td className={styles.numCell}>₪{fmtMoney(salary)}</td>
                     <td className={styles.actionCell}>
-                      {!isGlobal && isWithinEditWindow(shift.submittedAt) && (
+                      {!isFlat && isWithinEditWindow(shift.submittedAt) && (
                         <button
                           className={styles.editBtn}
                           onClick={() => navigate(`/employee/shifts/${shift.id}/edit`)}

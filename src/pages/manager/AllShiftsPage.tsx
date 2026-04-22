@@ -9,7 +9,7 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import {
   SHIFT_TYPE_LABELS, formatDateShort, currentMonthStr, monthOptions, formatMonth,
-  splitShiftHours, calcSalary, fmtMoney,
+  splitShiftHours, calcSalary, fmtMoney, computeTipDistribution,
 } from '../../lib/utils'
 import type { Employee, Shift } from '../../types'
 import styles from './AllShiftsPage.module.scss'
@@ -32,7 +32,26 @@ interface EmpStats {
   salary: number         // total
 }
 
-function aggregateShifts(shifts: Shift[], employee: Employee): EmpStats {
+/**
+ * Build a date→distributedTips map for a set of shifts.
+ * Tips are pooled per shift-window and shared proportionally among
+ * overlapping non-support/non-flat workers (see computeTipDistribution).
+ */
+function buildTipMap(allShiftsInPeriod: Shift[]): Map<string, Map<string, number>> {
+  // group by date
+  const byDate = new Map<string, Shift[]>()
+  for (const s of allShiftsInPeriod) {
+    if (!byDate.has(s.date)) byDate.set(s.date, [])
+    byDate.get(s.date)!.push(s)
+  }
+  const result = new Map<string, Map<string, number>>()
+  for (const [date, dayShifts] of byDate) {
+    result.set(date, computeTipDistribution(dayShifts))
+  }
+  return result
+}
+
+function aggregateShifts(shifts: Shift[], employee: Employee, tipMap: Map<string, Map<string, number>>): EmpStats {
   let regular = 0, shabbat = 0, support = 0, tips = 0, globalAmt = 0, taxiAmt = 0, shiftCount = 0
   for (const s of shifts) {
     if (s.type === 'global') {
@@ -44,9 +63,13 @@ function aggregateShifts(shifts: Shift[], employee: Employee): EmpStats {
       regular += h.regular
       shabbat += h.shabbat
       support += h.support
-      tips += s.tips ?? 0
       shiftCount++
     }
+  }
+  // Sum distributed tips across all dates this employee worked
+  const workedDates = [...new Set(shifts.filter(s => s.type !== 'global' && s.type !== 'taxi').map(s => s.date))]
+  for (const date of workedDates) {
+    tips += tipMap.get(date)?.get(employee.id) ?? 0
   }
   const hourlySalary = calcSalary(regular, shabbat, support, tips, employee.hourlyWage)
   const nesia = shiftCount * NESIA_RATE
@@ -100,12 +123,15 @@ export function AllShiftsPage() {
     [shifts, filterMonth]
   )
 
+  // Tip map is built from ALL shifts in the period so cross-worker overlaps are correct
+  const tipMap = useMemo(() => buildTipMap(monthShifts), [monthShifts])
+
   const summaryData = useMemo((): EmpStats[] =>
     activeEmployees.map(emp => {
       const empShifts = monthShifts.filter(s => s.employeeId === emp.id)
-      return aggregateShifts(empShifts, emp)
+      return aggregateShifts(empShifts, emp, tipMap)
     }),
-    [activeEmployees, monthShifts]
+    [activeEmployees, monthShifts, tipMap]
   )
 
   const selectedEmployee = selectedId ? employeeMap[selectedId] : null
@@ -119,29 +145,31 @@ export function AllShiftsPage() {
 
   function handleDownload() {
     const label = filterMonth ? formatMonth(filterMonth) : 'כל הזמן'
+    // Columns ordered RTL: rightmost first → leftmost last
     const headers = [
-      'שם', 'ת.ז.',
-      'משמרות',
-      'שעות משמרת', 'שעות שבת',
-      'סה"כ שכר שעתי',
-      'גלובאלי',
-      'נסיעות',
-      'מוניות שבת',
       'סה"כ',
+      'מוניות שבת',
+      'נסיעות',
+      'גלובאלי',
+      'סה"כ שכר שעתי',
+      'שעות שבת', 'שעות משמרת',
+      'משמרות',
+      'ת.ז.', 'שם',
     ]
     const rows = summaryData.map(d => [
-      d.employee.name,
-      d.employee.idNumber ?? '',
-      d.shiftCount,
-      Math.round((d.regular + d.support) * 10) / 10,
-      Math.round(d.shabbat * 10) / 10,
-      Math.round(d.hourlySalary),
-      Math.round(d.global),
-      Math.round(d.nesia),
-      Math.round(d.taxi),
       Math.round(d.salary),
+      Math.round(d.taxi),
+      Math.round(d.nesia),
+      Math.round(d.global),
+      Math.round(d.hourlySalary),
+      Math.round(d.shabbat * 10) / 10,
+      Math.round((d.regular + d.support) * 10) / 10,
+      d.shiftCount,
+      d.employee.idNumber ?? '',
+      d.employee.name,
     ])
     const ws = XLSX.utils.aoa_to_sheet([[label], [], headers, ...rows])
+    ws['!views'] = [{ rightToLeft: true }]
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'שעות')
     XLSX.writeFile(wb, `שעות_${filterMonth || 'כל'}.xlsx`)
@@ -201,7 +229,7 @@ export function AllShiftsPage() {
       {isLoading ? (
         <LoadingSpinner />
       ) : selectedEmployee ? (() => {
-        const empStats = aggregateShifts(detailShifts, selectedEmployee)
+        const empStats = aggregateShifts(detailShifts, selectedEmployee, tipMap)
         return (
           <div className={styles.tableWrapper}>
             <table className={styles.table}>
@@ -221,9 +249,10 @@ export function AllShiftsPage() {
                 ) : detailShifts.map(s => {
                   const isFlat = s.type === 'global' || s.type === 'taxi'
                   const h = isFlat ? { regular: 0, shabbat: 0, support: 0 } : splitShiftHours(s.date, s.startTime, s.endTime, s.type)
+                  const distributedTipForDate = isFlat ? 0 : (tipMap.get(s.date)?.get(selectedEmployee.id) ?? 0)
                   const shiftSalary = isFlat
                     ? (s.amount ?? 0)
-                    : calcSalary(h.regular, h.shabbat, h.support, s.tips ?? 0, selectedEmployee.hourlyWage)
+                    : calcSalary(h.regular, h.shabbat, h.support, distributedTipForDate, selectedEmployee.hourlyWage)
                   return (
                     <tr
                       key={s.id}

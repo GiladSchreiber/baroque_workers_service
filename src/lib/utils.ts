@@ -114,6 +114,78 @@ export function splitShiftHours(
   return { regular: totalMins / 60, shabbat: 0, support: 0 }
 }
 
+// ---------------------------------------------------------------------------
+// Tip distribution
+// ---------------------------------------------------------------------------
+
+/** Convert "HH:mm" to minutes from midnight. */
+function toMins(t: string): number {
+  const [h, m] = t.split(':').map(Number)
+  return h * 60 + m
+}
+
+/**
+ * Given all shifts on a single date, compute each worker's share of the tips.
+ *
+ * Rules:
+ *  - Each shift that has tips > 0 (and is not support/global/taxi) defines a
+ *    tip pool whose time window is that shift's startTime–endTime.
+ *  - Every non-support/non-flat shift on the same date that overlaps that
+ *    window (including the submitting shift itself) shares the pool
+ *    proportionally by overlap minutes.
+ *  - If a shift crosses midnight its endTime is treated as endTime + 24h for
+ *    the overlap maths (shift.date is always the correct calendar day).
+ *  - Late submissions: because this is computed fresh at display time, any
+ *    subsequently added shift automatically joins the relevant pool.
+ *
+ * Returns a Map<employeeId, totalDistributedTips>.
+ */
+import type { Shift } from '../types'
+
+export function computeTipDistribution(shiftsOnDate: Shift[]): Map<string, number> {
+  const result = new Map<string, number>()
+
+  const isFlat = (s: Shift) => s.type === 'support' || s.type === 'global' || s.type === 'taxi'
+
+  // Eligible shifts can RECEIVE tips (non-support, non-flat)
+  const eligible = shiftsOnDate.filter(s => !isFlat(s))
+
+  // Tip-pool shifts: eligible shifts that actually submitted tips
+  const pools = eligible.filter(s => (s.tips ?? 0) > 0)
+
+  for (const pool of pools) {
+    let pStart = toMins(pool.startTime)
+    let pEnd   = toMins(pool.endTime)
+    if (pEnd <= pStart) pEnd += 24 * 60   // crosses midnight
+
+    // Compute each eligible shift's overlap with this pool window
+    const overlapMins = new Map<string, number>()
+    let totalMins = 0
+
+    for (const s of eligible) {
+      let sStart = toMins(s.startTime)
+      let sEnd   = toMins(s.endTime)
+      if (sEnd <= sStart) sEnd += 24 * 60  // crosses midnight
+
+      const overlap = Math.max(0, Math.min(sEnd, pEnd) - Math.max(sStart, pStart))
+      if (overlap > 0) {
+        overlapMins.set(s.employeeId, (overlapMins.get(s.employeeId) ?? 0) + overlap)
+        totalMins += overlap
+      }
+    }
+
+    if (totalMins === 0) continue
+
+    const tipPool = pool.tips!
+    for (const [empId, mins] of overlapMins) {
+      const share = tipPool * (mins / totalMins)
+      result.set(empId, (result.get(empId) ?? 0) + share)
+    }
+  }
+
+  return result
+}
+
 // salary = regular*wage + shabbat*51.48 + MAX(0, tips - 15*(regular+shabbat)) + support*50
 export function calcSalary(
   regular: number,

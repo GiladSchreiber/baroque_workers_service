@@ -2,7 +2,7 @@ import type { Shift, CreateShiftInput } from '../../types'
 import type { ShiftRepository } from '../interfaces/ShiftRepository'
 import { LocalStore } from './LocalStore'
 
-const SEED_VERSION = 'v3'
+const SEED_VERSION = 'v4-clean'
 const SEED_VERSION_KEY = 'baroque_shifts_seed_v'
 
 // ---------------------------------------------------------------------------
@@ -33,9 +33,7 @@ function addHours(start: string, h: number): string {
 //   • רפאל day 14: TWO shifts — one regular 6h, one support 5.5h.
 // ---------------------------------------------------------------------------
 
-const SEED: Shift[] = [
-  // ── Day 1 · Wed April 1 (Passover holiday) ─────────────────────────────
-  {
+const _OLD_SEED_START = {
     id: 'shift-20260401-emp-julia',
     employeeId: 'emp-julia',
     date: '2026-04-01',
@@ -974,8 +972,10 @@ const SEED: Shift[] = [
     endTime: addHours('09:00', 7),
     tips: 29,
     submittedAt: '2026-04-15T10:00:00.000Z',
-  },
-]
+  }
+}
+
+const SEED: Shift[] = []
 
 // ---------------------------------------------------------------------------
 // Version guard — clears stale data and re-seeds on version bump
