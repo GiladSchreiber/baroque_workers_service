@@ -1,10 +1,11 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useShiftStore } from '../../store/shiftStore'
 import { useEmployeeStore } from '../../store/employeeStore'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { ShiftForm } from '../../components/forms/ShiftForm'
 import { Button } from '../../components/ui/Button'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import type { CreateShiftInput } from '../../types'
 import styles from './ManagerShiftFormPage.module.scss'
@@ -31,6 +32,8 @@ export function ManagerShiftFormPage() {
     [employees, employeeId],
   )
 
+  const [showDelete, setShowDelete] = useState(false)
+
   if (isEdit && !shift) return <LoadingSpinner />
 
   async function handleSubmit(data: CreateShiftInput) {
@@ -55,10 +58,8 @@ export function ManagerShiftFormPage() {
 
   async function handleDelete() {
     if (!id) return
-    if (window.confirm('למחוק רשומה זו לצמיתות?')) {
-      await deleteShift(id)
-      navigate(-1)
-    }
+    await deleteShift(id)
+    navigate(-1)
   }
 
   const initialValues: Partial<CreateShiftInput> | undefined = shift
@@ -94,12 +95,21 @@ export function ManagerShiftFormPage() {
         />
         {isEdit && (
           <div className={styles.deleteSection}>
-            <Button variant="destructive" fullWidth onClick={handleDelete}>
+            <Button variant="destructive" fullWidth onClick={() => setShowDelete(true)}>
               מחיקת רשומה
             </Button>
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={showDelete}
+        title="למחוק רשומה זו?"
+        message="פעולה זו אינה הפיכה."
+        confirmLabel="מחיקה"
+        onConfirm={handleDelete}
+        onCancel={() => setShowDelete(false)}
+      />
     </div>
   )
 }

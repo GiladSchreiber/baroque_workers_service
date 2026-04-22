@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
 import styles from './PageHeader.module.scss'
 
 interface PageHeaderProps {
@@ -12,6 +14,7 @@ export function PageHeader({ title, showBack = false, action }: PageHeaderProps)
   const navigate = useNavigate()
   const currentUser = useAuthStore(s => s.currentUser)
   const logout = useAuthStore(s => s.logout)
+  const [showLogout, setShowLogout] = useState(false)
 
   const firstName = currentUser?.name.split(' ')[0] ?? ''
 
@@ -30,16 +33,21 @@ export function PageHeader({ title, showBack = false, action }: PageHeaderProps)
       <div className={styles.right}>
         {action && <div className={styles.action}>{action}</div>}
         {firstName && (
-          <button
-            className={styles.userBtn}
-            onClick={() => {
-              if (window.confirm(`להתנתק?`)) logout()
-            }}
-          >
+          <button className={styles.userBtn} onClick={() => setShowLogout(true)}>
             שלום {firstName}
           </button>
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={showLogout}
+        title="להתנתק?"
+        confirmLabel="התנתקות"
+        cancelLabel="ביטול"
+        variant="primary"
+        onConfirm={() => { setShowLogout(false); logout() }}
+        onCancel={() => setShowLogout(false)}
+      />
     </header>
   )
 }

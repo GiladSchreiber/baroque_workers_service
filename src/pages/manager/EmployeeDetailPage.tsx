@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useEmployeeStore } from '../../store/employeeStore'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { Button } from '../../components/ui/Button'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import styles from './EmployeeDetailPage.module.scss'
 
@@ -28,6 +29,7 @@ export function EmployeeDetailPage() {
   }, [employees.length, fetchAll])
 
   const emp = employees.find(e => e.id === id)
+  const [showDelete, setShowDelete] = useState(false)
 
   if (isLoading) return <LoadingSpinner />
 
@@ -39,10 +41,8 @@ export function EmployeeDetailPage() {
   )
 
   async function handleDelete() {
-    if (window.confirm(`למחוק את חשבון ${emp!.name}? פעולה זו אינה הפיכה.`)) {
-      await deactivate(emp!.id)
-      navigate('/manager/employees', { replace: true })
-    }
+    await deactivate(emp!.id)
+    navigate('/manager/employees', { replace: true })
   }
 
   return (
@@ -81,15 +81,20 @@ export function EmployeeDetailPage() {
           >
             עריכה
           </Button>
-          <Button
-            fullWidth
-            variant="destructive"
-            onClick={handleDelete}
-          >
+          <Button fullWidth variant="destructive" onClick={() => setShowDelete(true)}>
             מחיקת עובד
           </Button>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={showDelete}
+        title={`למחוק את ${emp.name}?`}
+        message="פעולה זו אינה הפיכה."
+        confirmLabel="מחיקה"
+        onConfirm={handleDelete}
+        onCancel={() => setShowDelete(false)}
+      />
     </div>
   )
 }

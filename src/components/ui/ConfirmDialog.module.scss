@@ -1,0 +1,58 @@
+@use '../../styles/variables' as v;
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: v.$space-4;
+  animation: fadeIn 120ms ease;
+}
+
+.dialog {
+  background: v.$color-surface-raised;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-xl;
+  padding: v.$space-6;
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-4;
+  direction: rtl;
+  animation: slideUp 150ms ease;
+}
+
+.title {
+  font-size: v.$font-size-lg;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-text;
+  margin: 0;
+}
+
+.message {
+  font-size: v.$font-size-sm;
+  color: v.$color-text-muted;
+  margin: 0;
+  line-height: v.$line-height-normal;
+}
+
+.actions {
+  display: flex;
+  gap: v.$space-3;
+  justify-content: flex-start;
+  flex-direction: row-reverse;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0 }
+  to   { opacity: 1 }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(8px); opacity: 0 }
+  to   { transform: translateY(0);   opacity: 1 }
+}
