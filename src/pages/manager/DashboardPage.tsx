@@ -9,7 +9,7 @@ import { PageHeader } from '../../components/layout/PageHeader'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import { currentMonthStr, fmtMoney, formatMonth } from '../../lib/utils'
 import {
-  REVENUE_HISTORY, getYearlyTotals, getPointForSameMonthLastYear,
+  REVENUE_HISTORY, getPointForSameMonthLastYear,
 } from '../../data/revenueHistory'
 import styles from './DashboardPage.module.scss'
 
@@ -110,14 +110,10 @@ export function DashboardPage() {
     return months.length > 0 ? months.reduce((a, b) => a + b, 0) / months.length : 0
   }, [shifts, month])
 
-  const tipVsAvgChange = pct(totalTips, lastYearMonthlyAvgTips)
-
   // Same month last year revenue from historical data
   const sameMonthLastYearPoint = useMemo(() => getPointForSameMonthLastYear(month), [month])
   const sameMonthLastYearAvg = sameMonthLastYearPoint?.average ?? 0
   const revenueVsLastYearSameMonth = pct(avgRevenue, sameMonthLastYearAvg)
-
-  const selectedYear = month.split('-')[0]
 
   // View 1 "חודשי": daily revenue from shifts for the selected month
   const dailyData = useMemo(() => {
