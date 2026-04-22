@@ -97,18 +97,6 @@ export function DashboardPage() {
 
   const tipChange = pct(totalTips, lastYearTips)
 
-  // Average monthly tips across all months of last year
-  const lastYearMonthlyAvgTips = useMemo(() => {
-    const lastYear = String(Number(month.split('-')[0]) - 1)
-    const byMonth: Record<string, number> = {}
-    for (const s of shifts) {
-      if (!s.date.startsWith(lastYear)) continue
-      const ym = s.date.slice(0, 7)
-      byMonth[ym] = (byMonth[ym] ?? 0) + (s.tips ?? 0)
-    }
-    const months = Object.values(byMonth)
-    return months.length > 0 ? months.reduce((a, b) => a + b, 0) / months.length : 0
-  }, [shifts, month])
 
   // Same month last year revenue from historical data
   const sameMonthLastYearPoint = useMemo(() => getPointForSameMonthLastYear(month), [month])
