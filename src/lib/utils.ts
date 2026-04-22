@@ -37,6 +37,11 @@ export function todayString(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+export function currentTimeString(): string {
+  const d = new Date()
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
 export function currentMonthStr(): string {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -155,7 +160,7 @@ export function buildShiftMessage(data: CreateShiftInput, employeeName: string):
   const hasCash = data.revenue != null || data.cash != null || data.credit != null || data.tips != null
   if (hasCash) {
     lines.push('', '💰 פרטי קופה:')
-    if (data.revenue != null) lines.push(`   X (סך הכל): ₪${fmtMoney(data.revenue)}`)
+    if (data.revenue != null) lines.push(`   סה"כ: ₪${fmtMoney(data.revenue)}`)
     if (data.credit  != null) lines.push(`   אשראי: ₪${fmtMoney(data.credit)}`)
     if (data.cash    != null) lines.push(`   מזומן: ₪${fmtMoney(data.cash)}`)
     if (data.tips    != null) lines.push(`   טיפ: ₪${fmtMoney(data.tips)}`)

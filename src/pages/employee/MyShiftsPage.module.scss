@@ -108,17 +108,15 @@
 }
 
 .totalLabel {
-  color: v.$color-text-muted;
-  font-size: v.$font-size-xs;
-  font-weight: v.$font-weight-semibold;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  color: v.$color-text;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-bold;
   text-align: right;
 }
 
 .totalNum {
   color: v.$color-primary;
-  font-weight: v.$font-weight-semibold;
+  font-weight: v.$font-weight-bold;
   font-size: v.$font-size-sm;
   font-variant-numeric: tabular-nums;
   text-align: center;

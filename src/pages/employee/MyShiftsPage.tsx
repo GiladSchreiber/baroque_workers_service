@@ -6,12 +6,10 @@ import { PageHeader } from '../../components/layout/PageHeader'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import {
-  formatDateShort, isWithinEditWindow,
-  splitShiftHours, calcSalary, currentMonthStr, monthOptions, fmtMoney,
+  formatDateShort, formatMonth, isWithinEditWindow,
+  splitShiftHours, calcSalary, currentMonthStr, fmtMoney,
 } from '../../lib/utils'
 import styles from './MyShiftsPage.module.scss'
-
-const MONTH_OPTIONS = [{ value: '', label: 'כל הזמן' }, ...monthOptions(24)]
 
 function EditIcon() {
   return (
@@ -39,6 +37,15 @@ export function MyShiftsPage() {
 
   const hourlyWage = currentUser?.hourlyWage ?? 0
 
+  const monthOptions = useMemo(() => {
+    const months = Array.from(new Set(shifts.map(s => s.date.slice(0, 7))))
+      .sort((a, b) => b.localeCompare(a))
+    return [
+      { value: '', label: 'כל הזמן' },
+      ...months.map(ym => ({ value: ym, label: formatMonth(ym) })),
+    ]
+  }, [shifts])
+
   const filtered = useMemo(
     () => shifts
       .filter(s => !filterMonth || s.date.startsWith(filterMonth))
@@ -65,7 +72,7 @@ export function MyShiftsPage() {
           value={filterMonth}
           onChange={e => setFilterMonth(e.target.value)}
         >
-          {MONTH_OPTIONS.map(o => (
+          {monthOptions.map(o => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
@@ -120,7 +127,10 @@ export function MyShiftsPage() {
             </tbody>
             <tfoot>
               <tr className={styles.totalRow}>
-                <td colSpan={4} className={styles.totalLabel}>סה"כ</td>
+                <td className={styles.totalLabel}>סה"כ</td>
+                <td></td>
+                <td></td>
+                <td></td>
                 <td className={styles.totalNum}>₪{fmtMoney(totalSalary)}</td>
                 <td></td>
               </tr>

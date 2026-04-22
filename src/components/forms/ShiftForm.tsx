@@ -3,7 +3,7 @@ import type { CreateShiftInput, ShiftType } from '../../types'
 import { Input } from '../ui/Input'
 import { Select } from '../ui/Select'
 import { Button } from '../ui/Button'
-import { todayString } from '../../lib/utils'
+import { todayString, currentTimeString } from '../../lib/utils'
 import styles from './ShiftForm.module.scss'
 
 const SHIFT_TYPE_OPTIONS = [
@@ -35,7 +35,7 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
   const [date, setDate] = useState(initialValues?.date ?? todayString())
   const [type, setType] = useState<ShiftType>(initialValues?.type ?? 'morning')
   const [startTime, setStartTime] = useState(initialValues?.startTime ?? '')
-  const [endTime, setEndTime] = useState(initialValues?.endTime ?? '')
+  const [endTime, setEndTime] = useState(initialValues?.endTime ?? currentTimeString())
   const [revenue, setRevenue] = useState(initialValues?.revenue?.toString() ?? '')
   const [cash, setCash] = useState(initialValues?.cash?.toString() ?? '')
   const [credit, setCredit] = useState(initialValues?.credit?.toString() ?? '')
