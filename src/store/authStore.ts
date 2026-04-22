@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Employee } from '../types'
 import { employeeRepo } from '../repositories'
+import { hashPassword } from '../lib/utils'
 
 export interface RegisterInput {
   name: string
@@ -31,7 +32,8 @@ export const useAuthStore = create<AuthState>()(
         if (!employee.isActive) throw new Error('החשבון אינו פעיל')
         if (employee.role === 'manager') {
           if (!password) throw new Error('NEED_PASSWORD')
-          if (password !== employee.passwordHash) throw new Error('סיסמה שגויה')
+          const hashed = await hashPassword(password)
+          if (hashed !== employee.passwordHash) throw new Error('סיסמה שגויה')
         }
         set({ currentUser: employee })
       },

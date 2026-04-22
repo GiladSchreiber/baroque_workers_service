@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 import type { Role } from '../../types'
+import { hashPassword } from '../../lib/utils'
 import styles from './EmployeeFormPage.module.scss'
 
 const ROLE_OPTIONS = [
@@ -28,6 +29,7 @@ export function EmployeeFormPage() {
   const [bankNumber, setBankNumber] = useState('')
   const [bankBranch, setBankBranch] = useState('')
   const [bankAccount, setBankAccount] = useState('')
+  const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -59,15 +61,22 @@ export function EmployeeFormPage() {
     try {
       const personalFields = { idNumber, phone, bankNumber, bankBranch, bankAccount }
       if (isEdit && id) {
-        await updateEmployee(id, {
+        const updates: Parameters<typeof updateEmployee>[1] = {
           name, email, role,
           hourlyWage: Number(hourlyWage),
           ...personalFields,
-        })
+        }
+        if (role === 'manager' && password) {
+          updates.passwordHash = await hashPassword(password)
+        }
+        await updateEmployee(id, updates)
       } else {
+        const passwordHash = role === 'manager' && password
+          ? await hashPassword(password)
+          : ''
         await addEmployee({
           name, email,
-          passwordHash: '',
+          passwordHash,
           role,
           hourlyWage: Number(hourlyWage),
           isActive: true,
@@ -116,6 +125,17 @@ export function EmployeeFormPage() {
             value={role}
             onChange={e => setRole(e.target.value as Role)}
           />
+          {role === 'manager' && (
+            <Input
+              label={isEdit ? 'סיסמה (השאר ריק לאי-שינוי)' : 'סיסמה'}
+              id="password"
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required={!isEdit}
+              autoComplete="new-password"
+            />
+          )}
           <Input
             label="שכר לשעה"
             id="hourlyWage"

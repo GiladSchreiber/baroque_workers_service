@@ -218,6 +218,15 @@ export function fmtMoney(n: number): string {
   return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
+/** SHA-256 hash using the built-in Web Crypto API. No external dependencies. */
+export async function hashPassword(password: string): Promise<string> {
+  const data = new TextEncoder().encode(password)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  return Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
 export function isWithinEditWindow(submittedAt: string): boolean {
   return Date.now() - new Date(submittedAt).getTime() < 24 * 60 * 60 * 1000
 }
