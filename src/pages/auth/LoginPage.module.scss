@@ -58,27 +58,3 @@
     font-weight: v.$font-weight-medium;
   }
 }
-
-.quickLogin {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: v.$space-2;
-  margin-top: v.$space-2;
-}
-
-.quickBtn {
-  background: none;
-  border: 1px dashed v.$color-border;
-  border-radius: v.$radius-sm;
-  color: v.$color-text-muted;
-  font-family: v.$font-family;
-  font-size: v.$font-size-xs;
-  padding: v.$space-2;
-  cursor: pointer;
-  transition: color v.$transition-fast, border-color v.$transition-fast;
-
-  &:active {
-    color: v.$color-primary;
-    border-color: v.$color-primary;
-  }
-}

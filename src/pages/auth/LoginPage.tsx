@@ -80,16 +80,6 @@ export function LoginPage() {
           כניסה
         </Button>
 
-        <div className={styles.quickLogin}>
-          <button type="button" className={styles.quickBtn} onClick={() => login('liav.pinchas@baroque.com')}>ליאב</button>
-          <button type="button" className={styles.quickBtn} onClick={() => login('sinai.yoffe@baroque.com')}>סיני</button>
-          <button type="button" className={styles.quickBtn} onClick={() => login('sofia.kaplan@baroque.com')}>סופיה</button>
-          <button type="button" className={styles.quickBtn} onClick={() => login('rafael.buzaglo@baroque.com')}>רפאל</button>
-          <button type="button" className={styles.quickBtn} onClick={() => login('nea.freilpert@baroque.com')}>נעה</button>
-          <button type="button" className={styles.quickBtn} onClick={() => login('julia.abukhalil@baroque.com')}>ג׳וליה</button>
-          <button type="button" className={styles.quickBtn} onClick={() => login('ila.avivi@baroque.com')}>אילה</button>
-          <button type="button" className={styles.quickBtn} onClick={() => login('yotam.zak@baroque.com')}>יותם</button>
-        </div>
       </form>
 
       <p className={styles.hint}>
