@@ -15,7 +15,7 @@ export interface RegisterInput {
 
 interface AuthState {
   currentUser: Employee | null
-  login: (email: string) => Promise<void>
+  login: (email: string, password?: string) => Promise<void>
   logout: () => void
   register: (data: RegisterInput) => Promise<void>
 }
@@ -25,13 +25,13 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       currentUser: null,
 
-      login: async (email) => {
+      login: async (email, password) => {
         const employee = await employeeRepo.getByEmail(email)
-        if (!employee) {
-          throw new Error('משתמש לא נמצא')
-        }
-        if (!employee.isActive) {
-          throw new Error('החשבון אינו פעיל')
+        if (!employee) throw new Error('משתמש לא נמצא')
+        if (!employee.isActive) throw new Error('החשבון אינו פעיל')
+        if (employee.role === 'manager') {
+          if (!password) throw new Error('NEED_PASSWORD')
+          if (password !== employee.passwordHash) throw new Error('סיסמה שגויה')
         }
         set({ currentUser: employee })
       },

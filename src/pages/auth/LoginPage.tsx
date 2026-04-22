@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
+import { Modal } from '../../components/ui/Modal'
 import styles from './LoginPage.module.scss'
 
 export function LoginPage() {
@@ -13,6 +14,12 @@ export function LoginPage() {
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+
+  // Manager password modal
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [password, setPassword] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false)
 
   if (currentUser) {
     navigate(currentUser.role === 'manager' ? '/manager/dashboard' : '/employee/report', { replace: true })
@@ -26,9 +33,27 @@ export function LoginPage() {
     try {
       await login(email)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed')
+      const msg = err instanceof Error ? err.message : 'Login failed'
+      if (msg === 'NEED_PASSWORD') {
+        setShowPasswordModal(true)
+      } else {
+        setError(msg)
+      }
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  async function handlePasswordSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setPasswordError('')
+    setIsPasswordLoading(true)
+    try {
+      await login(email, password)
+    } catch (err) {
+      setPasswordError(err instanceof Error ? err.message : 'Login failed')
+    } finally {
+      setIsPasswordLoading(false)
     }
   }
 
@@ -56,8 +81,6 @@ export function LoginPage() {
         </Button>
 
         <div className={styles.quickLogin}>
-          <button type="button" className={styles.quickBtn} onClick={() => login('noam@gmail.com')}>נועם (מנהל)</button>
-          <button type="button" className={styles.quickBtn} onClick={() => login('gilad@gmail.com')}>גלעד (מנהל)</button>
           <button type="button" className={styles.quickBtn} onClick={() => login('liav.pinchas@baroque.com')}>ליאב</button>
           <button type="button" className={styles.quickBtn} onClick={() => login('sinai.yoffe@baroque.com')}>סיני</button>
           <button type="button" className={styles.quickBtn} onClick={() => login('sofia.kaplan@baroque.com')}>סופיה</button>
@@ -72,6 +95,29 @@ export function LoginPage() {
       <p className={styles.hint}>
         עובד חדש? <Link to="/register">הרשמה</Link>
       </p>
+
+      {/* Manager password modal */}
+      <Modal
+        isOpen={showPasswordModal}
+        onClose={() => { setShowPasswordModal(false); setPassword(''); setPasswordError('') }}
+        title="כניסת מנהל"
+      >
+        <form onSubmit={handlePasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <Input
+            label="סיסמה"
+            id="manager-password"
+            type="password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required
+            autoFocus
+          />
+          {passwordError && <p className={styles.error}>{passwordError}</p>}
+          <Button type="submit" fullWidth isLoading={isPasswordLoading}>
+            כניסה
+          </Button>
+        </form>
+      </Modal>
     </div>
   )
 }
