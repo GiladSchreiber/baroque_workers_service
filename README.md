@@ -1,73 +1,132 @@
-# React + TypeScript + Vite
+# Baroque Bar — Shift Management App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A mobile-first web app for managing employee shifts, cash flow, tips, and payroll at Baroque Bar café.
 
-Currently, two official plugins are available:
+**Live site:** https://giladschreiber.github.io/baroque_workers_service/
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## What it does
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### For employees
+- Log in with email only (no password needed)
+- Submit daily shift reports: hours, shift type, and cash register data (revenue, cash, credit, tips)
+- Mark a shift as a holiday (חג 150%) or special holiday (חג מיוחד 200%) when applicable
+- Edit submitted shifts within 24 hours
+- View your own shift history with calculated salary per shift
+- Salary is automatically calculated including base wage, Shabbat/holiday rate, tip distribution, and travel expenses (₪8/shift)
 
-## Expanding the ESLint configuration
+### For managers
+- Log in with email + password
+- View all employees and their monthly shift summaries
+- Add, edit, or delete any employee's shifts
+- Manage the employee list: add new employees, edit details and wage, deactivate accounts
+- View the income page: daily revenue breakdown by shift
+- Dashboard: revenue graphs (daily and all-time), trend lines, and year-over-year comparisons
+- Export monthly shift data to Excel (XLSX)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Salary calculation
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+| Hour type | Rate |
+|-----------|------|
+| Regular weekday | Employee's hourly wage (₪40 or ₪45) |
+| Friday after 14:00 / Saturday until 20:00 | ₪51.48/hr (150% of minimum wage) |
+| Holiday (חג) — manual checkbox | ₪51.48/hr |
+| Special holiday (חג מיוחד) — manual checkbox | ₪68.64/hr (200% of minimum wage) |
+| Support shift (אחמ"ש) | ₪50/hr flat |
+| Global shift (גלובלי) | Fixed amount set per shift |
+| Saturday taxi (מוניות) | Fixed amount set per shift |
+| Travel expenses | ₪8 per non-flat shift |
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+**Tips** are distributed proportionally among all non-support shifts that overlap in time on the same day. Only the amount above ₪15/hr threshold is counted as income.
+
+---
+
+## Tech stack
+
+- **Frontend:** React + TypeScript + Vite
+- **State:** Zustand
+- **Styling:** SCSS Modules
+- **Backend:** Supabase (PostgreSQL)
+- **Deployment:** GitHub Pages via GitHub Actions
+
+---
+
+## Project structure
+
+```
+src/
+├── types/              # TypeScript models
+├── repositories/
+│   ├── interfaces/     # Repository contracts
+│   ├── mock/           # localStorage implementations (dev fallback)
+│   └── supabase/       # Supabase implementations (production)
+├── store/              # Zustand stores (auth, shifts, employees)
+├── hooks/              # Custom hooks (useMonthlySummaries, etc.)
+├── components/
+│   ├── ui/             # Button, Input, Card, Modal, Badge, etc.
+│   ├── forms/          # ShiftForm, EmployeeForm
+│   └── layout/         # AppShell, BottomNav, PageHeader
+├── pages/
+│   ├── auth/           # Login, Register
+│   ├── employee/       # MyShifts, ReportShift, EditShift
+│   └── manager/        # Dashboard, AllShifts, Employees, Income
+├── lib/
+│   └── utils.ts        # Salary calculations, date helpers, tip distribution
+└── data/
+    └── revenueHistory.ts  # Historical revenue reference data
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Local development
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
+
+Requires a `.env.local` file:
+```
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+Without these env vars the app falls back to localStorage mock data automatically.
+
+---
+
+## Database setup
+
+Run the SQL files in order in the Supabase SQL Editor:
+
+1. `supabase-schema.sql` — creates all tables
+2. `supabase-historical-revenue.sql` — inserts real historical monthly revenue data (April 2023 – March 2026)
+
+To add the first manager account:
+```sql
+INSERT INTO public.employees (name, email, password_hash, role, hourly_wage, is_active)
+VALUES ('Your Name', 'your@email.com', 'your-password', 'manager', 45, true);
+```
+
+---
+
+## Deployment
+
+Pushes to `main` automatically deploy to GitHub Pages via `.github/workflows/deploy.yml`.
+
+The build requires two GitHub repository secrets:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+---
+
+## Running tests
+
+```bash
+npm test
+```
+
+Unit tests cover the core salary calculation logic: `splitShiftHours`, `calcSalary`, and `computeTipDistribution`, including validation against real payroll data.
