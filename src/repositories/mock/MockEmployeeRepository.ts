@@ -2,7 +2,7 @@ import type { Employee, CreateEmployeeInput } from '../../types'
 import type { EmployeeRepository } from '../interfaces/EmployeeRepository'
 import { LocalStore } from './LocalStore'
 
-const SEED_VERSION = 'v2'
+const SEED_VERSION = 'v4'
 const SEED_VERSION_KEY = 'baroque_seed_v'
 
 const SEED: Employee[] = [
@@ -16,6 +16,11 @@ const SEED: Employee[] = [
     hourlyWage: 45,
     isActive: true,
     createdAt: new Date('2024-01-01').toISOString(),
+    idNumber: '312445678',
+    phone: '050-1234567',
+    bankNumber: '12',
+    bankBranch: '045',
+    bankAccount: '123456789',
   },
   {
     id: 'mgr-gilad',
@@ -26,6 +31,11 @@ const SEED: Employee[] = [
     hourlyWage: 45,
     isActive: true,
     createdAt: new Date('2024-01-01').toISOString(),
+    idNumber: '203871542',
+    phone: '052-9876543',
+    bankNumber: '20',
+    bankBranch: '610',
+    bankAccount: '987654321',
   },
   // Employees — 45 ₪/hr
   {
@@ -37,6 +47,11 @@ const SEED: Employee[] = [
     hourlyWage: 45,
     isActive: true,
     createdAt: new Date('2024-01-01').toISOString(),
+    idNumber: '319284756',
+    phone: '054-3344556',
+    bankNumber: '10',
+    bankBranch: '148',
+    bankAccount: '234567890',
   },
   {
     id: 'emp-uri',
@@ -47,6 +62,11 @@ const SEED: Employee[] = [
     hourlyWage: 45,
     isActive: true,
     createdAt: new Date('2024-01-01').toISOString(),
+    idNumber: '208734512',
+    phone: '053-7654321',
+    bankNumber: '11',
+    bankBranch: '022',
+    bankAccount: '345678901',
   },
   {
     id: 'emp-shahar',
@@ -57,6 +77,11 @@ const SEED: Employee[] = [
     hourlyWage: 45,
     isActive: true,
     createdAt: new Date('2024-01-01').toISOString(),
+    idNumber: '315678234',
+    phone: '058-2233445',
+    bankNumber: '12',
+    bankBranch: '701',
+    bankAccount: '456789012',
   },
   {
     id: 'emp-liav',
@@ -67,6 +92,11 @@ const SEED: Employee[] = [
     hourlyWage: 45,
     isActive: true,
     createdAt: new Date('2024-01-01').toISOString(),
+    idNumber: '204512378',
+    phone: '050-5544332',
+    bankNumber: '04',
+    bankBranch: '333',
+    bankAccount: '567890123',
   },
   {
     id: 'emp-sofia',
@@ -77,6 +107,11 @@ const SEED: Employee[] = [
     hourlyWage: 45,
     isActive: true,
     createdAt: new Date('2024-01-01').toISOString(),
+    idNumber: '311234567',
+    phone: '052-6677889',
+    bankNumber: '20',
+    bankBranch: '580',
+    bankAccount: '678901234',
   },
   {
     id: 'emp-rafael',
@@ -87,6 +122,11 @@ const SEED: Employee[] = [
     hourlyWage: 45,
     isActive: true,
     createdAt: new Date('2024-01-01').toISOString(),
+    idNumber: '206543219',
+    phone: '054-9988776',
+    bankNumber: '17',
+    bankBranch: '056',
+    bankAccount: '789012345',
   },
   {
     id: 'emp-sinai',
@@ -97,6 +137,11 @@ const SEED: Employee[] = [
     hourlyWage: 45,
     isActive: true,
     createdAt: new Date('2024-01-01').toISOString(),
+    idNumber: '318765432',
+    phone: '053-1122334',
+    bankNumber: '10',
+    bankBranch: '920',
+    bankAccount: '890123456',
   },
   {
     id: 'emp-nea',
@@ -107,6 +152,11 @@ const SEED: Employee[] = [
     hourlyWage: 45,
     isActive: true,
     createdAt: new Date('2024-01-01').toISOString(),
+    idNumber: '302918374',
+    phone: '058-4455667',
+    bankNumber: '11',
+    bankBranch: '475',
+    bankAccount: '901234567',
   },
   // Employees — 40 ₪/hr
   {
@@ -118,6 +168,11 @@ const SEED: Employee[] = [
     hourlyWage: 40,
     isActive: true,
     createdAt: new Date('2024-01-01').toISOString(),
+    idNumber: '214365870',
+    phone: '050-8877665',
+    bankNumber: '12',
+    bankBranch: '234',
+    bankAccount: '112233445',
   },
   {
     id: 'emp-julia',
@@ -128,6 +183,11 @@ const SEED: Employee[] = [
     hourlyWage: 40,
     isActive: true,
     createdAt: new Date('2024-01-01').toISOString(),
+    idNumber: '328761094',
+    phone: '052-3344556',
+    bankNumber: '20',
+    bankBranch: '099',
+    bankAccount: '223344556',
   },
   {
     id: 'emp-ila',
@@ -138,6 +198,11 @@ const SEED: Employee[] = [
     hourlyWage: 40,
     isActive: true,
     createdAt: new Date('2024-01-01').toISOString(),
+    idNumber: '209183746',
+    phone: '054-5566778',
+    bankNumber: '04',
+    bankBranch: '712',
+    bankAccount: '334455667',
   },
   {
     id: 'emp-haim',
@@ -148,6 +213,11 @@ const SEED: Employee[] = [
     hourlyWage: 40,
     isActive: true,
     createdAt: new Date('2024-01-01').toISOString(),
+    idNumber: '316254780',
+    phone: '053-6677889',
+    bankNumber: '17',
+    bankBranch: '381',
+    bankAccount: '445566778',
   },
   {
     id: 'emp-noa',
@@ -158,6 +228,11 @@ const SEED: Employee[] = [
     hourlyWage: 40,
     isActive: true,
     createdAt: new Date('2024-01-01').toISOString(),
+    idNumber: '301827465',
+    phone: '058-7788990',
+    bankNumber: '10',
+    bankBranch: '543',
+    bankAccount: '556677889',
   },
   {
     id: 'emp-dafna',
@@ -168,6 +243,11 @@ const SEED: Employee[] = [
     hourlyWage: 40,
     isActive: true,
     createdAt: new Date('2024-01-01').toISOString(),
+    idNumber: '217364850',
+    phone: '050-2233441',
+    bankNumber: '11',
+    bankBranch: '820',
+    bankAccount: '667788990',
   },
   {
     id: 'emp-yotam',
@@ -178,6 +258,11 @@ const SEED: Employee[] = [
     hourlyWage: 40,
     isActive: true,
     createdAt: new Date('2024-01-01').toISOString(),
+    idNumber: '325619483',
+    phone: '052-1122338',
+    bankNumber: '12',
+    bankBranch: '067',
+    bankAccount: '778899001',
   },
 ]
 

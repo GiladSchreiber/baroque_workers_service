@@ -77,6 +77,32 @@
   }
 }
 
+.repeatRow {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+  cursor: pointer;
+  padding: v.$space-3 v.$space-4;
+  background: v.$color-surface-raised;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-lg;
+}
+
+.repeatCheckbox {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: v.$color-primary;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.repeatLabel {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: v.$color-text;
+  user-select: none;
+}
+
 .submitError {
   font-size: v.$font-size-sm;
   color: v.$color-danger;

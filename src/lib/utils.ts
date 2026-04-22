@@ -10,6 +10,8 @@ export const SHIFT_TYPE_LABELS: Record<ShiftType, string> = {
   manager: 'פיק',
   overlap: 'חפיפה',
   general: 'כללי',
+  global: 'גלובלי',
+  taxi: 'מוניות',
 }
 
 export const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
@@ -88,6 +90,7 @@ export function splitShiftHours(
   const totalMins = endMins - startMins
 
   if (type === 'support') return { regular: 0, shabbat: 0, support: totalMins / 60 }
+  if (type === 'global' || type === 'taxi') return { regular: 0, shabbat: 0, support: 0 }
 
   // morning/afternoon/evening follow the same shabbat rules as regular
 

@@ -16,6 +16,22 @@
   gap: v.$space-4;
 }
 
+.sectionTitle {
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding-top: v.$space-2;
+  border-top: 1px solid v.$color-border;
+}
+
+.bankGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.5fr;
+  gap: v.$space-3;
+}
+
 .error {
   font-size: v.$font-size-sm;
   color: v.$color-danger;

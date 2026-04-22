@@ -38,13 +38,18 @@ export function IncomePage() {
     return map
   }, [monthShifts])
 
-  // One income row per day — the shift carrying revenue/cash/credit
-  const incomeRows = useMemo(
-    () => monthShifts
-      .filter(s => s.revenue !== undefined)
-      .sort((a, b) => b.date.localeCompare(a.date)),
-    [monthShifts],
-  )
+  // One income row per day — the LAST shift (by endTime) that has revenue data
+  const incomeRows = useMemo(() => {
+    const byDate: Record<string, typeof monthShifts[0]> = {}
+    for (const s of monthShifts) {
+      if (s.revenue === undefined) continue
+      const existing = byDate[s.date]
+      if (!existing || s.endTime > existing.endTime) {
+        byDate[s.date] = s
+      }
+    }
+    return Object.values(byDate).sort((a, b) => b.date.localeCompare(a.date))
+  }, [monthShifts])
 
   function workerFirstName(id: string): string {
     const name = employeeMap[id] ?? ''

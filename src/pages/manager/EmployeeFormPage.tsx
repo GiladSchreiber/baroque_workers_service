@@ -23,15 +23,16 @@ export function EmployeeFormPage() {
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<Role>('employee')
   const [hourlyWage, setHourlyWage] = useState('')
+  const [idNumber, setIdNumber] = useState('')
+  const [phone, setPhone] = useState('')
+  const [bankNumber, setBankNumber] = useState('')
+  const [bankBranch, setBankBranch] = useState('')
+  const [bankAccount, setBankAccount] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (isEdit) {
-      if (employees.length === 0) {
-        fetchAll()
-      }
-    }
+    if (isEdit && employees.length === 0) fetchAll()
   }, [isEdit, employees.length, fetchAll])
 
   useEffect(() => {
@@ -42,6 +43,11 @@ export function EmployeeFormPage() {
         setEmail(emp.email)
         setRole(emp.role)
         setHourlyWage(String(emp.hourlyWage))
+        setIdNumber(emp.idNumber ?? '')
+        setPhone(emp.phone ?? '')
+        setBankNumber(emp.bankNumber ?? '')
+        setBankBranch(emp.bankBranch ?? '')
+        setBankAccount(emp.bankAccount ?? '')
       }
     }
   }, [isEdit, id, employees])
@@ -51,24 +57,24 @@ export function EmployeeFormPage() {
     setError('')
     setIsLoading(true)
     try {
+      const personalFields = { idNumber, phone, bankNumber, bankBranch, bankAccount }
       if (isEdit && id) {
         await updateEmployee(id, {
-          name,
-          email,
-          role,
+          name, email, role,
           hourlyWage: Number(hourlyWage),
+          ...personalFields,
         })
       } else {
         await addEmployee({
-          name,
-          email,
+          name, email,
           passwordHash: '',
           role,
           hourlyWage: Number(hourlyWage),
           isActive: true,
+          ...personalFields,
         })
       }
-      navigate('/manager/employees')
+      navigate(-1)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'אירעה שגיאה')
     } finally {
@@ -120,6 +126,48 @@ export function EmployeeFormPage() {
             min={0}
             required
           />
+
+          <div className={styles.sectionTitle}>פרטים אישיים</div>
+          <Input
+            label="תעודת זהות"
+            id="idNumber"
+            type="text"
+            value={idNumber}
+            onChange={e => setIdNumber(e.target.value)}
+          />
+          <Input
+            label="טלפון"
+            id="phone"
+            type="tel"
+            value={phone}
+            onChange={e => setPhone(e.target.value)}
+          />
+
+          <div className={styles.sectionTitle}>פרטי בנק</div>
+          <div className={styles.bankGrid}>
+            <Input
+              label="מספר בנק"
+              id="bankNumber"
+              type="text"
+              value={bankNumber}
+              onChange={e => setBankNumber(e.target.value)}
+            />
+            <Input
+              label="סניף"
+              id="bankBranch"
+              type="text"
+              value={bankBranch}
+              onChange={e => setBankBranch(e.target.value)}
+            />
+            <Input
+              label="חשבון"
+              id="bankAccount"
+              type="text"
+              value={bankAccount}
+              onChange={e => setBankAccount(e.target.value)}
+            />
+          </div>
+
           {error && <p className={styles.error}>{error}</p>}
           <Button type="submit" fullWidth isLoading={isLoading}>
             {isEdit ? 'שמור שינויים' : 'הוסף עובד'}

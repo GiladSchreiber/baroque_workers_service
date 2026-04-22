@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import styles from './BottomNav.module.scss'
 
@@ -8,30 +8,35 @@ const EMPLOYEE_LINKS = [
 ]
 
 const MANAGER_LINKS = [
+  { to: '/manager/dashboard', label: 'דשבורד', icon: <DashboardIcon /> },
   { to: '/manager/employees', label: 'צוות', icon: <TeamIcon /> },
   { to: '/manager/shifts', label: 'שעות', icon: <ShiftsIcon /> },
   { to: '/manager/income', label: 'הכנסות', icon: <ClosureIcon /> },
-  { to: '/manager/dashboard', label: 'דשבורד', icon: <DashboardIcon /> },
 ]
 
 export function BottomNav() {
   const role = useAuthStore(s => s.currentUser?.role)
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
   const links = role === 'manager' ? MANAGER_LINKS : EMPLOYEE_LINKS
 
   return (
     <nav className={styles.nav}>
-      {links.map(link => (
-        <NavLink
-          key={link.to}
-          to={link.to}
-          className={({ isActive }) =>
-            [styles.link, isActive ? styles.active : ''].join(' ')
-          }
-        >
-          <span className={styles.icon}>{link.icon}</span>
-          <span className={styles.label}>{link.label}</span>
-        </NavLink>
-      ))}
+      {links.map(link => {
+        const linkSection = link.to.split('/')[2]
+        const currentSection = pathname.split('/')[2]
+        const active = linkSection === currentSection
+        return (
+          <button
+            key={link.to}
+            className={[styles.link, active ? styles.active : ''].join(' ')}
+            onClick={() => navigate(link.to)}
+          >
+            <span className={styles.icon}>{link.icon}</span>
+            <span className={styles.label}>{link.label}</span>
+          </button>
+        )
+      })}
     </nav>
   )
 }

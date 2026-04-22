@@ -12,46 +12,11 @@ const ROLE_LABELS: Record<Role, string> = {
   manager: 'מנהל',
 }
 
-function EditIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path
-        d="M11.5 2.5a1.414 1.414 0 012 2L5 13H3v-2L11.5 2.5z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
-
-function DeactivateIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path
-        d="M12 4L4 12M4 4l8 8"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
-
 export function EmployeesPage() {
   const navigate = useNavigate()
-  const { employees, isLoading, fetchAll, deactivate } = useEmployeeStore()
+  const { employees, isLoading, fetchAll } = useEmployeeStore()
 
-  useEffect(() => {
-    fetchAll()
-  }, [fetchAll])
-
-  async function handleDeactivate(id: string, name: string) {
-    if (window.confirm(`לבטל את חשבון ${name}?`)) {
-      await deactivate(id)
-    }
-  }
+  useEffect(() => { fetchAll() }, [fetchAll])
 
   return (
     <div className={styles.page}>
@@ -67,13 +32,16 @@ export function EmployeesPage() {
               <tr>
                 <th>שם</th>
                 <th>תפקיד</th>
-                <th style={{ textAlign: 'center' }}>שכר/שעה</th>
-                <th></th>
+                <th style={{ textAlign: 'center' }}>שכר בסיס</th>
               </tr>
             </thead>
             <tbody>
               {employees.map(emp => (
-                <tr key={emp.id} className={emp.isActive ? '' : styles.inactiveRow}>
+                <tr
+                  key={emp.id}
+                  className={`${styles.clickableRow} ${emp.isActive ? '' : styles.inactiveRow}`}
+                  onClick={() => navigate(`/manager/employees/${emp.id}`)}
+                >
                   <td className={styles.nameCell}>{emp.name}</td>
                   <td>
                     <span className={emp.role === 'manager' ? styles.roleManager : styles.roleEmployee}>
@@ -81,24 +49,6 @@ export function EmployeesPage() {
                     </span>
                   </td>
                   <td className={styles.wageCell}>₪{emp.hourlyWage}</td>
-                  <td className={styles.actionCell}>
-                    <button
-                      className={styles.editBtn}
-                      onClick={() => navigate(`/manager/employees/${emp.id}/edit`)}
-                      aria-label="עריכה"
-                    >
-                      <EditIcon />
-                    </button>
-                    {emp.isActive && (
-                      <button
-                        className={styles.deactivateBtn}
-                        onClick={() => handleDeactivate(emp.id, emp.name)}
-                        aria-label="ביטול חשבון"
-                      >
-                        <DeactivateIcon />
-                      </button>
-                    )}
-                  </td>
                 </tr>
               ))}
             </tbody>

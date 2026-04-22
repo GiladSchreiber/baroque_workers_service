@@ -99,6 +99,27 @@
   color: v.$color-text;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: v.$space-1;
+}
+
+.addBtn {
+  background: none;
+  border: none;
+  color: v.$color-primary;
+  padding: v.$space-2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: v.$radius-sm;
+  cursor: pointer;
+  transition: opacity v.$transition-fast;
+
+  &:active { opacity: 0.6; }
+}
+
 .xlsxBtn {
   background: none;
   border: none;
@@ -112,6 +133,27 @@
   transition: opacity v.$transition-fast;
 
   &:active { opacity: 0.6; }
+}
+
+.nesiaRow {
+  td {
+    border-bottom: 1px solid v.$color-border;
+  }
+}
+
+.totalRow {
+  td {
+    border-top: 2px solid v.$color-border;
+    border-bottom: none;
+    font-weight: v.$font-weight-bold;
+    color: v.$color-text;
+  }
+}
+
+.totalLabel {
+  text-align: right;
+  color: v.$color-text-muted;
+  font-size: v.$font-size-sm;
 }
 
 .emptyCell {

@@ -42,6 +42,15 @@
   }
 }
 
+.clickableRow {
+  cursor: pointer;
+  transition: background v.$transition-fast;
+
+  &:active {
+    background-color: v.$color-surface-raised;
+  }
+}
+
 .inactiveRow {
   opacity: 0.5;
 
@@ -84,44 +93,3 @@
   white-space: nowrap;
 }
 
-
-.actionCell {
-  width: 5rem;
-  text-align: center;
-  padding: v.$space-2 v.$space-3;
-  white-space: nowrap;
-}
-
-.editBtn {
-  background: none;
-  border: none;
-  color: v.$color-primary;
-  padding: v.$space-2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: v.$radius-sm;
-  cursor: pointer;
-  transition: opacity v.$transition-fast;
-
-  &:active {
-    opacity: 0.6;
-  }
-}
-
-.deactivateBtn {
-  background: none;
-  border: none;
-  color: v.$color-danger;
-  padding: v.$space-2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: v.$radius-sm;
-  cursor: pointer;
-  transition: opacity v.$transition-fast;
-
-  &:active {
-    opacity: 0.6;
-  }
-}

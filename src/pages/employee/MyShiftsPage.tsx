@@ -7,8 +7,9 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import {
   formatDateShort, formatMonth, isWithinEditWindow,
-  splitShiftHours, calcSalary, currentMonthStr, fmtMoney,
+  splitShiftHours, calcSalary, currentMonthStr, fmtMoney, SHIFT_TYPE_LABELS,
 } from '../../lib/utils'
+import { Badge } from '../../components/ui/Badge'
 import styles from './MyShiftsPage.module.scss'
 
 function EditIcon() {
@@ -56,8 +57,12 @@ export function MyShiftsPage() {
   const totalSalary = useMemo(() => {
     let total = 0
     for (const s of filtered) {
-      const h = splitShiftHours(s.date, s.startTime, s.endTime, s.type)
-      total += calcSalary(h.regular, h.shabbat, h.support, s.tips ?? 0, hourlyWage)
+      if (s.type === 'global') {
+        total += s.amount ?? 0
+      } else {
+        const h = splitShiftHours(s.date, s.startTime, s.endTime, s.type)
+        total += calcSalary(h.regular, h.shabbat, h.support, s.tips ?? 0, hourlyWage)
+      }
     }
     return total
   }, [filtered, hourlyWage])
@@ -92,6 +97,7 @@ export function MyShiftsPage() {
             <thead>
               <tr>
                 <th>תאריך</th>
+                <th>סוג</th>
                 <th>רגיל</th>
                 <th>שבת</th>
                 <th>אחמ"ש</th>
@@ -101,17 +107,21 @@ export function MyShiftsPage() {
             </thead>
             <tbody>
               {filtered.map(shift => {
-                const h = splitShiftHours(shift.date, shift.startTime, shift.endTime, shift.type)
-                const salary = calcSalary(h.regular, h.shabbat, h.support, shift.tips ?? 0, hourlyWage)
+                const isGlobal = shift.type === 'global'
+                const h = isGlobal ? { regular: 0, shabbat: 0, support: 0 } : splitShiftHours(shift.date, shift.startTime, shift.endTime, shift.type)
+                const salary = isGlobal
+                  ? (shift.amount ?? 0)
+                  : calcSalary(h.regular, h.shabbat, h.support, shift.tips ?? 0, hourlyWage)
                 return (
                   <tr key={shift.id}>
                     <td className={styles.dateCell}>{formatDateShort(shift.date)}</td>
-                    <td className={styles.numCell}>{fmtH(h.regular)}</td>
-                    <td className={styles.numCell}>{fmtH(h.shabbat)}</td>
-                    <td className={styles.numCell}>{fmtH(h.support)}</td>
+                    <td><Badge type={shift.type} label={SHIFT_TYPE_LABELS[shift.type]} /></td>
+                    <td className={styles.numCell}>{isGlobal ? '—' : fmtH(h.regular)}</td>
+                    <td className={styles.numCell}>{isGlobal ? '—' : fmtH(h.shabbat)}</td>
+                    <td className={styles.numCell}>{isGlobal ? '—' : fmtH(h.support)}</td>
                     <td className={styles.numCell}>₪{fmtMoney(salary)}</td>
                     <td className={styles.actionCell}>
-                      {isWithinEditWindow(shift.submittedAt) && (
+                      {!isGlobal && isWithinEditWindow(shift.submittedAt) && (
                         <button
                           className={styles.editBtn}
                           onClick={() => navigate(`/employee/shifts/${shift.id}/edit`)}
@@ -128,6 +138,7 @@ export function MyShiftsPage() {
             <tfoot>
               <tr className={styles.totalRow}>
                 <td className={styles.totalLabel}>סה"כ</td>
+                <td></td>
                 <td></td>
                 <td></td>
                 <td></td>

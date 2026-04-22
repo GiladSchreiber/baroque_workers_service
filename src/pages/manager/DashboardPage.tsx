@@ -7,16 +7,36 @@ import {
 import { useShiftStore } from '../../store/shiftStore'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
-import { currentMonthStr, monthOptions, fmtMoney } from '../../lib/utils'
+import { currentMonthStr, fmtMoney, formatMonth } from '../../lib/utils'
 import {
-  REVENUE_HISTORY, getPointForSameMonthLastYear,
+  REVENUE_HISTORY, getYearlyTotals, getPointForSameMonthLastYear,
 } from '../../data/revenueHistory'
 import styles from './DashboardPage.module.scss'
 
-const MONTH_OPTIONS = monthOptions(24)
+const THIS_MONTH = currentMonthStr()
+const MONTH_OPTIONS = [
+  { value: THIS_MONTH, label: formatMonth(THIS_MONTH) },
+  ...REVENUE_HISTORY
+    .slice()
+    .reverse()
+    .filter(p => p.month !== THIS_MONTH)
+    .map(p => ({ value: p.month, label: formatMonth(p.month) })),
+]
 const MONTH_ABBR = ['ינו', 'פבר', 'מרץ', 'אפר', 'מאי', 'יוני', 'יולי', 'אוג', 'ספט', 'אוק', 'נוב', 'דצמ']
 
-type ChartView = 'ytd' | 'year' | 'all'
+type ChartView = 'daily' | 'monthly'
+
+function linRegression(values: number[]): number[] {
+  const n = values.length
+  if (n < 2) return values
+  const sumX = (n * (n - 1)) / 2
+  const sumX2 = (n * (n - 1) * (2 * n - 1)) / 6
+  const sumY = values.reduce((a, b) => a + b, 0)
+  const sumXY = values.reduce((acc, y, i) => acc + i * y, 0)
+  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX)
+  const intercept = (sumY - slope * sumX) / n
+  return values.map((_, i) => Math.round(intercept + slope * i))
+}
 
 function shortMonth(ym: string) {
   const [y, m] = ym.split('-')
@@ -45,8 +65,8 @@ function ChartTooltip({ active, payload, label }: any) {
 
 export function DashboardPage() {
   const { shifts, isLoading, fetchAll } = useShiftStore()
-  const [month, setMonth] = useState(currentMonthStr())
-  const [chartView, setChartView] = useState<ChartView>('ytd')
+  const [month, setMonth] = useState(THIS_MONTH)
+  const [chartView, setChartView] = useState<ChartView>('daily')
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
@@ -92,37 +112,45 @@ export function DashboardPage() {
 
   const tipVsAvgChange = pct(totalTips, lastYearMonthlyAvgTips)
 
+  // Same month last year revenue from historical data
+  const sameMonthLastYearPoint = useMemo(() => getPointForSameMonthLastYear(month), [month])
+  const sameMonthLastYearAvg = sameMonthLastYearPoint?.average ?? 0
+  const revenueVsLastYearSameMonth = pct(avgRevenue, sameMonthLastYearAvg)
+
   const selectedYear = month.split('-')[0]
 
-  const toChartPoint = (p: typeof REVENUE_HISTORY[0]) => ({
-    name: shortMonth(p.month),
-    'סה"כ': p.sum,
-    'ממוצע': p.average,
-  })
+  // View 1 "חודשי": daily revenue from shifts for the selected month
+  const dailyData = useMemo(() => {
+    const byDay: Record<string, number> = {}
+    for (const s of shifts) {
+      if (!s.date.startsWith(month) || s.revenue == null) continue
+      byDay[s.date] = (byDay[s.date] ?? 0) + s.revenue
+    }
+    const days = Object.keys(byDay).sort()
+    const sums = days.map(d => byDay[d])
+    const trend = linRegression(sums)
+    return days.map((d, i) => ({
+      name: new Intl.DateTimeFormat('he-IL', { day: 'numeric', month: 'numeric' }).format(new Date(d + 'T12:00:00')),
+      'סה"כ': sums[i],
+      'מגמה': trend[i],
+    }))
+  }, [shifts, month])
 
-  // View 1: year-to-date (months of selected year up to selected month)
-  const ytdData = useMemo(
-    () => REVENUE_HISTORY.filter(p => p.month.startsWith(selectedYear) && p.month <= month).map(toChartPoint),
-    [selectedYear, month],
-  )
+  // View 2 "שנתי": all monthly data across all years
+  const yearlyData = useMemo(() => {
+    const points = REVENUE_HISTORY
+    const sums = points.map(p => p.sum)
+    const trend = linRegression(sums)
+    return points.map((p, i) => ({
+      name: shortMonth(p.month),
+      'סה"כ': p.sum,
+      'מגמה': trend[i],
+    }))
+  }, [])
 
-  // View 2: full selected year
-  const yearData = useMemo(
-    () => REVENUE_HISTORY.filter(p => p.month.startsWith(selectedYear)).map(toChartPoint),
-    [selectedYear],
-  )
+  const chartData = chartView === 'daily' ? dailyData : yearlyData
 
-  // View 3: all data since beginning
-  const allData = useMemo(
-    () => REVENUE_HISTORY.map(toChartPoint),
-    [],
-  )
-
-  const chartData = chartView === 'ytd' ? ytdData
-    : chartView === 'year' ? yearData
-    : allData
-
-  const xInterval = chartView === 'all' ? 5 : 0
+  const xInterval = chartView === 'monthly' ? 5 : 0
 
   // Historical reference for selected month
   const historicalPoint = useMemo(() => {
@@ -183,7 +211,7 @@ export function DashboardPage() {
               <span className={styles.cardLabel}>סה"כ אשראי</span>
               <span className={styles.cardValue}>₪{fmtMoney(totalCredit)}</span>
             </div>
-            <div className={`${styles.card} ${styles.cardFull}`}>
+            <div className={styles.card}>
               <span className={styles.cardLabel}>סה"כ טיפ</span>
               <span className={styles.cardValue}>₪{fmtMoney(totalTips)}</span>
               {lastYearTips > 0 && tipChange !== null && (
@@ -194,11 +222,15 @@ export function DashboardPage() {
                   </span>
                 </span>
               )}
-              {lastYearMonthlyAvgTips > 0 && tipVsAvgChange !== null && (
+            </div>
+            <div className={styles.card}>
+              <span className={styles.cardLabel}>ממוצע X {shortMonth(lastYearMonth)}</span>
+              <span className={styles.cardValue}>₪{fmtMoney(sameMonthLastYearAvg)}</span>
+              {revenueVsLastYearSameMonth !== null && sameMonthLastYearAvg > 0 && (
                 <span className={styles.cardSub}>
-                  ממוצע חודשי {String(Number(month.split('-')[0]) - 1)}: ₪{fmtMoney(lastYearMonthlyAvgTips)}
-                  <span className={tipVsAvgChange >= 0 ? styles.up : styles.down}>
-                    {' '}{tipVsAvgChange >= 0 ? '▲' : '▼'}{Math.abs(tipVsAvgChange).toFixed(1)}%
+                  לעומת ממוצע חודש זה
+                  <span className={revenueVsLastYearSameMonth >= 0 ? styles.up : styles.down}>
+                    {' '}{revenueVsLastYearSameMonth >= 0 ? '▲' : '▼'}{Math.abs(revenueVsLastYearSameMonth).toFixed(1)}%
                   </span>
                 </span>
               )}
@@ -208,15 +240,15 @@ export function DashboardPage() {
           {/* Growth chart */}
           <div className={styles.chartSection}>
             <div className={styles.chartHeader}>
-              <span className={styles.chartTitle}>גדילה — {selectedYear}</span>
+              <span />
               <div className={styles.toggle}>
-                {(['ytd', 'year', 'all'] as ChartView[]).map(v => (
+                {(['daily', 'monthly'] as ChartView[]).map(v => (
                   <button
                     key={v}
                     className={`${styles.toggleBtn} ${chartView === v ? styles.toggleActive : ''}`}
                     onClick={() => setChartView(v)}
                   >
-                    {v === 'ytd' ? 'מתחילת השנה' : v === 'year' ? 'כל השנה' : 'מתחילת הדרך'}
+                    {v === 'daily' ? 'יומי' : 'חודשי'}
                   </button>
                 ))}
               </div>
@@ -234,23 +266,13 @@ export function DashboardPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#263040" vertical={false} />
                   <XAxis dataKey="name" tick={{ fill: '#7a8a9a', fontSize: 10 }} axisLine={false} tickLine={false} interval={xInterval} />
                   <YAxis tick={{ fill: '#7a8a9a', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `₪${fmtMoney(v)}`} width={62} />
-                  <Tooltip content={<ChartTooltip />} />
-                  <Area type="monotone" dataKey='סה"כ' stroke="#c8bfa0" strokeWidth={2} fill="url(#gradSum)" dot={false} />
-                  <Line type="monotone" dataKey="ממוצע" stroke="#7a8a9a" strokeWidth={1.5} strokeDasharray="5 3" dot={false} />
+                  <Tooltip content={<ChartTooltip />} cursor={false} />
+                  <Area type="monotone" dataKey='סה"כ' stroke="#c8bfa0" strokeWidth={2} fill="url(#gradSum)" dot={false} activeDot={false} />
+                  <Line type="monotone" dataKey="מגמה" stroke="#7a8a9a" strokeWidth={1.5} strokeDasharray="5 3" dot={false} legendType="none" />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
 
-            <div className={styles.chartLegend}>
-              <span className={styles.legendItem}>
-                <span className={styles.legendDot} style={{ background: '#c8bfa0' }} />
-                סה"כ חודשי
-              </span>
-              <span className={styles.legendItem}>
-                <span className={styles.legendDash} />
-                ממוצע יומי
-              </span>
-            </div>
           </div>
         </div>
       )}

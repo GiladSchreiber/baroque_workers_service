@@ -1,5 +1,5 @@
 export type Role = 'employee' | 'manager'
-export type ShiftType = 'regular' | 'morning' | 'afternoon' | 'evening' | 'kitchen' | 'support' | 'manager' | 'overlap' | 'general'
+export type ShiftType = 'regular' | 'morning' | 'afternoon' | 'evening' | 'kitchen' | 'support' | 'manager' | 'overlap' | 'general' | 'global' | 'taxi'
 export type BlockType = 'morning' | 'afternoon' | 'evening'
 
 export interface Employee {
@@ -31,6 +31,9 @@ export interface Shift {
   cash?: number
   credit?: number
   tips?: number
+  // Global (flat payment) — used when type === 'global'
+  amount?: number
+  repeatMonthly?: boolean
   submittedAt: string
   updatedAt?: string
 }

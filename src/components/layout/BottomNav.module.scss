@@ -21,6 +21,10 @@
   gap: v.$space-1;
   color: v.$color-text-muted;
   text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
   transition: color v.$transition-fast;
 
   &.active {
