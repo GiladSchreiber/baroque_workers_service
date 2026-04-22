@@ -5,23 +5,13 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { useShiftStore } from '../../store/shiftStore'
+import { useMonthlySummaries } from '../../hooks/useMonthlySummaries'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import { currentMonthStr, fmtMoney, formatMonth } from '../../lib/utils'
-import {
-  REVENUE_HISTORY, getPointForSameMonthLastYear,
-} from '../../data/revenueHistory'
 import styles from './DashboardPage.module.scss'
 
 const THIS_MONTH = currentMonthStr()
-const MONTH_OPTIONS = [
-  { value: THIS_MONTH, label: formatMonth(THIS_MONTH) },
-  ...REVENUE_HISTORY
-    .slice()
-    .reverse()
-    .filter(p => p.month !== THIS_MONTH)
-    .map(p => ({ value: p.month, label: formatMonth(p.month) })),
-]
 const MONTH_ABBR = ['ינו', 'פבר', 'מרץ', 'אפר', 'מאי', 'יוני', 'יולי', 'אוג', 'ספט', 'אוק', 'נוב', 'דצמ']
 
 type ChartView = 'daily' | 'monthly'
@@ -65,10 +55,20 @@ function ChartTooltip({ active, payload, label }: any) {
 
 export function DashboardPage() {
   const { shifts, isLoading, fetchAll } = useShiftStore()
+  const { summaries } = useMonthlySummaries()
   const [month, setMonth] = useState(THIS_MONTH)
   const [chartView, setChartView] = useState<ChartView>('daily')
 
   useEffect(() => { fetchAll() }, [fetchAll])
+
+  const monthOptions = useMemo(() => [
+    { value: THIS_MONTH, label: formatMonth(THIS_MONTH) },
+    ...summaries
+      .slice()
+      .reverse()
+      .filter(p => p.month !== THIS_MONTH)
+      .map(p => ({ value: p.month, label: formatMonth(p.month) })),
+  ], [summaries])
 
   const incomeShifts = useMemo(
     () => shifts.filter(s => s.date.startsWith(month) && s.revenue !== undefined),
@@ -98,12 +98,15 @@ export function DashboardPage() {
   const tipChange = pct(totalTips, lastYearTips)
 
 
-  // Same month last year revenue from historical data
-  const sameMonthLastYearPoint = useMemo(() => getPointForSameMonthLastYear(month), [month])
+  // Same month last year from summaries
+  const sameMonthLastYearPoint = useMemo(() => {
+    const [y, m] = month.split('-')
+    return summaries.find(p => p.month === `${Number(y) - 1}-${m}`)
+  }, [month, summaries])
   const sameMonthLastYearAvg = sameMonthLastYearPoint?.average ?? 0
   const revenueVsLastYearSameMonth = pct(avgRevenue, sameMonthLastYearAvg)
 
-  // View 1 "חודשי": daily revenue from shifts for the selected month
+  // View 1 "יומי": daily revenue from shifts for the selected month
   const dailyData = useMemo(() => {
     const byDay: Record<string, number> = {}
     for (const s of shifts) {
@@ -120,28 +123,27 @@ export function DashboardPage() {
     }))
   }, [shifts, month])
 
-  // View 2 "שנתי": all monthly data across all years
+  // View 2 "חודשי": all monthly summaries across all time
   const yearlyData = useMemo(() => {
-    const points = REVENUE_HISTORY
-    const sums = points.map(p => p.sum)
+    const sums = summaries.map(p => p.sum)
     const trend = linRegression(sums)
-    return points.map((p, i) => ({
+    return summaries.map((p, i) => ({
       name: shortMonth(p.month),
       'סה"כ': p.sum,
       'מגמה': trend[i],
     }))
-  }, [])
+  }, [summaries])
 
   const chartData = chartView === 'daily' ? dailyData : yearlyData
-
   const xInterval = chartView === 'monthly' ? 5 : 0
 
   // Historical reference for selected month
   const historicalPoint = useMemo(() => {
-    const found = REVENUE_HISTORY.find(p => p.month === month)
-    const prev  = getPointForSameMonthLastYear(month)
+    const found = summaries.find(p => p.month === month)
+    const [y, m] = month.split('-')
+    const prev  = summaries.find(p => p.month === `${Number(y) - 1}-${m}`)
     return { found, prev }
-  }, [month])
+  }, [month, summaries])
 
   const historicalChange = historicalPoint.found && historicalPoint.prev
     ? pct(historicalPoint.found.sum, historicalPoint.prev.sum)
@@ -159,7 +161,7 @@ export function DashboardPage() {
             value={month}
             onChange={e => setMonth(e.target.value)}
           >
-            {MONTH_OPTIONS.map(o => (
+            {monthOptions.map(o => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>

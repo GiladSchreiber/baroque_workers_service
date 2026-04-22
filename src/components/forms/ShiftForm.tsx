@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { CreateShiftInput, ShiftType } from '../../types'
+import type { CreateShiftInput, ShiftType, DayType } from '../../types'
 import { Input } from '../ui/Input'
 import { Select } from '../ui/Select'
 import { Button } from '../ui/Button'
@@ -50,6 +50,7 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
   const [financialOpen, setFinancialOpen] = useState(
     Boolean(initialValues?.revenue || initialValues?.cash || initialValues?.credit || initialValues?.tips)
   )
+  const [dayType, setDayType] = useState<DayType>(initialValues?.dayType ?? 'auto')
   const [repeatMonthly, setRepeatMonthly] = useState(initialValues?.repeatMonthly ?? false)
   const [errors, setErrors] = useState<FormErrors>({})
   const [isLoading, setIsLoading] = useState(false)
@@ -86,6 +87,7 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
         endTime:   isGlobal ? '00:00' : endTime,
         amount:  isGlobal && amount !== '' ? Number(amount) : undefined,
         repeatMonthly: type === 'global' && !isEdit ? repeatMonthly : undefined,
+        dayType: !isGlobal ? dayType : undefined,
         revenue: !isGlobal && revenue !== '' ? Number(revenue) : undefined,
         cash:    !isGlobal && cash    !== '' ? Number(cash)    : undefined,
         credit:  !isGlobal && credit  !== '' ? Number(credit)  : undefined,
@@ -166,6 +168,25 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
               onChange={e => setEndTime(e.target.value)}
               error={errors.endTime}
             />
+          </div>
+
+          <div className={styles.dayTypeRow}>
+            <label className={styles.dayTypeCheck}>
+              <input
+                type="checkbox"
+                checked={dayType === 'shabbat'}
+                onChange={e => setDayType(e.target.checked ? 'shabbat' : 'auto')}
+              />
+              <span>חג (150%)</span>
+            </label>
+            <label className={styles.dayTypeCheck}>
+              <input
+                type="checkbox"
+                checked={dayType === 'holiday'}
+                onChange={e => setDayType(e.target.checked ? 'holiday' : 'auto')}
+              />
+              <span>חג מיוחד (200%)</span>
+            </label>
           </div>
 
           <div className={styles.financialSection}>

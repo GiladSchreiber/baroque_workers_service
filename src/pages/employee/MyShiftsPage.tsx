@@ -80,9 +80,9 @@ export function MyShiftsPage() {
       if (s.type === 'global' || s.type === 'taxi') {
         total += s.amount ?? 0
       } else {
-        const h = splitShiftHours(s.date, s.startTime, s.endTime, s.type)
+        const h = splitShiftHours(s.date, s.startTime, s.endTime, s.type, s.dayType)
         const myTip = tipMap.get(s.date)?.get(myId) ?? 0
-        total += calcSalary(h.regular, h.shabbat, h.support, myTip, hourlyWage)
+        total += calcSalary(h.regular, h.shabbat, h.support, myTip, hourlyWage, h.holiday)
         shiftCount++
       }
     }
@@ -131,11 +131,11 @@ export function MyShiftsPage() {
             <tbody>
               {filtered.map(shift => {
                 const isFlat = shift.type === 'global' || shift.type === 'taxi'
-                const h = isFlat ? { regular: 0, shabbat: 0, support: 0 } : splitShiftHours(shift.date, shift.startTime, shift.endTime, shift.type)
+                const h = isFlat ? { regular: 0, shabbat: 0, holiday: 0, support: 0 } : splitShiftHours(shift.date, shift.startTime, shift.endTime, shift.type, shift.dayType)
                 const myTip = isFlat ? 0 : (tipMap.get(shift.date)?.get(myId) ?? 0)
                 const salary = isFlat
                   ? (shift.amount ?? 0)
-                  : calcSalary(h.regular, h.shabbat, h.support, myTip, hourlyWage)
+                  : calcSalary(h.regular, h.shabbat, h.support, myTip, hourlyWage, h.holiday)
                 return (
                   <tr key={shift.id}>
                     <td className={styles.dateCell}>{formatDateShort(shift.date)}</td>

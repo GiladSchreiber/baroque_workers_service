@@ -103,6 +103,31 @@
   user-select: none;
 }
 
+.dayTypeRow {
+  display: flex;
+  flex-direction: row;
+  gap: v.$space-5;
+  padding: v.$space-2 v.$space-1;
+}
+
+.dayTypeCheck {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  cursor: pointer;
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+  user-select: none;
+
+  input[type='checkbox'] {
+    width: 1rem;
+    height: 1rem;
+    accent-color: v.$color-primary;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+}
+
 .submitError {
   font-size: v.$font-size-sm;
   color: v.$color-danger;

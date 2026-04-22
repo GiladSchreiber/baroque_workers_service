@@ -17,6 +17,7 @@ interface ShiftRow {
   tips: number | null
   amount: number | null
   repeat_monthly: boolean | null
+  day_type: string | null
   submitted_at: string
   updated_at: string | null
 }
@@ -36,6 +37,7 @@ function toShift(row: ShiftRow): Shift {
     tips: row.tips ?? undefined,
     amount: row.amount ?? undefined,
     repeatMonthly: row.repeat_monthly ?? undefined,
+    dayType: (row.day_type as Shift['dayType']) ?? undefined,
     submittedAt: row.submitted_at,
     updatedAt: row.updated_at ?? undefined,
   }
@@ -55,6 +57,7 @@ function toRow(data: Partial<Shift>): Partial<ShiftRow> {
   if (data.tips !== undefined) row.tips = data.tips
   if (data.amount !== undefined) row.amount = data.amount
   if (data.repeatMonthly !== undefined) row.repeat_monthly = data.repeatMonthly
+  if (data.dayType !== undefined) row.day_type = data.dayType
   if (data.updatedAt !== undefined) row.updated_at = data.updatedAt
   return row
 }

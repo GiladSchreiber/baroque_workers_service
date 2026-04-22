@@ -52,16 +52,17 @@ function buildTipMap(allShiftsInPeriod: Shift[]): Map<string, Map<string, number
 }
 
 function aggregateShifts(shifts: Shift[], employee: Employee, tipMap: Map<string, Map<string, number>>): EmpStats {
-  let regular = 0, shabbat = 0, support = 0, tips = 0, globalAmt = 0, taxiAmt = 0, shiftCount = 0
+  let regular = 0, shabbat = 0, holiday = 0, support = 0, tips = 0, globalAmt = 0, taxiAmt = 0, shiftCount = 0
   for (const s of shifts) {
     if (s.type === 'global') {
       globalAmt += s.amount ?? 0
     } else if (s.type === 'taxi') {
       taxiAmt += s.amount ?? 0
     } else {
-      const h = splitShiftHours(s.date, s.startTime, s.endTime, s.type)
+      const h = splitShiftHours(s.date, s.startTime, s.endTime, s.type, s.dayType)
       regular += h.regular
       shabbat += h.shabbat
+      holiday += h.holiday
       support += h.support
       shiftCount++
     }
@@ -71,7 +72,7 @@ function aggregateShifts(shifts: Shift[], employee: Employee, tipMap: Map<string
   for (const date of workedDates) {
     tips += tipMap.get(date)?.get(employee.id) ?? 0
   }
-  const hourlySalary = calcSalary(regular, shabbat, support, tips, employee.hourlyWage)
+  const hourlySalary = calcSalary(regular, shabbat, support, tips, employee.hourlyWage, holiday)
   const nesia = shiftCount * NESIA_RATE
   return {
     employee,
@@ -248,11 +249,11 @@ export function AllShiftsPage() {
                   <tr><td colSpan={6} className={styles.emptyCell}>אין משמרות בחודש זה</td></tr>
                 ) : detailShifts.map(s => {
                   const isFlat = s.type === 'global' || s.type === 'taxi'
-                  const h = isFlat ? { regular: 0, shabbat: 0, support: 0 } : splitShiftHours(s.date, s.startTime, s.endTime, s.type)
+                  const h = isFlat ? { regular: 0, shabbat: 0, holiday: 0, support: 0 } : splitShiftHours(s.date, s.startTime, s.endTime, s.type, s.dayType)
                   const distributedTipForDate = isFlat ? 0 : (tipMap.get(s.date)?.get(selectedEmployee.id) ?? 0)
                   const shiftSalary = isFlat
                     ? (s.amount ?? 0)
-                    : calcSalary(h.regular, h.shabbat, h.support, distributedTipForDate, selectedEmployee.hourlyWage)
+                    : calcSalary(h.regular, h.shabbat, h.support, distributedTipForDate, selectedEmployee.hourlyWage, h.holiday)
                   return (
                     <tr
                       key={s.id}

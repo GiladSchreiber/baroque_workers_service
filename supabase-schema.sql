@@ -35,6 +35,7 @@ create table public.shifts (
   tips            numeric(10,2),
   amount          numeric(10,2),             -- flat payment for global / taxi shifts
   repeat_monthly  boolean default false,
+  day_type        text default 'auto',       -- 'auto' | 'shabbat' (150%) | 'holiday' (200%)
   submitted_at    timestamptz not null default now(),
   updated_at      timestamptz
 );
@@ -53,7 +54,16 @@ create table public.closures (
   submitted_at    timestamptz not null default now()
 );
 
+-- Monthly revenue summaries (historical + auto-computed going forward)
+create table public.monthly_summaries (
+  month         char(7) primary key,           -- YYYY-MM
+  daily_average numeric(10,2) not null,
+  monthly_total numeric(10,2) not null,
+  is_historical boolean not null default true  -- false = computed from live shifts
+);
+
 -- Disable RLS (internal app — no public access expected)
-alter table public.employees disable row level security;
-alter table public.shifts    disable row level security;
-alter table public.closures  disable row level security;
+alter table public.employees          disable row level security;
+alter table public.shifts             disable row level security;
+alter table public.closures           disable row level security;
+alter table public.monthly_summaries  disable row level security;

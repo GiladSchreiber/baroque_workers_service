@@ -1,6 +1,8 @@
 export type Role = 'employee' | 'manager'
 export type ShiftType = 'regular' | 'morning' | 'afternoon' | 'evening' | 'kitchen' | 'support' | 'manager' | 'overlap' | 'general' | 'global' | 'taxi'
 export type BlockType = 'morning' | 'afternoon' | 'evening'
+/** Override the automatic weekday/Shabbat detection for a shift day. */
+export type DayType = 'auto' | 'shabbat' | 'holiday'
 
 export interface Employee {
   id: string
@@ -34,6 +36,8 @@ export interface Shift {
   // Global (flat payment) — used when type === 'global'
   amount?: number
   repeatMonthly?: boolean
+  /** Overrides automatic weekday detection for pay-rate purposes. */
+  dayType?: DayType
   submittedAt: string
   updatedAt?: string
 }
