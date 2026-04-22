@@ -46,7 +46,7 @@ export const useAuthStore = create<AuthState>()(
           email,
           passwordHash: '',
           role: 'employee',
-          hourlyWage: 0,
+          hourlyWage: 45,
           isActive: true,
           idNumber,
           phone,
