@@ -11,7 +11,6 @@ export function LoginPage() {
   const currentUser = useAuthStore(s => s.currentUser)
 
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -25,7 +24,7 @@ export function LoginPage() {
     setError('')
     setIsLoading(true)
     try {
-      await login(email, password)
+      await login(email)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')
     } finally {
@@ -45,23 +44,11 @@ export function LoginPage() {
           label="אימייל"
           id="email"
           type="email"
-          placeholder="you@bar.com"
           value={email}
           onChange={e => setEmail(e.target.value)}
           required
           autoComplete="email"
         />
-        <Input
-          label="סיסמה"
-          id="password"
-          type="password"
-          placeholder="••••••••"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-          autoComplete="current-password"
-        />
-
         {error && <p className={styles.error}>{error}</p>}
 
         <Button type="submit" fullWidth isLoading={isLoading}>
@@ -72,14 +59,14 @@ export function LoginPage() {
           <button
             type="button"
             className={styles.quickBtn}
-            onClick={() => { login('liav.pinchas@baroque.com', 'password123') }}
+            onClick={() => { login('liav.pinchas@baroque.com') }}
           >
             כניסה כליאב
           </button>
           <button
             type="button"
             className={styles.quickBtn}
-            onClick={() => { login('noam@gmail.com', 'password123') }}
+            onClick={() => { login('noam@gmail.com') }}
           >
             כניסה כנועם
           </button>

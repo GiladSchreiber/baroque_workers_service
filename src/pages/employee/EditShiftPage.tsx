@@ -5,7 +5,7 @@ import { useShiftStore } from '../../store/shiftStore'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { ShiftForm } from '../../components/forms/ShiftForm'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
-import { isWithinEditWindow } from '../../lib/utils'
+import { isWithinEditWindow, buildShiftMessage } from '../../lib/utils'
 import type { CreateShiftInput, Shift } from '../../types'
 import styles from './EditShiftPage.module.scss'
 
@@ -31,6 +31,11 @@ export function EditShiftPage() {
 
   async function handleSubmit(data: CreateShiftInput) {
     await updateShift(id!, data)
+    try {
+      await navigator.clipboard.writeText(buildShiftMessage(data, currentUser.name))
+    } catch {
+      // clipboard not available — silently skip
+    }
     navigate('/employee/shifts')
   }
 

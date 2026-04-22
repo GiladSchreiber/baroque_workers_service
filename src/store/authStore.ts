@@ -3,11 +3,21 @@ import { persist } from 'zustand/middleware'
 import type { Employee } from '../types'
 import { employeeRepo } from '../repositories'
 
+export interface RegisterInput {
+  name: string
+  email: string
+  idNumber?: string
+  phone?: string
+  bankNumber?: string
+  bankAccount?: string
+  bankBranch?: string
+}
+
 interface AuthState {
   currentUser: Employee | null
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string) => Promise<void>
   logout: () => void
-  register: (name: string, email: string, password: string) => Promise<void>
+  register: (data: RegisterInput) => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -15,29 +25,34 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       currentUser: null,
 
-      login: async (email, password) => {
+      login: async (email) => {
         const employee = await employeeRepo.getByEmail(email)
-        if (!employee || employee.passwordHash !== password) {
-          throw new Error('Invalid email or password')
+        if (!employee) {
+          throw new Error('משתמש לא נמצא')
         }
         if (!employee.isActive) {
-          throw new Error('Account is deactivated')
+          throw new Error('החשבון אינו פעיל')
         }
         set({ currentUser: employee })
       },
 
       logout: () => set({ currentUser: null }),
 
-      register: async (name, email, password) => {
+      register: async ({ name, email, idNumber, phone, bankNumber, bankAccount, bankBranch }) => {
         const existing = await employeeRepo.getByEmail(email)
-        if (existing) throw new Error('Email already in use')
+        if (existing) throw new Error('האימייל כבר בשימוש')
         const employee = await employeeRepo.create({
           name,
           email,
-          passwordHash: password,
+          passwordHash: '',
           role: 'employee',
           hourlyWage: 0,
           isActive: true,
+          idNumber,
+          phone,
+          bankNumber,
+          bankAccount,
+          bankBranch,
         })
         set({ currentUser: employee })
       },

@@ -1,5 +1,5 @@
 export type Role = 'employee' | 'manager'
-export type ShiftType = 'regular' | 'kitchen' | 'support' | 'manager' | 'overlap' | 'general'
+export type ShiftType = 'regular' | 'morning' | 'afternoon' | 'evening' | 'kitchen' | 'support' | 'manager' | 'overlap' | 'general'
 export type BlockType = 'morning' | 'afternoon' | 'evening'
 
 export interface Employee {
@@ -11,6 +11,11 @@ export interface Employee {
   hourlyWage: number
   isActive: boolean
   createdAt: string
+  idNumber?: string
+  phone?: string
+  bankNumber?: string
+  bankAccount?: string
+  bankBranch?: string
 }
 
 export interface Shift {

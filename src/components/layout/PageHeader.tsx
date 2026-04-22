@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useAuthStore } from '../../store/authStore'
 import styles from './PageHeader.module.scss'
 
 interface PageHeaderProps {
@@ -9,6 +10,11 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, showBack = false, action }: PageHeaderProps) {
   const navigate = useNavigate()
+  const currentUser = useAuthStore(s => s.currentUser)
+  const logout = useAuthStore(s => s.logout)
+
+  const firstName = currentUser?.name.split(' ')[0] ?? ''
+
   return (
     <header className={styles.header}>
       <div className={styles.left}>
@@ -21,7 +27,19 @@ export function PageHeader({ title, showBack = false, action }: PageHeaderProps)
         )}
         <h1 className={styles.title}>{title}</h1>
       </div>
-      {action && <div className={styles.action}>{action}</div>}
+      <div className={styles.right}>
+        {action && <div className={styles.action}>{action}</div>}
+        {firstName && (
+          <button
+            className={styles.userBtn}
+            onClick={() => {
+              if (window.confirm(`להתנתק?`)) logout()
+            }}
+          >
+            שלום {firstName}
+          </button>
+        )}
+      </div>
     </header>
   )
 }

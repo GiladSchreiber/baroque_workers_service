@@ -3,13 +3,11 @@ import { useAuthStore } from '../../store/authStore'
 import styles from './BottomNav.module.scss'
 
 const EMPLOYEE_LINKS = [
-  { to: '/employee/profile', label: 'פרופיל', icon: <ProfileIcon /> },
   { to: '/employee/shifts', label: 'שעות', icon: <ShiftsIcon /> },
   { to: '/employee/report', label: 'דיווח', icon: <PlusIcon /> },
 ]
 
 const MANAGER_LINKS = [
-  { to: '/manager/profile', label: 'פרופיל', icon: <ProfileIcon /> },
   { to: '/manager/employees', label: 'צוות', icon: <TeamIcon /> },
   { to: '/manager/shifts', label: 'שעות', icon: <ShiftsIcon /> },
   { to: '/manager/income', label: 'הכנסות', icon: <ClosureIcon /> },
@@ -52,15 +50,6 @@ function PlusIcon() {
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
       <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="1.75"/>
       <path d="M11 7v8M7 11h8" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
-    </svg>
-  )
-}
-
-function ProfileIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-      <circle cx="11" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.75"/>
-      <path d="M4 18c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
     </svg>
   )
 }

@@ -3,11 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useShiftStore } from '../../store/shiftStore'
 import { PageHeader } from '../../components/layout/PageHeader'
-import { Badge } from '../../components/ui/Badge'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import {
-  SHIFT_TYPE_LABELS, formatDateShort, isWithinEditWindow,
+  formatDateShort, isWithinEditWindow,
   splitShiftHours, calcSalary, currentMonthStr, monthOptions, fmtMoney,
 } from '../../lib/utils'
 import styles from './MyShiftsPage.module.scss'
@@ -21,6 +20,7 @@ function EditIcon() {
     </svg>
   )
 }
+
 
 function fmtH(h: number): string {
   if (h === 0) return '—'
@@ -85,10 +85,10 @@ export function MyShiftsPage() {
             <thead>
               <tr>
                 <th>תאריך</th>
-                <th>סוג</th>
-                <th className={styles.numHeader}>שע׳ רגיל</th>
-                <th className={styles.numHeader}>שע׳ שבת</th>
-                <th className={styles.numHeader}>שכר</th>
+                <th>רגיל</th>
+                <th>שבת</th>
+                <th>אחמ"ש</th>
+                <th>שכר</th>
                 <th></th>
               </tr>
             </thead>
@@ -99,9 +99,9 @@ export function MyShiftsPage() {
                 return (
                   <tr key={shift.id}>
                     <td className={styles.dateCell}>{formatDateShort(shift.date)}</td>
-                    <td><Badge type={shift.type} label={SHIFT_TYPE_LABELS[shift.type]} /></td>
                     <td className={styles.numCell}>{fmtH(h.regular)}</td>
                     <td className={styles.numCell}>{fmtH(h.shabbat)}</td>
+                    <td className={styles.numCell}>{fmtH(h.support)}</td>
                     <td className={styles.numCell}>₪{fmtMoney(salary)}</td>
                     <td className={styles.actionCell}>
                       {isWithinEditWindow(shift.submittedAt) && (

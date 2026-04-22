@@ -11,7 +11,11 @@ export function RegisterPage() {
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [idNumber, setIdNumber] = useState('')
+  const [phone, setPhone] = useState('')
+  const [bankNumber, setBankNumber] = useState('')
+  const [bankAccount, setBankAccount] = useState('')
+  const [bankBranch, setBankBranch] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -20,7 +24,7 @@ export function RegisterPage() {
     setError('')
     setIsLoading(true)
     try {
-      await register(name, email, password)
+      await register({ name, email, idNumber, phone, bankNumber, bankAccount, bankBranch })
       navigate('/employee/report', { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed')
@@ -32,7 +36,7 @@ export function RegisterPage() {
   return (
     <div className={styles.page}>
       <div className={styles.brand}>
-        <img src="/logo.png" alt="Baroque" className={styles.logo} />
+        <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Baroque" className={styles.logo} />
         <p className={styles.brandSub}>הרשמה לצוות</p>
       </div>
 
@@ -41,7 +45,6 @@ export function RegisterPage() {
           label="שם מלא"
           id="name"
           type="text"
-          placeholder="השם שלך"
           value={name}
           onChange={e => setName(e.target.value)}
           required
@@ -50,23 +53,57 @@ export function RegisterPage() {
           label="אימייל"
           id="email"
           type="email"
-          placeholder="you@bar.com"
           value={email}
           onChange={e => setEmail(e.target.value)}
           required
           autoComplete="email"
         />
         <Input
-          label="סיסמה"
-          id="password"
-          type="password"
-          placeholder="לפחות 6 תווים"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-          minLength={6}
-          autoComplete="new-password"
+          label="תעודת זהות"
+          id="idNumber"
+          type="text"
+          inputMode="numeric"
+          value={idNumber}
+          onChange={e => setIdNumber(e.target.value)}
         />
+        <Input
+          label="מספר טלפון"
+          id="phone"
+          type="tel"
+          value={phone}
+          onChange={e => setPhone(e.target.value)}
+          autoComplete="tel"
+        />
+
+        <div className={styles.bankSection}>
+          <p className={styles.bankTitle}>פרטי בנק</p>
+          <div className={styles.bankGrid}>
+            <Input
+              label="מספר בנק"
+              id="bankNumber"
+              type="text"
+              inputMode="numeric"
+              value={bankNumber}
+              onChange={e => setBankNumber(e.target.value)}
+            />
+            <Input
+              label="מספר סניף"
+              id="bankBranch"
+              type="text"
+              inputMode="numeric"
+              value={bankBranch}
+              onChange={e => setBankBranch(e.target.value)}
+            />
+            <Input
+              label="חשבון בנק"
+              id="bankAccount"
+              type="text"
+              inputMode="numeric"
+              value={bankAccount}
+              onChange={e => setBankAccount(e.target.value)}
+            />
+          </div>
+        </div>
 
         {error && <p className={styles.error}>{error}</p>}
 

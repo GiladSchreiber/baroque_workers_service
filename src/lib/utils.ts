@@ -2,6 +2,9 @@ import type { ShiftType, BlockType } from '../types'
 
 export const SHIFT_TYPE_LABELS: Record<ShiftType, string> = {
   regular: 'רגיל',
+  morning: 'בוקר',
+  afternoon: 'צהריים',
+  evening: 'ערב',
   kitchen: 'מטבח',
   support: 'אחמ"ש',
   manager: 'פיק',
@@ -81,6 +84,9 @@ export function splitShiftHours(
 
   if (type === 'support') return { regular: 0, shabbat: 0, support: totalMins / 60 }
 
+  // morning/afternoon/evening follow the same shabbat rules as regular
+
+
   const dow = new Date(date + 'T12:00:00').getDay() // 5=Fri, 6=Sat
 
   if (dow === 5) {
@@ -122,4 +128,38 @@ export function fmtMoney(n: number): string {
 
 export function isWithinEditWindow(submittedAt: string): boolean {
   return Date.now() - new Date(submittedAt).getTime() < 24 * 60 * 60 * 1000
+}
+
+import type { CreateShiftInput } from '../types'
+
+export function buildShiftMessage(data: CreateShiftInput, employeeName: string): string {
+  const [sh, sm] = data.startTime.split(':').map(Number)
+  const [eh, em] = data.endTime.split(':').map(Number)
+  let mins = (eh * 60 + em) - (sh * 60 + sm)
+  if (mins < 0) mins += 24 * 60
+  const totalHours = mins / 60
+  const hoursStr = totalHours % 1 === 0 ? String(totalHours) : totalHours.toFixed(1)
+
+  const dateObj = new Date(data.date + 'T00:00:00')
+  const dateStr = new Intl.DateTimeFormat('he-IL', {
+    weekday: 'long', day: 'numeric', month: 'long',
+  }).format(dateObj)
+
+  const lines: string[] = [
+    `📅 ${dateStr}`,
+    `👤 ${employeeName}`,
+    `🕐 ${SHIFT_TYPE_LABELS[data.type]}`,
+    `⏱️ ${hoursStr} שעות (${data.startTime}–${data.endTime})`,
+  ]
+
+  const hasCash = data.revenue != null || data.cash != null || data.credit != null || data.tips != null
+  if (hasCash) {
+    lines.push('', '💰 פרטי קופה:')
+    if (data.revenue != null) lines.push(`   X (סך הכל): ₪${fmtMoney(data.revenue)}`)
+    if (data.credit  != null) lines.push(`   אשראי: ₪${fmtMoney(data.credit)}`)
+    if (data.cash    != null) lines.push(`   מזומן: ₪${fmtMoney(data.cash)}`)
+    if (data.tips    != null) lines.push(`   טיפ: ₪${fmtMoney(data.tips)}`)
+  }
+
+  return lines.join('\n')
 }

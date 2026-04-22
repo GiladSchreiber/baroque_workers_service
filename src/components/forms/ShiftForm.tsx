@@ -2,13 +2,14 @@ import { useState } from 'react'
 import type { CreateShiftInput, ShiftType } from '../../types'
 import { Input } from '../ui/Input'
 import { Select } from '../ui/Select'
-import { Textarea } from '../ui/Textarea'
 import { Button } from '../ui/Button'
 import { todayString } from '../../lib/utils'
 import styles from './ShiftForm.module.scss'
 
 const SHIFT_TYPE_OPTIONS = [
-  { value: 'regular', label: 'רגיל' },
+  { value: 'morning', label: 'בוקר' },
+  { value: 'afternoon', label: 'צהריים' },
+  { value: 'evening', label: 'ערב' },
   { value: 'kitchen', label: 'מטבח' },
   { value: 'support', label: 'אחמ"ש' },
   { value: 'manager', label: 'פיק' },
@@ -32,14 +33,16 @@ interface FormErrors {
 
 export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = 'שלח דיווח' }: ShiftFormProps) {
   const [date, setDate] = useState(initialValues?.date ?? todayString())
-  const [type, setType] = useState<ShiftType>(initialValues?.type ?? 'regular')
+  const [type, setType] = useState<ShiftType>(initialValues?.type ?? 'morning')
   const [startTime, setStartTime] = useState(initialValues?.startTime ?? '')
   const [endTime, setEndTime] = useState(initialValues?.endTime ?? '')
-  const [note, setNote] = useState(initialValues?.note ?? '')
   const [revenue, setRevenue] = useState(initialValues?.revenue?.toString() ?? '')
   const [cash, setCash] = useState(initialValues?.cash?.toString() ?? '')
   const [credit, setCredit] = useState(initialValues?.credit?.toString() ?? '')
   const [tips, setTips] = useState(initialValues?.tips?.toString() ?? '')
+  const [financialOpen, setFinancialOpen] = useState(
+    Boolean(initialValues?.revenue || initialValues?.cash || initialValues?.credit || initialValues?.tips)
+  )
   const [errors, setErrors] = useState<FormErrors>({})
   const [isLoading, setIsLoading] = useState(false)
   const [submitError, setSubmitError] = useState('')
@@ -65,7 +68,6 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
     try {
       await onSubmit({
         employeeId, date, type, startTime, endTime,
-        note: note || undefined,
         revenue: revenue !== '' ? Number(revenue) : undefined,
         cash: cash !== '' ? Number(cash) : undefined,
         credit: credit !== '' ? Number(credit) : undefined,
@@ -116,9 +118,16 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
         />
       </div>
 
-      {type === 'regular' && (
-        <div className={styles.financialSection}>
-          <p className={styles.financialTitle}>נתוני קופה</p>
+      <div className={styles.financialSection}>
+        <button
+          type="button"
+          className={styles.financialToggle}
+          onClick={() => setFinancialOpen(o => !o)}
+        >
+          <span>נתוני קופה</span>
+          <span className={`${styles.chevron} ${financialOpen ? styles.chevronOpen : ''}`}>›</span>
+        </button>
+        {financialOpen && (
           <div className={styles.financialGrid}>
             <Input
               label="X (סך הכל)"
@@ -161,17 +170,8 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
               onChange={e => setTips(e.target.value)}
             />
           </div>
-        </div>
-      )}
-
-      <Textarea
-        label="הערה (אופציונלי)"
-        id="note"
-        placeholder="הערות על המשמרת…"
-        value={note}
-        onChange={e => setNote(e.target.value)}
-        rows={3}
-      />
+        )}
+      </div>
       {submitError && <p className={styles.submitError}>{submitError}</p>}
       <Button type="submit" fullWidth isLoading={isLoading}>
         {submitLabel}

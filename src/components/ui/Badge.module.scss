@@ -15,6 +15,21 @@
   color: v.$shift-regular;
 }
 
+.morning {
+  background-color: rgba(251, 191, 36, 0.18);
+  color: #d97706;
+}
+
+.afternoon {
+  background-color: rgba(59, 130, 246, 0.18);
+  color: v.$shift-regular;
+}
+
+.evening {
+  background-color: rgba(139, 92, 246, 0.18);
+  color: v.$shift-manager;
+}
+
 .kitchen {
   background-color: rgba(249, 115, 22, 0.18);
   color: v.$shift-kitchen;

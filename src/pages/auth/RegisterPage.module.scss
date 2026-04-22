@@ -20,8 +20,9 @@
 }
 
 .logo {
-  height: 4rem;
+  height: 5rem;
   width: auto;
+  object-fit: contain;
   filter: invert(1);
 }
 
@@ -38,6 +39,38 @@
 
   button[type='submit'] {
     margin-top: v.$space-4;
+  }
+}
+
+.bankSection {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-3;
+  padding: v.$space-4;
+  background-color: v.$color-surface-raised;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-lg;
+  margin-top: v.$space-4;
+}
+
+.bankTitle {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-text-muted;
+  margin: 0;
+}
+
+.bankGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-3;
+
+  > *:last-child {
+    grid-column: 1 / -1;
+  }
+
+  > * {
+    min-width: 0;
   }
 }
 

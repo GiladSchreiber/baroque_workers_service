@@ -21,7 +21,6 @@ export function EmployeeFormPage() {
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [role, setRole] = useState<Role>('employee')
   const [hourlyWage, setHourlyWage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -63,7 +62,7 @@ export function EmployeeFormPage() {
         await addEmployee({
           name,
           email,
-          passwordHash: password,
+          passwordHash: '',
           role,
           hourlyWage: Number(hourlyWage),
           isActive: true,
@@ -104,19 +103,6 @@ export function EmployeeFormPage() {
             required
             autoComplete="email"
           />
-          {!isEdit && (
-            <Input
-              label="סיסמה"
-              id="password"
-              type="password"
-              placeholder="לפחות 6 תווים"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              minLength={6}
-              autoComplete="new-password"
-            />
-          )}
           <Select
             label="תפקיד"
             id="role"

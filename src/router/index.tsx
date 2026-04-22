@@ -11,8 +11,6 @@ import { AllShiftsPage } from '../pages/manager/AllShiftsPage'
 import { EmployeesPage } from '../pages/manager/EmployeesPage'
 import { EmployeeFormPage } from '../pages/manager/EmployeeFormPage'
 import { IncomePage } from '../pages/manager/IncomePage'
-import { ProfilePage } from '../pages/shared/ProfilePage'
-
 function RequireAuth({ children, role }: { children: React.ReactNode; role?: 'employee' | 'manager' }) {
   const currentUser = useAuthStore(s => s.currentUser)
   if (!currentUser) return <Navigate to="/login" replace />
@@ -40,7 +38,6 @@ export const router = createHashRouter([
       { path: 'report', element: <ReportShiftPage /> },
       { path: 'shifts', element: <MyShiftsPage /> },
       { path: 'shifts/:id/edit', element: <EditShiftPage /> },
-      { path: 'profile', element: <ProfilePage /> },
     ],
   },
   {
@@ -53,7 +50,6 @@ export const router = createHashRouter([
       { path: 'employees', element: <EmployeesPage /> },
       { path: 'employees/:id/edit', element: <EmployeeFormPage /> },
       { path: 'income', element: <IncomePage /> },
-      { path: 'profile', element: <ProfilePage /> },
     ],
   },
 ])

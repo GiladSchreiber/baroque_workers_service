@@ -36,7 +36,8 @@
 }
 
 .tableWrapper {
-  padding: v.$space-4 0;
+  padding: v.$space-3 0;
+  width: 100%;
 }
 
 .table {
@@ -45,23 +46,23 @@
   font-size: v.$font-size-sm;
 
   th {
-    padding: v.$space-3 v.$space-4;
-    text-align: right;
+    padding: v.$space-2 v.$space-4;
+    text-align: center;
     font-size: v.$font-size-xs;
     font-weight: v.$font-weight-semibold;
     color: v.$color-text-muted;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.04em;
     border-bottom: 1px solid v.$color-border;
     white-space: nowrap;
   }
-
-  th.numHeader { text-align: center; }
 
   td {
     padding: v.$space-3 v.$space-4;
     border-bottom: 1px solid v.$color-border;
     vertical-align: middle;
+    text-align: center;
+    white-space: nowrap;
   }
 
   tbody tr:last-child td {
@@ -71,29 +72,23 @@
 
 .dateCell {
   color: v.$color-text-muted;
-  font-size: v.$font-size-xs;
-  white-space: nowrap;
 }
 
 .numCell {
-  text-align: center;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  color: v.$color-text;
 }
 
 .actionCell {
-  width: 2.5rem;
-  text-align: center;
-  padding: v.$space-2 v.$space-3;
+  padding: v.$space-1 v.$space-2;
+  white-space: nowrap;
 }
 
 .editBtn {
   background: none;
   border: none;
   color: v.$color-primary;
-  padding: v.$space-2;
-  display: flex;
+  padding: v.$space-1;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: v.$radius-sm;
@@ -102,6 +97,7 @@
 
   &:active { opacity: 0.6; }
 }
+
 
 .totalRow {
   td {
@@ -117,6 +113,7 @@
   font-weight: v.$font-weight-semibold;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  text-align: right;
 }
 
 .totalNum {

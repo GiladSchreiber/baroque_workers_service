@@ -3,6 +3,7 @@ import { useAuthStore } from '../../store/authStore'
 import { useShiftStore } from '../../store/shiftStore'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { ShiftForm } from '../../components/forms/ShiftForm'
+import { buildShiftMessage } from '../../lib/utils'
 import type { CreateShiftInput } from '../../types'
 import styles from './ReportShiftPage.module.scss'
 
@@ -13,6 +14,11 @@ export function ReportShiftPage() {
 
   async function handleSubmit(data: CreateShiftInput) {
     await addShift(data)
+    try {
+      await navigator.clipboard.writeText(buildShiftMessage(data, currentUser.name))
+    } catch {
+      // clipboard not available — silently skip
+    }
     navigate('/employee/shifts')
   }
 

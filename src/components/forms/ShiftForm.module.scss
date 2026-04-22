@@ -19,12 +19,39 @@
 .financialSection {
   display: flex;
   flex-direction: column;
-  gap: v.$space-3;
-  padding: v.$space-4;
   background-color: v.$color-surface-raised;
   border: 1px solid v.$color-border;
   border-radius: v.$radius-lg;
-  animation: slideDown 200ms ease both;
+  overflow: hidden;
+}
+
+.financialToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: v.$space-3 v.$space-4;
+  background: none;
+  border: none;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-primary;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  text-align: right;
+}
+
+.chevron {
+  font-size: 1.2rem;
+  line-height: 1;
+  transform: rotate(90deg);
+  transition: transform 200ms ease;
+  display: inline-block;
+}
+
+.chevronOpen {
+  transform: rotate(-90deg);
 }
 
 @keyframes slideDown {
@@ -38,14 +65,9 @@
   }
 }
 
-.financialTitle {
-  font-size: v.$font-size-sm;
-  font-weight: v.$font-weight-semibold;
-  color: v.$color-primary;
-  letter-spacing: 0.04em;
-}
-
 .financialGrid {
+  padding: 0 v.$space-4 v.$space-4;
+  animation: slideDown 180ms ease both;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: v.$space-4;
