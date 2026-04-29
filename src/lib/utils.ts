@@ -233,6 +233,14 @@ export function isWithinEditWindow(submittedAt: string): boolean {
 
 import type { CreateShiftInput } from '../types'
 
+export function formatEmployeeNameForMessage(fullName: string, allNames: string[]): string {
+  const parts = fullName.trim().split(/\s+/)
+  const firstName = parts[0]
+  const hasDuplicate = allNames.some(n => n !== fullName && n.trim().split(/\s+/)[0] === firstName)
+  if (!hasDuplicate) return firstName
+  return parts.length > 1 ? `${firstName} ${parts[1][0]}.` : firstName
+}
+
 export function buildShiftMessage(data: CreateShiftInput, employeeName: string): string {
   const [sh, sm] = data.startTime.split(':').map(Number)
   const [eh, em] = data.endTime.split(':').map(Number)
@@ -247,19 +255,19 @@ export function buildShiftMessage(data: CreateShiftInput, employeeName: string):
   }).format(dateObj)
 
   const lines: string[] = [
-    `📅 ${dateStr}`,
-    `👤 ${employeeName}`,
-    `🕐 ${SHIFT_TYPE_LABELS[data.type]}`,
-    `⏱️ ${hoursStr} שעות (${data.startTime}–${data.endTime})`,
+    `📋 ${dateStr}`,
+    employeeName,
+    SHIFT_TYPE_LABELS[data.type],
+    `${hoursStr} שעות (${data.startTime}–${data.endTime})`,
   ]
 
   const hasCash = data.revenue != null || data.cash != null || data.credit != null || data.tips != null
   if (hasCash) {
-    lines.push('', '💰 פרטי קופה:')
-    if (data.revenue != null) lines.push(`   סה"כ: ₪${fmtMoney(data.revenue)}`)
-    if (data.credit  != null) lines.push(`   אשראי: ₪${fmtMoney(data.credit)}`)
-    if (data.cash    != null) lines.push(`   מזומן: ₪${fmtMoney(data.cash)}`)
-    if (data.tips    != null) lines.push(`   טיפ: ₪${fmtMoney(data.tips)}`)
+    lines.push('', 'פרטי קופה:')
+    if (data.revenue != null) lines.push(`סה"כ: ₪${fmtMoney(data.revenue)}`)
+    if (data.credit  != null) lines.push(`אשראי: ₪${fmtMoney(data.credit)}`)
+    if (data.cash    != null) lines.push(`מזומן: ₪${fmtMoney(data.cash)}`)
+    if (data.tips    != null) lines.push(`טיפ: ₪${fmtMoney(data.tips)}`)
   }
 
   return lines.join('\n')
