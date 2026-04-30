@@ -58,6 +58,8 @@ function aggregateShifts(shifts: Shift[], employee: Employee, tipMap: Map<string
       globalAmt += s.amount ?? 0
     } else if (s.type === 'taxi') {
       taxiAmt += s.amount ?? 0
+    } else if (s.type === 'cashier') {
+      // cashier shifts are data-only, no hours or salary contribution
     } else {
       const h = splitShiftHours(s.date, s.startTime, s.endTime, s.type, s.dayType)
       regular += h.regular
@@ -68,7 +70,7 @@ function aggregateShifts(shifts: Shift[], employee: Employee, tipMap: Map<string
     }
   }
   // Sum distributed tips across all dates this employee worked
-  const workedDates = [...new Set(shifts.filter(s => s.type !== 'global' && s.type !== 'taxi').map(s => s.date))]
+  const workedDates = [...new Set(shifts.filter(s => s.type !== 'global' && s.type !== 'taxi' && s.type !== 'cashier').map(s => s.date))]
   for (const date of workedDates) {
     tips += tipMap.get(date)?.get(employee.id) ?? 0
   }
@@ -248,7 +250,7 @@ export function AllShiftsPage() {
                 {detailShifts.length === 0 ? (
                   <tr><td colSpan={6} className={styles.emptyCell}>אין משמרות בחודש זה</td></tr>
                 ) : detailShifts.map(s => {
-                  const isFlat = s.type === 'global' || s.type === 'taxi'
+                  const isFlat = s.type === 'global' || s.type === 'taxi' || s.type === 'cashier'
                   const h = isFlat ? { regular: 0, shabbat: 0, holiday: 0, support: 0 } : splitShiftHours(s.date, s.startTime, s.endTime, s.type, s.dayType)
                   const distributedTipForDate = isFlat ? 0 : (tipMap.get(s.date)?.get(selectedEmployee.id) ?? 0)
                   const shiftSalary = isFlat

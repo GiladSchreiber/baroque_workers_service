@@ -12,6 +12,7 @@ export const SHIFT_TYPE_LABELS: Record<ShiftType, string> = {
   general: 'כללי',
   global: 'גלובלי',
   taxi: 'מוניות',
+  cashier: 'נתוני קופה בלבד',
 }
 
 export const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
@@ -96,7 +97,7 @@ export function splitShiftHours(
   const totalHours = totalMins / 60
 
   if (type === 'support') return { regular: 0, shabbat: 0, holiday: 0, support: totalHours }
-  if (type === 'global' || type === 'taxi') return { regular: 0, shabbat: 0, holiday: 0, support: 0 }
+  if (type === 'global' || type === 'taxi' || type === 'cashier') return { regular: 0, shabbat: 0, holiday: 0, support: 0 }
 
   // Explicit day-type overrides
   if (dayType === 'holiday') return { regular: 0, shabbat: 0, holiday: totalHours, support: 0 }
@@ -153,7 +154,7 @@ import type { Shift } from '../types'
 export function computeTipDistribution(shiftsOnDate: Shift[]): Map<string, number> {
   const result = new Map<string, number>()
 
-  const isFlat = (s: Shift) => s.type === 'support' || s.type === 'global' || s.type === 'taxi'
+  const isFlat = (s: Shift) => s.type === 'support' || s.type === 'global' || s.type === 'taxi' || s.type === 'cashier'
 
   // Eligible shifts can RECEIVE tips (non-support, non-flat)
   const eligible = shiftsOnDate.filter(s => !isFlat(s))

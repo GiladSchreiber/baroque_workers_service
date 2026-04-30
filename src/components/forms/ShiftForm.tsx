@@ -7,8 +7,6 @@ import { todayString, currentTimeString } from '../../lib/utils'
 import styles from './ShiftForm.module.scss'
 
 const SHIFT_TYPE_OPTIONS = [
-  { value: 'global', label: 'גלובלי' },
-  { value: 'taxi',   label: 'מוניות' },
   { value: 'morning', label: 'בוקר' },
   { value: 'afternoon', label: 'צהריים' },
   { value: 'evening', label: 'ערב' },
@@ -17,6 +15,9 @@ const SHIFT_TYPE_OPTIONS = [
   { value: 'manager', label: 'פיק' },
   { value: 'overlap', label: 'חפיפה' },
   { value: 'general', label: 'כללי' },
+  { value: 'global',  label: 'גלובלי' },
+  { value: 'taxi',    label: 'מוניות' },
+  { value: 'cashier', label: 'נתוני קופה בלבד' },
 ]
 
 interface ShiftFormProps {
@@ -47,9 +48,6 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
   const [cash, setCash] = useState(initialValues?.cash?.toString() ?? '')
   const [credit, setCredit] = useState(initialValues?.credit?.toString() ?? '')
   const [tips, setTips] = useState(initialValues?.tips?.toString() ?? '')
-  const [financialOpen, setFinancialOpen] = useState(
-    Boolean(initialValues?.revenue || initialValues?.cash || initialValues?.credit || initialValues?.tips)
-  )
   const [dayType, setDayType] = useState<DayType>(initialValues?.dayType ?? 'auto')
   const [repeatMonthly, setRepeatMonthly] = useState(initialValues?.repeatMonthly ?? false)
   const [errors, setErrors] = useState<FormErrors>({})
@@ -57,6 +55,7 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
   const [submitError, setSubmitError] = useState('')
 
   const isGlobal = type === 'global' || type === 'taxi'
+  const isCashier = type === 'cashier'
 
   function validate(): boolean {
     const next: FormErrors = {}
@@ -64,7 +63,7 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
     if (!type) next.type = 'סוג משמרת נדרש'
     if (isGlobal) {
       if (!amount || Number(amount) <= 0) next.amount = 'סכום נדרש'
-    } else {
+    } else if (!isCashier) {
       if (!startTime) next.startTime = 'שעת התחלה נדרשת'
       if (!endTime) next.endTime = 'שעת סיום נדרשת'
       if (startTime && endTime && endTime <= startTime) {
@@ -83,15 +82,15 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
     try {
       await onSubmit({
         employeeId, date, type,
-        startTime: isGlobal ? '00:00' : startTime,
-        endTime:   isGlobal ? '00:00' : endTime,
+        startTime: (isGlobal || isCashier) ? '00:00' : startTime,
+        endTime:   (isGlobal || isCashier) ? '00:00' : endTime,
         amount:  isGlobal && amount !== '' ? Number(amount) : undefined,
         repeatMonthly: type === 'global' && !isEdit ? repeatMonthly : undefined,
-        dayType: !isGlobal ? dayType : undefined,
-        revenue: !isGlobal && revenue !== '' ? Number(revenue) : undefined,
-        cash:    !isGlobal && cash    !== '' ? Number(cash)    : undefined,
-        credit:  !isGlobal && credit  !== '' ? Number(credit)  : undefined,
-        tips:    !isGlobal && tips    !== '' ? Number(tips)    : undefined,
+        dayType: (!isGlobal && !isCashier) ? dayType : undefined,
+        revenue: isCashier && revenue !== '' ? Number(revenue) : undefined,
+        cash:    isCashier && cash    !== '' ? Number(cash)    : undefined,
+        credit:  isCashier && credit  !== '' ? Number(credit)  : undefined,
+        tips:    isCashier && tips    !== '' ? Number(tips)    : undefined,
       })
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'שגיאה בשליחה')
@@ -124,7 +123,7 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
         error={errors.type}
       />
 
-      {isGlobal ? (
+      {isGlobal && (
         <>
           <Input
             label="סכום (₪)"
@@ -149,7 +148,54 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
             </label>
           )}
         </>
-      ) : (
+      )}
+
+      {isCashier && (
+        <div className={styles.financialGrid}>
+          <Input
+            label="X (סך הכל)"
+            id="revenue"
+            type="number"
+            inputMode="numeric"
+            min="0"
+            placeholder="0"
+            value={revenue}
+            onChange={e => setRevenue(e.target.value)}
+          />
+          <Input
+            label="אשראי"
+            id="credit"
+            type="number"
+            inputMode="numeric"
+            min="0"
+            placeholder="0"
+            value={credit}
+            onChange={e => setCredit(e.target.value)}
+          />
+          <Input
+            label="מזומן"
+            id="cash"
+            type="number"
+            inputMode="numeric"
+            min="0"
+            placeholder="0"
+            value={cash}
+            onChange={e => setCash(e.target.value)}
+          />
+          <Input
+            label="טיפ"
+            id="tips"
+            type="number"
+            inputMode="numeric"
+            min="0"
+            placeholder="0"
+            value={tips}
+            onChange={e => setTips(e.target.value)}
+          />
+        </div>
+      )}
+
+      {!isGlobal && !isCashier && (
         <>
           <div className={styles.timeRow}>
             <Input
@@ -190,61 +236,6 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
               </label>
             </div>
           )}
-
-          <div className={styles.financialSection}>
-            <button
-              type="button"
-              className={styles.financialToggle}
-              onClick={() => setFinancialOpen(o => !o)}
-            >
-              <span>נתוני קופה</span>
-              <span className={`${styles.chevron} ${financialOpen ? styles.chevronOpen : ''}`}>›</span>
-            </button>
-            {financialOpen && (
-              <div className={styles.financialGrid}>
-                <Input
-                  label="X (סך הכל)"
-                  id="revenue"
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  placeholder="0"
-                  value={revenue}
-                  onChange={e => setRevenue(e.target.value)}
-                />
-                <Input
-                  label="אשראי"
-                  id="credit"
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  placeholder="0"
-                  value={credit}
-                  onChange={e => setCredit(e.target.value)}
-                />
-                <Input
-                  label="מזומן"
-                  id="cash"
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  placeholder="0"
-                  value={cash}
-                  onChange={e => setCash(e.target.value)}
-                />
-                <Input
-                  label="טיפ"
-                  id="tips"
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  placeholder="0"
-                  value={tips}
-                  onChange={e => setTips(e.target.value)}
-                />
-              </div>
-            )}
-          </div>
         </>
       )}
 

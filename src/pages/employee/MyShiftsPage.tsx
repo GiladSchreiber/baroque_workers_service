@@ -77,7 +77,7 @@ export function MyShiftsPage() {
     let total = 0
     let shiftCount = 0
     for (const s of filtered) {
-      if (s.type === 'global' || s.type === 'taxi') {
+      if (s.type === 'global' || s.type === 'taxi' || s.type === 'cashier') {
         total += s.amount ?? 0
       } else {
         const h = splitShiftHours(s.date, s.startTime, s.endTime, s.type, s.dayType)
@@ -130,7 +130,7 @@ export function MyShiftsPage() {
             </thead>
             <tbody>
               {filtered.map(shift => {
-                const isFlat = shift.type === 'global' || shift.type === 'taxi'
+                const isFlat = shift.type === 'global' || shift.type === 'taxi' || shift.type === 'cashier'
                 const h = isFlat ? { regular: 0, shabbat: 0, holiday: 0, support: 0 } : splitShiftHours(shift.date, shift.startTime, shift.endTime, shift.type, shift.dayType)
                 const myTip = isFlat ? 0 : (tipMap.get(shift.date)?.get(myId) ?? 0)
                 const salary = isFlat
