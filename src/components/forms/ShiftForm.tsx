@@ -170,24 +170,26 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
             />
           </div>
 
-          <div className={styles.dayTypeRow}>
-            <label className={styles.dayTypeCheck}>
-              <input
-                type="checkbox"
-                checked={dayType === 'shabbat'}
-                onChange={e => setDayType(e.target.checked ? 'shabbat' : 'auto')}
-              />
-              <span>חג (150%)</span>
-            </label>
-            <label className={styles.dayTypeCheck}>
-              <input
-                type="checkbox"
-                checked={dayType === 'holiday'}
-                onChange={e => setDayType(e.target.checked ? 'holiday' : 'auto')}
-              />
-              <span>חג מיוחד (200%)</span>
-            </label>
-          </div>
+          {managerMode && (
+            <div className={styles.dayTypeRow}>
+              <label className={styles.dayTypeCheck}>
+                <input
+                  type="checkbox"
+                  checked={dayType === 'shabbat'}
+                  onChange={e => setDayType(e.target.checked ? 'shabbat' : 'auto')}
+                />
+                <span>חג (150%)</span>
+              </label>
+              <label className={styles.dayTypeCheck}>
+                <input
+                  type="checkbox"
+                  checked={dayType === 'holiday'}
+                  onChange={e => setDayType(e.target.checked ? 'holiday' : 'auto')}
+                />
+                <span>חג מיוחד (200%)</span>
+              </label>
+            </div>
+          )}
 
           <div className={styles.financialSection}>
             <button
