@@ -99,6 +99,15 @@
 }
 
 
+.nesiaRow {
+  td {
+    border-top: 1px solid v.$color-border;
+    padding-top: v.$space-3;
+    color: v.$color-text-muted;
+    font-size: v.$font-size-sm;
+  }
+}
+
 .totalRow {
   td {
     border-top: 2px solid v.$color-border;

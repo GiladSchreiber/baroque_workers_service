@@ -73,21 +73,21 @@ export function MyShiftsPage() {
     return byDate
   }, [shifts, filtered])
 
-  const totalSalary = useMemo(() => {
-    let total = 0
+  const { totalSalary, nesia } = useMemo(() => {
+    let salary = 0
     let shiftCount = 0
     for (const s of filtered) {
       if (s.type === 'global' || s.type === 'taxi' || s.type === 'cashier') {
-        total += s.amount ?? 0
+        salary += s.amount ?? 0
       } else {
         const h = splitShiftHours(s.date, s.startTime, s.endTime, s.type, s.dayType)
         const myTip = tipMap.get(s.date)?.get(myId) ?? 0
-        total += calcSalary(h.regular, h.shabbat, h.support, myTip, hourlyWage, h.holiday)
+        salary += calcSalary(h.regular, h.shabbat, h.support, myTip, hourlyWage, h.holiday)
         shiftCount++
       }
     }
-    total += shiftCount * 8 // נסיעות ₪8 per non-flat shift
-    return total
+    const nesia = shiftCount * 8
+    return { totalSalary: salary + nesia, nesia }
   }, [filtered, hourlyWage, tipMap, myId])
 
   return (
@@ -160,6 +160,17 @@ export function MyShiftsPage() {
               })}
             </tbody>
             <tfoot>
+              {nesia > 0 && (
+                <tr className={styles.nesiaRow}>
+                  <td className={styles.totalLabel}>נסיעות</td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td className={styles.totalNum}>₪{fmtMoney(nesia)}</td>
+                  <td></td>
+                </tr>
+              )}
               <tr className={styles.totalRow}>
                 <td className={styles.totalLabel}>סה"כ</td>
                 <td></td>
