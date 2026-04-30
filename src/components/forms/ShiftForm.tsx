@@ -86,7 +86,7 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
         endTime:   (isGlobal || isCashier) ? '00:00' : endTime,
         amount:  isGlobal && amount !== '' ? Number(amount) : undefined,
         repeatMonthly: type === 'global' && !isEdit ? repeatMonthly : undefined,
-        dayType: (!isGlobal && !isCashier) ? dayType : undefined,
+        dayType: (!isGlobal && !isCashier && dayType !== 'auto') ? dayType : undefined,
         revenue: isCashier && revenue !== '' ? Number(revenue) : undefined,
         cash:    isCashier && cash    !== '' ? Number(cash)    : undefined,
         credit:  isCashier && credit  !== '' ? Number(credit)  : undefined,
