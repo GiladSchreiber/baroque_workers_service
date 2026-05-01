@@ -76,7 +76,7 @@ export function MyShiftsPage() {
     return byDate
   }, [shifts, filtered])
 
-  const { totalSalary, nesia } = useMemo(() => {
+  const { totalSalary } = useMemo(() => {
     let salary = 0
     let shiftCount = 0
     for (const s of filtered) {

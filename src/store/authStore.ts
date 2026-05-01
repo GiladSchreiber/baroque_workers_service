@@ -19,11 +19,12 @@ interface AuthState {
   login: (email: string, password?: string) => Promise<void>
   logout: () => void
   register: (data: RegisterInput) => Promise<void>
+  refreshCurrentUser: () => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       currentUser: null,
 
       login: async (email, password) => {
@@ -39,6 +40,13 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => set({ currentUser: null }),
+
+      refreshCurrentUser: async () => {
+        const current = get().currentUser
+        if (!current) return
+        const fresh = await employeeRepo.getByEmail(current.email)
+        if (fresh) set({ currentUser: fresh })
+      },
 
       register: async ({ name, email, idNumber, phone, bankNumber, bankAccount, bankBranch }) => {
         const existing = await employeeRepo.getByEmail(email)
