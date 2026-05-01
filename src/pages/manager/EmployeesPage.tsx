@@ -15,7 +15,9 @@ const ROLE_LABELS: Record<Role, string> = {
 export function EmployeesPage() {
   const navigate = useNavigate()
   const { employees: allEmployees, isLoading, fetchAll } = useEmployeeStore()
-  const employees = allEmployees.filter(e => e.isActive)
+  const employees = allEmployees
+    .filter(e => e.isActive)
+    .sort((a, b) => a.name.split(' ')[0].localeCompare(b.name.split(' ')[0], 'he'))
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
