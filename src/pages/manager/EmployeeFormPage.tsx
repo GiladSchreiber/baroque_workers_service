@@ -71,6 +71,8 @@ export function EmployeeFormPage() {
         }
         await updateEmployee(id, updates)
       } else {
+        const duplicate = employees.find(e => e.email.toLowerCase() === email.toLowerCase())
+        if (duplicate) throw new Error('האימייל כבר בשימוש')
         const passwordHash = role === 'manager' && password
           ? await hashPassword(password)
           : ''

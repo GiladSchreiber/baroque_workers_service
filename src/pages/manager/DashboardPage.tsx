@@ -151,7 +151,7 @@ export function DashboardPage() {
 
   return (
     <div className={styles.page}>
-      <PageHeader title="דשבורד" />
+      <PageHeader title="סקירה" />
       {isLoading ? (
         <LoadingSpinner />
       ) : (

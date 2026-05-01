@@ -8,7 +8,7 @@ const EMPLOYEE_LINKS = [
 ]
 
 const MANAGER_LINKS = [
-  { to: '/manager/dashboard', label: 'דשבורד', icon: <DashboardIcon /> },
+  { to: '/manager/dashboard', label: 'סקירה', icon: <DashboardIcon /> },
   { to: '/manager/employees', label: 'צוות', icon: <TeamIcon /> },
   { to: '/manager/shifts', label: 'שעות', icon: <ShiftsIcon /> },
   { to: '/manager/income', label: 'הכנסות', icon: <ClosureIcon /> },
