@@ -90,8 +90,7 @@ export function MyShiftsPage() {
         shiftCount++
       }
     }
-    const nesia = shiftCount * 8
-    return { totalSalary: salary + nesia, nesia }
+    return { totalSalary: salary, nesia: shiftCount * 8 }
   }, [filtered, hourlyWage, tipMap, myId, getTimesForDate])
 
   return (
@@ -165,17 +164,6 @@ export function MyShiftsPage() {
               })}
             </tbody>
             <tfoot>
-              {nesia > 0 && (
-                <tr className={styles.nesiaRow}>
-                  <td className={styles.dateCell}>—</td>
-                  <td><Badge type="support" label="נסיעות" /></td>
-                  <td className={styles.numCell}>—</td>
-                  <td className={styles.numCell}>—</td>
-                  <td className={styles.numCell}>—</td>
-                  <td className={styles.numCell}>₪{fmtMoney(nesia)}</td>
-                  <td></td>
-                </tr>
-              )}
               <tr className={styles.totalRow}>
                 <td className={styles.totalLabel}>סה"כ</td>
                 <td></td>
