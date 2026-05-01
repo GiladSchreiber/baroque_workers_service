@@ -75,11 +75,13 @@ export function shiftHours(startTime: string, endTime: string): string {
 }
 
 // Returns regular/shabbat/holiday/support breakdown for a shift.
-// Support type → all hours go to support.
+// Support type → regular-day hours go to support (₪50 flat); Shabbat/holiday hours go to shabbat/holiday bucket.
 // Friday 14:00–end-of-day and Saturday 00:00–20:00 are shabbat (when dayType is 'auto').
-// dayType 'shabbat' → all hours at shabbat rate (150%, ₪51.48/hr).
-// dayType 'holiday' → all hours at holiday rate (200%, ₪68.64/hr).
-export const HOLIDAY_RATE = 68.64 // 200% of minimum wage (2 × ₪34.32)
+// dayType 'shabbat' → all hours at shabbat rate (150% of minimum wage).
+// dayType 'holiday' → all hours at holiday rate (200% of minimum wage).
+export const MINIMUM_WAGE = 35.4
+export const SHABBAT_RATE = MINIMUM_WAGE * 1.5  // 53.1
+export const HOLIDAY_RATE = MINIMUM_WAGE * 2.0  // 70.8
 
 export function splitShiftHours(
   date: string,
@@ -96,10 +98,9 @@ export function splitShiftHours(
   const totalMins = endMins - startMins
   const totalHours = totalMins / 60
 
-  if (type === 'support') return { regular: 0, shabbat: 0, holiday: 0, support: totalHours }
   if (type === 'global' || type === 'taxi' || type === 'cashier') return { regular: 0, shabbat: 0, holiday: 0, support: 0 }
 
-  // Explicit day-type overrides
+  // Explicit day-type overrides (apply to both support and regular shift types)
   if (dayType === 'holiday') return { regular: 0, shabbat: 0, holiday: totalHours, support: 0 }
   if (dayType === 'shabbat') return { regular: 0, shabbat: totalHours, holiday: 0, support: 0 }
 
@@ -108,18 +109,21 @@ export function splitShiftHours(
 
   if (dow === 5) {
     const cut = 14 * 60
-    const reg  = Math.max(0, Math.min(endMins, cut) - startMins)
-    const shab = Math.max(0, endMins - Math.max(startMins, cut))
-    return { regular: reg / 60, shabbat: shab / 60, holiday: 0, support: 0 }
+    const regMins  = Math.max(0, Math.min(endMins, cut) - startMins)
+    const shabMins = Math.max(0, endMins - Math.max(startMins, cut))
+    if (type === 'support') return { regular: 0, shabbat: shabMins / 60, holiday: 0, support: regMins / 60 }
+    return { regular: regMins / 60, shabbat: shabMins / 60, holiday: 0, support: 0 }
   }
 
   if (dow === 6) {
     const cut = 20 * 60
-    const shab = Math.max(0, Math.min(endMins, cut) - startMins)
-    const reg  = Math.max(0, endMins - Math.max(startMins, cut))
-    return { regular: reg / 60, shabbat: shab / 60, holiday: 0, support: 0 }
+    const shabMins = Math.max(0, Math.min(endMins, cut) - startMins)
+    const regMins  = Math.max(0, endMins - Math.max(startMins, cut))
+    if (type === 'support') return { regular: 0, shabbat: shabMins / 60, holiday: 0, support: regMins / 60 }
+    return { regular: regMins / 60, shabbat: shabMins / 60, holiday: 0, support: 0 }
   }
 
+  if (type === 'support') return { regular: 0, shabbat: 0, holiday: 0, support: totalHours }
   return { regular: totalHours, shabbat: 0, holiday: 0, support: 0 }
 }
 
@@ -195,7 +199,7 @@ export function computeTipDistribution(shiftsOnDate: Shift[]): Map<string, numbe
   return result
 }
 
-// salary = regular*wage + shabbat*51.48 + holiday*68.64
+// salary = regular*wage + shabbat*SHABBAT_RATE + holiday*HOLIDAY_RATE
 //        + MAX(0, tips - 15*(regular+shabbat+holiday)) + support*50
 export function calcSalary(
   regular: number,
@@ -208,7 +212,7 @@ export function calcSalary(
   const paidHours = regular + shabbat + holiday
   return (
     regular * hourlyWage +
-    shabbat * 51.48 +
+    shabbat * SHABBAT_RATE +
     holiday * HOLIDAY_RATE +
     Math.max(0, tips - 15 * paidHours) +
     support * 50
