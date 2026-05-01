@@ -18,14 +18,12 @@ export function ReportShiftPage() {
   useEffect(() => { fetchAll() }, [fetchAll])
 
   async function handleSubmit(data: CreateShiftInput) {
-    await addShift(data)
     const allNames = employees.filter(e => e.isActive).map(e => e.name)
     const displayName = formatEmployeeNameForMessage(currentUser.name, allNames)
-    try {
-      await navigator.clipboard.writeText(buildShiftMessage(data, displayName))
-    } catch {
-      // clipboard not available — silently skip
-    }
+    // Initiate clipboard write immediately within the user gesture context (required by iOS Safari)
+    const clipboardWrite = navigator.clipboard.writeText(buildShiftMessage(data, displayName)).catch(() => {})
+    await addShift(data)
+    await clipboardWrite
     navigate('/employee/shifts')
   }
 

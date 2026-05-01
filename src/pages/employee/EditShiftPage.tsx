@@ -30,12 +30,10 @@ export function EditShiftPage() {
   }, [shifts, id])
 
   async function handleSubmit(data: CreateShiftInput) {
+    // Initiate clipboard write immediately within the user gesture context (required by iOS Safari)
+    const clipboardWrite = navigator.clipboard.writeText(buildShiftMessage(data, currentUser.name)).catch(() => {})
     await updateShift(id!, data)
-    try {
-      await navigator.clipboard.writeText(buildShiftMessage(data, currentUser.name))
-    } catch {
-      // clipboard not available — silently skip
-    }
+    await clipboardWrite
     navigate('/employee/shifts')
   }
 
