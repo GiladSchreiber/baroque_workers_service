@@ -162,12 +162,12 @@ export function MyShiftsPage() {
             <tfoot>
               {nesia > 0 && (
                 <tr className={styles.nesiaRow}>
-                  <td className={styles.totalLabel}>נסיעות</td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                  <td className={styles.totalNum}>₪{fmtMoney(nesia)}</td>
+                  <td className={styles.dateCell}>—</td>
+                  <td><Badge type="support" label="נסיעות" /></td>
+                  <td className={styles.numCell}>—</td>
+                  <td className={styles.numCell}>—</td>
+                  <td className={styles.numCell}>—</td>
+                  <td className={styles.numCell}>₪{fmtMoney(nesia)}</td>
                   <td></td>
                 </tr>
               )}

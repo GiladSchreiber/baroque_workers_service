@@ -101,10 +101,7 @@
 
 .nesiaRow {
   td {
-    border-top: 1px solid v.$color-border;
-    padding-top: v.$space-3;
-    color: v.$color-text-muted;
-    font-size: v.$font-size-sm;
+    border-bottom: 1px solid v.$color-border;
   }
 }
 
