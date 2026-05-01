@@ -55,6 +55,12 @@ export interface ShiftClosure {
   submittedAt: string
 }
 
+export interface ShabbatSetting {
+  month: string       // 'YYYY-MM'
+  fridayStart: string // 'HH:mm' — when Shabbat begins on Friday
+  saturdayEnd: string // 'HH:mm' — when Shabbat ends on Saturday
+}
+
 export type CreateEmployeeInput = Omit<Employee, 'id' | 'createdAt'>
 export type CreateShiftInput = Omit<Shift, 'id' | 'submittedAt' | 'updatedAt'>
 export type CreateClosureInput = Omit<ShiftClosure, 'id' | 'submittedAt'>

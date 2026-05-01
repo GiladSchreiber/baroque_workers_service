@@ -14,6 +14,24 @@
   border-bottom: 1px solid v.$color-border;
 }
 
+.shabbatBtn {
+  grid-column: 1 / -1;
+  background: none;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-sm;
+  color: v.$color-text-muted;
+  font-size: v.$font-size-sm;
+  padding: v.$space-2 v.$space-3;
+  cursor: pointer;
+  text-align: center;
+  transition: color v.$transition-fast, border-color v.$transition-fast;
+
+  &:active {
+    color: v.$color-primary;
+    border-color: v.$color-primary;
+  }
+}
+
 .filterSelect {
   width: 100%;
   background: v.$color-surface-raised;

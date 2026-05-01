@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useShiftStore } from '../../store/shiftStore'
+import { useShabbatSettingsStore } from '../../store/shabbatSettingsStore'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
@@ -31,11 +32,13 @@ export function MyShiftsPage() {
   const navigate = useNavigate()
   const currentUser = useAuthStore(s => s.currentUser)
   const { shifts, isLoading, fetchAll } = useShiftStore()
+  const { fetchAll: fetchShabbatSettings, getTimesForDate } = useShabbatSettingsStore()
   const [filterMonth, setFilterMonth] = useState(currentMonthStr())
 
   useEffect(() => {
     fetchAll()
-  }, [fetchAll])
+    fetchShabbatSettings()
+  }, [fetchAll, fetchShabbatSettings])
 
   const hourlyWage = currentUser?.hourlyWage ?? 0
   const myId = currentUser?.id ?? ''
@@ -80,7 +83,8 @@ export function MyShiftsPage() {
       if (s.type === 'global' || s.type === 'taxi' || s.type === 'cashier') {
         salary += s.amount ?? 0
       } else {
-        const h = splitShiftHours(s.date, s.startTime, s.endTime, s.type, s.dayType)
+        const { fridayStartMins, saturdayEndMins } = getTimesForDate(s.date)
+        const h = splitShiftHours(s.date, s.startTime, s.endTime, s.type, s.dayType, fridayStartMins, saturdayEndMins)
         const myTip = tipMap.get(s.date)?.get(myId) ?? 0
         salary += calcSalary(h.regular, h.shabbat, h.support, myTip, hourlyWage, h.holiday)
         shiftCount++
@@ -88,7 +92,7 @@ export function MyShiftsPage() {
     }
     const nesia = shiftCount * 8
     return { totalSalary: salary + nesia, nesia }
-  }, [filtered, hourlyWage, tipMap, myId])
+  }, [filtered, hourlyWage, tipMap, myId, getTimesForDate])
 
   return (
     <div className={styles.page}>
@@ -131,7 +135,8 @@ export function MyShiftsPage() {
             <tbody>
               {filtered.map(shift => {
                 const isFlat = shift.type === 'global' || shift.type === 'taxi' || shift.type === 'cashier'
-                const h = isFlat ? { regular: 0, shabbat: 0, holiday: 0, support: 0 } : splitShiftHours(shift.date, shift.startTime, shift.endTime, shift.type, shift.dayType)
+                const { fridayStartMins, saturdayEndMins } = getTimesForDate(shift.date)
+                const h = isFlat ? { regular: 0, shabbat: 0, holiday: 0, support: 0 } : splitShiftHours(shift.date, shift.startTime, shift.endTime, shift.type, shift.dayType, fridayStartMins, saturdayEndMins)
                 const myTip = isFlat ? 0 : (tipMap.get(shift.date)?.get(myId) ?? 0)
                 const salary = isFlat
                   ? (shift.amount ?? 0)

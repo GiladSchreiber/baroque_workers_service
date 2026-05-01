@@ -89,6 +89,8 @@ export function splitShiftHours(
   endTime: string,
   type: ShiftType,
   dayType?: DayType,
+  fridayStartMins = 14 * 60,
+  saturdayEndMins = 20 * 60,
 ): { regular: number; shabbat: number; holiday: number; support: number } {
   const [sh, sm] = startTime.split(':').map(Number)
   const [eh, em] = endTime.split(':').map(Number)
@@ -108,7 +110,7 @@ export function splitShiftHours(
   const dow = new Date(date + 'T12:00:00').getDay() // 5=Fri, 6=Sat
 
   if (dow === 5) {
-    const cut = 14 * 60
+    const cut = fridayStartMins
     const regMins  = Math.max(0, Math.min(endMins, cut) - startMins)
     const shabMins = Math.max(0, endMins - Math.max(startMins, cut))
     if (type === 'support') return { regular: 0, shabbat: shabMins / 60, holiday: 0, support: regMins / 60 }
@@ -116,7 +118,7 @@ export function splitShiftHours(
   }
 
   if (dow === 6) {
-    const cut = 20 * 60
+    const cut = saturdayEndMins
     const shabMins = Math.max(0, Math.min(endMins, cut) - startMins)
     const regMins  = Math.max(0, endMins - Math.max(startMins, cut))
     if (type === 'support') return { regular: 0, shabbat: shabMins / 60, holiday: 0, support: regMins / 60 }

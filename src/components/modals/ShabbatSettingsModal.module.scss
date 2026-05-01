@@ -1,0 +1,25 @@
+@use '../../styles/variables' as v;
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-4;
+}
+
+.timeRow {
+  display: flex;
+  gap: v.$space-3;
+  > * { flex: 1; }
+}
+
+.error {
+  color: v.$color-danger;
+  font-size: v.$font-size-sm;
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  gap: v.$space-3;
+  flex-direction: row-reverse;
+}

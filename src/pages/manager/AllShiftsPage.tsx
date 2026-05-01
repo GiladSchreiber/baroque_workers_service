@@ -3,10 +3,12 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import * as XLSX from 'xlsx'
 import { useShiftStore } from '../../store/shiftStore'
 import { useEmployeeStore } from '../../store/employeeStore'
+import { useShabbatSettingsStore } from '../../store/shabbatSettingsStore'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { Badge } from '../../components/ui/Badge'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
+import { ShabbatSettingsModal } from '../../components/modals/ShabbatSettingsModal'
 import {
   SHIFT_TYPE_LABELS, formatDateShort, currentMonthStr, monthOptions, formatMonth,
   splitShiftHours, calcSalary, fmtMoney, computeTipDistribution,
@@ -51,7 +53,12 @@ function buildTipMap(allShiftsInPeriod: Shift[]): Map<string, Map<string, number
   return result
 }
 
-function aggregateShifts(shifts: Shift[], employee: Employee, tipMap: Map<string, Map<string, number>>): EmpStats {
+function aggregateShifts(
+  shifts: Shift[],
+  employee: Employee,
+  tipMap: Map<string, Map<string, number>>,
+  getTimesForDate: (date: string) => { fridayStartMins: number; saturdayEndMins: number },
+): EmpStats {
   let regular = 0, shabbat = 0, holiday = 0, support = 0, tips = 0, globalAmt = 0, taxiAmt = 0, shiftCount = 0
   for (const s of shifts) {
     if (s.type === 'global') {
@@ -61,7 +68,8 @@ function aggregateShifts(shifts: Shift[], employee: Employee, tipMap: Map<string
     } else if (s.type === 'cashier') {
       // cashier shifts are data-only, no hours or salary contribution
     } else {
-      const h = splitShiftHours(s.date, s.startTime, s.endTime, s.type, s.dayType)
+      const { fridayStartMins, saturdayEndMins } = getTimesForDate(s.date)
+      const h = splitShiftHours(s.date, s.startTime, s.endTime, s.type, s.dayType, fridayStartMins, saturdayEndMins)
       regular += h.regular
       shabbat += h.shabbat
       holiday += h.holiday
@@ -98,9 +106,11 @@ export function AllShiftsPage() {
   const { key: locationKey } = useLocation()
   const { shifts, isLoading, fetchAll: fetchShifts } = useShiftStore()
   const { employees, fetchAll: fetchEmployees } = useEmployeeStore()
+  const { fetchAll: fetchShabbatSettings, getTimesForDate } = useShabbatSettingsStore()
 
   const [filterMonth, setFilterMonth] = useState(currentMonthStr())
   const [selectedId, setSelectedId] = useState('')
+  const [shabbatModalOpen, setShabbatModalOpen] = useState(false)
 
   useEffect(() => {
     setSelectedId('')
@@ -109,7 +119,8 @@ export function AllShiftsPage() {
   useEffect(() => {
     fetchShifts()
     fetchEmployees()
-  }, [fetchShifts, fetchEmployees])
+    fetchShabbatSettings()
+  }, [fetchShifts, fetchEmployees, fetchShabbatSettings])
 
   const activeEmployees = useMemo(
     () => employees.filter(e => e.isActive && e.role === 'employee'),
@@ -132,9 +143,9 @@ export function AllShiftsPage() {
   const summaryData = useMemo((): EmpStats[] =>
     activeEmployees.map(emp => {
       const empShifts = monthShifts.filter(s => s.employeeId === emp.id)
-      return aggregateShifts(empShifts, emp, tipMap)
+      return aggregateShifts(empShifts, emp, tipMap, getTimesForDate)
     }),
-    [activeEmployees, monthShifts, tipMap]
+    [activeEmployees, monthShifts, tipMap, getTimesForDate]
   )
 
   const selectedEmployee = selectedId ? employeeMap[selectedId] : null
@@ -227,12 +238,21 @@ export function AllShiftsPage() {
             <option key={e.id} value={e.id}>{e.name}</option>
           ))}
         </select>
+        <button className={styles.shabbatBtn} onClick={() => setShabbatModalOpen(true)}>
+          ערוך שעות שבת
+        </button>
       </div>
+
+      <ShabbatSettingsModal
+        isOpen={shabbatModalOpen}
+        initialMonth={filterMonth || currentMonthStr()}
+        onClose={() => setShabbatModalOpen(false)}
+      />
 
       {isLoading ? (
         <LoadingSpinner />
       ) : selectedEmployee ? (() => {
-        const empStats = aggregateShifts(detailShifts, selectedEmployee, tipMap)
+        const empStats = aggregateShifts(detailShifts, selectedEmployee, tipMap, getTimesForDate)
         return (
           <div className={styles.tableWrapper}>
             <table className={styles.table}>
@@ -251,7 +271,8 @@ export function AllShiftsPage() {
                   <tr><td colSpan={6} className={styles.emptyCell}>אין משמרות בחודש זה</td></tr>
                 ) : detailShifts.map(s => {
                   const isFlat = s.type === 'global' || s.type === 'taxi' || s.type === 'cashier'
-                  const h = isFlat ? { regular: 0, shabbat: 0, holiday: 0, support: 0 } : splitShiftHours(s.date, s.startTime, s.endTime, s.type, s.dayType)
+                  const { fridayStartMins, saturdayEndMins } = getTimesForDate(s.date)
+                  const h = isFlat ? { regular: 0, shabbat: 0, holiday: 0, support: 0 } : splitShiftHours(s.date, s.startTime, s.endTime, s.type, s.dayType, fridayStartMins, saturdayEndMins)
                   const distributedTipForDate = isFlat ? 0 : (tipMap.get(s.date)?.get(selectedEmployee.id) ?? 0)
                   const shiftSalary = isFlat
                     ? (s.amount ?? 0)

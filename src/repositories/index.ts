@@ -5,6 +5,7 @@ import { MockMonthlySummaryRepository } from './mock/MockMonthlySummaryRepositor
 import { SupabaseEmployeeRepository } from './supabase/SupabaseEmployeeRepository'
 import { SupabaseShiftRepository } from './supabase/SupabaseShiftRepository'
 import { SupabaseMonthlySummaryRepository } from './supabase/SupabaseMonthlySummaryRepository'
+import { SupabaseShabbatSettingsRepository } from './supabase/SupabaseShabbatSettingsRepository'
 
 const useSupabase = Boolean(
   import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -23,3 +24,5 @@ export const summaryRepo = useSupabase
   : new MockMonthlySummaryRepository()
 
 export const closureRepo = new MockClosureRepository()
+
+export const shabbatSettingsRepo = new SupabaseShabbatSettingsRepository()
