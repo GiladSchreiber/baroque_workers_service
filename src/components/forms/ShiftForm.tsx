@@ -48,6 +48,9 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
   const [cash, setCash] = useState(initialValues?.cash?.toString() ?? '')
   const [credit, setCredit] = useState(initialValues?.credit?.toString() ?? '')
   const [tips, setTips] = useState(initialValues?.tips?.toString() ?? '')
+  const [financialOpen, setFinancialOpen] = useState(
+    Boolean(initialValues?.revenue || initialValues?.cash || initialValues?.credit || initialValues?.tips)
+  )
   const [dayType, setDayType] = useState<DayType>(initialValues?.dayType ?? 'auto')
   const [repeatMonthly, setRepeatMonthly] = useState(initialValues?.repeatMonthly ?? false)
   const [errors, setErrors] = useState<FormErrors>({})
@@ -87,10 +90,10 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
         amount:  isGlobal && amount !== '' ? Number(amount) : undefined,
         repeatMonthly: type === 'global' && !isEdit ? repeatMonthly : undefined,
         dayType: (!isGlobal && !isCashier && dayType !== 'auto') ? dayType : undefined,
-        revenue: isCashier && revenue !== '' ? Number(revenue) : undefined,
-        cash:    isCashier && cash    !== '' ? Number(cash)    : undefined,
-        credit:  isCashier && credit  !== '' ? Number(credit)  : undefined,
-        tips:    isCashier && tips    !== '' ? Number(tips)    : undefined,
+        revenue: !isGlobal && revenue !== '' ? Number(revenue) : undefined,
+        cash:    !isGlobal && cash    !== '' ? Number(cash)    : undefined,
+        credit:  !isGlobal && credit  !== '' ? Number(credit)  : undefined,
+        tips:    !isGlobal && tips    !== '' ? Number(tips)    : undefined,
       })
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'שגיאה בשליחה')
@@ -236,6 +239,61 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
               </label>
             </div>
           )}
+
+          <div className={styles.financialSection}>
+            <button
+              type="button"
+              className={styles.financialToggle}
+              onClick={() => setFinancialOpen(o => !o)}
+            >
+              <span>נתוני קופה</span>
+              <span className={`${styles.chevron} ${financialOpen ? styles.chevronOpen : ''}`}>›</span>
+            </button>
+            {financialOpen && (
+              <div className={styles.financialGrid}>
+                <Input
+                  label="X (סך הכל)"
+                  id="revenue"
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  placeholder="0"
+                  value={revenue}
+                  onChange={e => setRevenue(e.target.value)}
+                />
+                <Input
+                  label="אשראי"
+                  id="credit"
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  placeholder="0"
+                  value={credit}
+                  onChange={e => setCredit(e.target.value)}
+                />
+                <Input
+                  label="מזומן"
+                  id="cash"
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  placeholder="0"
+                  value={cash}
+                  onChange={e => setCash(e.target.value)}
+                />
+                <Input
+                  label="טיפ"
+                  id="tips"
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  placeholder="0"
+                  value={tips}
+                  onChange={e => setTips(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
         </>
       )}
 
