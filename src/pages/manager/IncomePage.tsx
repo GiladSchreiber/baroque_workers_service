@@ -9,6 +9,12 @@ import styles from './IncomePage.module.scss'
 
 const MONTH_OPTIONS = [{ value: '', label: 'כל הזמן' }, ...monthOptions(24)]
 
+function toMins(t: string) { const [h, m] = t.split(':').map(Number); return h * 60 + m }
+function effectiveEndMins(s: { startTime: string; endTime: string }) {
+  const end = toMins(s.endTime)
+  return end <= toMins(s.startTime) ? end + 24 * 60 : end
+}
+
 export function IncomePage() {
   const { shifts, isLoading, fetchAll: fetchShifts } = useShiftStore()
   const { employees, fetchAll: fetchEmployees } = useEmployeeStore()
@@ -38,13 +44,14 @@ export function IncomePage() {
     return map
   }, [monthShifts])
 
-  // One income row per day — the LAST shift (by endTime) that has revenue data
+  // One income row per day — the LAST shift (by effective end time) that has revenue data.
+  // Overnight shifts (endTime < startTime) get +24h so "02:30" sorts after "23:00".
   const incomeRows = useMemo(() => {
     const byDate: Record<string, typeof monthShifts[0]> = {}
     for (const s of monthShifts) {
       if (s.revenue === undefined) continue
       const existing = byDate[s.date]
-      if (!existing || s.endTime > existing.endTime) {
+      if (!existing || effectiveEndMins(s) > effectiveEndMins(existing)) {
         byDate[s.date] = s
       }
     }

@@ -70,14 +70,16 @@ export function DashboardPage() {
       .map(p => ({ value: p.month, label: formatMonth(p.month) })),
   ], [summaries])
 
-  // One entry per day — the last shift (by endTime) that has revenue data,
-  // matching the same logic used on IncomePage so numbers are consistent.
+  // One entry per day — the last shift (by effective end time) that has revenue data.
+  // Overnight shifts get +24h so "02:30" sorts after "23:00".
   const latestIncomeByDay = useMemo(() => {
+    const toMins = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
+    const effEnd = (s: typeof shifts[0]) => { const e = toMins(s.endTime); return e <= toMins(s.startTime) ? e + 24 * 60 : e }
     const byDate: Record<string, typeof shifts[0]> = {}
     for (const s of shifts) {
       if (!s.date.startsWith(month) || s.revenue == null) continue
       const existing = byDate[s.date]
-      if (!existing || s.endTime > existing.endTime) byDate[s.date] = s
+      if (!existing || effEnd(s) > effEnd(existing)) byDate[s.date] = s
     }
     return Object.values(byDate)
   }, [shifts, month])
