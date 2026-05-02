@@ -235,7 +235,10 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 export function isWithinEditWindow(submittedAt: string): boolean {
-  return Date.now() - new Date(submittedAt).getTime() < 24 * 60 * 60 * 1000
+  const s = new Date(submittedAt)
+  // Edit allowed until end of the calendar day after submission day
+  const endOfNextDay = new Date(s.getFullYear(), s.getMonth(), s.getDate() + 1, 23, 59, 59, 999)
+  return Date.now() <= endOfNextDay.getTime()
 }
 
 import type { CreateShiftInput } from '../types'

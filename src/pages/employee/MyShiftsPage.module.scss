@@ -78,24 +78,12 @@
   font-variant-numeric: tabular-nums;
 }
 
-.actionCell {
-  padding: v.$space-1 v.$space-2;
-  white-space: nowrap;
-}
-
-.editBtn {
-  background: none;
-  border: none;
-  color: v.$color-primary;
-  padding: v.$space-1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: v.$radius-sm;
+.clickableRow {
   cursor: pointer;
-  transition: opacity v.$transition-fast;
 
-  &:active { opacity: 0.6; }
+  &:active {
+    background: v.$color-surface-raised;
+  }
 }
 
 

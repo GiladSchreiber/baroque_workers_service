@@ -262,13 +262,12 @@ export function AllShiftsPage() {
                   <th>סוג</th>
                   <th className={styles.numHeader}>שע׳ רגיל</th>
                   <th className={styles.numHeader}>שע׳ שבת</th>
-                  <th className={styles.numHeader}>אחמ"ש</th>
                   <th className={styles.numHeader}>שכר</th>
                 </tr>
               </thead>
               <tbody>
                 {detailShifts.length === 0 ? (
-                  <tr><td colSpan={6} className={styles.emptyCell}>אין משמרות בחודש זה</td></tr>
+                  <tr><td colSpan={5} className={styles.emptyCell}>אין משמרות בחודש זה</td></tr>
                 ) : detailShifts.map(s => {
                   const isFlat = s.type === 'global' || s.type === 'taxi' || s.type === 'cashier'
                   const { fridayStartMins, saturdayEndMins } = getTimesForDate(s.date)
@@ -287,7 +286,6 @@ export function AllShiftsPage() {
                       <td><Badge type={s.type} label={SHIFT_TYPE_LABELS[s.type]} /></td>
                       <td className={styles.numCell}>{isFlat ? '—' : fmtH(h.regular)}</td>
                       <td className={styles.numCell}>{isFlat ? '—' : fmtH(h.shabbat)}</td>
-                      <td className={styles.numCell}>{isFlat ? '—' : fmtH(h.support)}</td>
                       <td className={styles.numCell}>₪{fmtMoney(shiftSalary)}</td>
                     </tr>
                   )
@@ -298,7 +296,6 @@ export function AllShiftsPage() {
                     <td><Badge type="support" label='נסיעות' /></td>
                     <td className={styles.numCell}>—</td>
                     <td className={styles.numCell}>—</td>
-                    <td className={styles.numCell}>—</td>
                     <td className={styles.numCell}>₪{fmtMoney(empStats.nesia)}</td>
                   </tr>
                 )}
@@ -306,7 +303,7 @@ export function AllShiftsPage() {
               {detailShifts.length > 0 && (
                 <tfoot>
                   <tr className={styles.totalRow}>
-                    <td colSpan={5} className={styles.totalLabel}>סה"כ</td>
+                    <td colSpan={4} className={styles.totalLabel}>סה"כ</td>
                     <td className={styles.numCell}>₪{fmtMoney(empStats.salary)}</td>
                   </tr>
                 </tfoot>
@@ -326,7 +323,6 @@ export function AllShiftsPage() {
                   <th>עובד</th>
                   <th className={styles.numHeader}>שע׳ רגיל</th>
                   <th className={styles.numHeader}>שע׳ שבת</th>
-                  <th className={styles.numHeader}>אחמ"ש</th>
                   <th className={styles.numHeader}>שכר</th>
                 </tr>
               </thead>
@@ -340,16 +336,15 @@ export function AllShiftsPage() {
                     <td className={styles.nameCell}>{d.employee.name}</td>
                     <td className={styles.numCell}>{fmtH(d.regular)}</td>
                     <td className={styles.numCell}>{fmtH(d.shabbat)}</td>
-                    <td className={styles.numCell}>{fmtH(d.support)}</td>
                     <td className={styles.numCell}>
                       {d.shiftCount > 0 ? `₪${fmtMoney(d.salary)}` : '—'}
                     </td>
                   </tr>
                 ))}
               </tbody>
-              <tfoot>
+                <tfoot>
                 <tr className={styles.totalRow}>
-                  <td colSpan={4} className={styles.totalLabel}>סה"כ</td>
+                  <td colSpan={3} className={styles.totalLabel}>סה"כ</td>
                   <td className={styles.numCell}>₪{fmtMoney(grandTotal)}</td>
                 </tr>
               </tfoot>

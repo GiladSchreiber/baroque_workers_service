@@ -70,15 +70,22 @@ export function DashboardPage() {
       .map(p => ({ value: p.month, label: formatMonth(p.month) })),
   ], [summaries])
 
-  const incomeShifts = useMemo(
-    () => shifts.filter(s => s.date.startsWith(month) && s.revenue !== undefined),
-    [shifts, month],
-  )
+  // One entry per day — the last shift (by endTime) that has revenue data,
+  // matching the same logic used on IncomePage so numbers are consistent.
+  const latestIncomeByDay = useMemo(() => {
+    const byDate: Record<string, typeof shifts[0]> = {}
+    for (const s of shifts) {
+      if (!s.date.startsWith(month) || s.revenue == null) continue
+      const existing = byDate[s.date]
+      if (!existing || s.endTime > existing.endTime) byDate[s.date] = s
+    }
+    return Object.values(byDate)
+  }, [shifts, month])
 
-  const totalRevenue = useMemo(() => incomeShifts.reduce((sum, s) => sum + (s.revenue ?? 0), 0), [incomeShifts])
-  const totalCash    = useMemo(() => incomeShifts.reduce((sum, s) => sum + (s.cash ?? 0), 0), [incomeShifts])
-  const totalCredit  = useMemo(() => incomeShifts.reduce((sum, s) => sum + (s.credit ?? 0), 0), [incomeShifts])
-  const avgRevenue   = incomeShifts.length > 0 ? totalRevenue / incomeShifts.length : 0
+  const totalRevenue = useMemo(() => latestIncomeByDay.reduce((sum, s) => sum + (s.revenue ?? 0), 0), [latestIncomeByDay])
+  const totalCash    = useMemo(() => latestIncomeByDay.reduce((sum, s) => sum + (s.cash ?? 0), 0), [latestIncomeByDay])
+  const totalCredit  = useMemo(() => latestIncomeByDay.reduce((sum, s) => sum + (s.credit ?? 0), 0), [latestIncomeByDay])
+  const avgRevenue   = latestIncomeByDay.length > 0 ? totalRevenue / latestIncomeByDay.length : 0
 
   const totalTips = useMemo(
     () => shifts.filter(s => s.date.startsWith(month)).reduce((sum, s) => sum + (s.tips ?? 0), 0),
@@ -106,13 +113,10 @@ export function DashboardPage() {
   const sameMonthLastYearAvg = sameMonthLastYearPoint?.average ?? 0
   const revenueVsLastYearSameMonth = pct(avgRevenue, sameMonthLastYearAvg)
 
-  // View 1 "יומי": daily revenue from shifts for the selected month
+  // View 1 "יומי": daily revenue for the selected month (last shift per day)
   const dailyData = useMemo(() => {
     const byDay: Record<string, number> = {}
-    for (const s of shifts) {
-      if (!s.date.startsWith(month) || s.revenue == null) continue
-      byDay[s.date] = (byDay[s.date] ?? 0) + s.revenue
-    }
+    for (const s of latestIncomeByDay) byDay[s.date] = s.revenue ?? 0
     const days = Object.keys(byDay).sort()
     const sums = days.map(d => byDay[d])
     const trend = linRegression(sums)
@@ -121,7 +125,7 @@ export function DashboardPage() {
       'סה"כ': sums[i],
       'מגמה': trend[i],
     }))
-  }, [shifts, month])
+  }, [latestIncomeByDay])
 
   // View 2 "חודשי": all monthly summaries across all time
   const yearlyData = useMemo(() => {

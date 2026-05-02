@@ -1,0 +1,21 @@
+@use '../../styles/variables' as v;
+
+.closedWindow {
+  padding: v.$space-4 0 v.$space-2;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+}
+
+.closedTitle {
+  margin: 0;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-text;
+}
+
+.closedSub {
+  margin: 0;
+  font-size: v.$font-size-sm;
+  color: v.$color-text-muted;
+}
