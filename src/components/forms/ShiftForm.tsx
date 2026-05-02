@@ -69,9 +69,6 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
     } else if (!isCashier) {
       if (!startTime) next.startTime = 'שעת התחלה נדרשת'
       if (!endTime) next.endTime = 'שעת סיום נדרשת'
-      if (startTime && endTime && endTime <= startTime) {
-        next.endTime = 'שעת סיום חייבת להיות אחרי שעת ההתחלה'
-      }
     }
     setErrors(next)
     return Object.keys(next).length === 0
