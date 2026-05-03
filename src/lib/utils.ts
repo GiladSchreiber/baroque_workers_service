@@ -37,6 +37,8 @@ export function formatDate(dateStr: string): string {
 
 export function todayString(): string {
   const d = new Date()
+  // Before 08:00 treat it as still the previous day (night-shift workers filling in after midnight)
+  if (d.getHours() < 8) d.setDate(d.getDate() - 1)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
