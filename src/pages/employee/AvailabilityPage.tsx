@@ -121,8 +121,17 @@ export function AvailabilityPage() {
 
   function selectAll(dow: number) {
     const ids = slots.filter(s => s.dayOfWeek === dow).map(s => s.id)
+    const allSelected = ids.every(id => selected.has(id))
     setBlockedDays(prev => { const n = new Set(prev); n.delete(dow); return n })
-    setSelected(prev => { const n = new Set(prev); ids.forEach(id => n.add(id)); return n })
+    setSelected(prev => {
+      const n = new Set(prev)
+      if (allSelected) {
+        ids.forEach(id => n.delete(id))  // second tap → deselect all
+      } else {
+        ids.forEach(id => n.add(id))     // first tap → select all
+      }
+      return n
+    })
   }
 
   function blockDay(dow: number) {
