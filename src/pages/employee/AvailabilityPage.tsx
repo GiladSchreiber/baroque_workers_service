@@ -247,7 +247,7 @@ export function AvailabilityPage() {
         </div>
 
         <button className={styles.submitBtn} onClick={handleSubmit}>
-          {editing ? 'עדכן הגשה' : 'שלח הגשה'}
+          {editing ? 'עדכן הגשה' : 'ערוך הגשה'}
         </button>
       </div>
     </div>
