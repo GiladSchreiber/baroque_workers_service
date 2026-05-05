@@ -5,6 +5,7 @@ import { useEmployeeStore } from '../../../store/employeeStore'
 import { PageHeader } from '../../../components/layout/PageHeader'
 import { Modal } from '../../../components/ui/Modal'
 import {
+  getCurrentWeekStart,
   getNextWeekStart,
   getWeekTitle,
   getEffectiveSlotsForWeek,
@@ -382,7 +383,8 @@ export function ArrangementPage() {
   const { templates, overrides, submissions, assignments, weeks, upsertWeek, seedDemoData } = useSchedulingStore()
   const { employees, fetchAll } = useEmployeeStore()
 
-  const weekStart = getNextWeekStart()
+  const [weekKey, setWeekKey] = useState<'next' | 'current'>('next')
+  const weekStart = weekKey === 'next' ? getNextWeekStart() : getCurrentWeekStart()
   const weekTitle = getWeekTitle(weekStart)
 
   const slots = useMemo(
@@ -524,6 +526,22 @@ export function ArrangementPage() {
     <div className={styles.page}>
       <PageHeader title={weekTitle} />
       <SchedulingSubNav />
+
+      {/* Week selector */}
+      <div className={styles.weekTabs}>
+        <button
+          className={[styles.weekTab, weekKey === 'next' ? styles.weekTabActive : ''].join(' ')}
+          onClick={() => setWeekKey('next')}
+        >
+          שבוע הבא
+        </button>
+        <button
+          className={[styles.weekTab, weekKey === 'current' ? styles.weekTabActive : ''].join(' ')}
+          onClick={() => setWeekKey('current')}
+        >
+          שבוע נוכחי
+        </button>
+      </div>
 
       {/* Submission status – 3 buttons in one row, expands below */}
       <section className={styles.statusSection}>
