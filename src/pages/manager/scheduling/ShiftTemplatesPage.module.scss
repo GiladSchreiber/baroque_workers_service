@@ -78,8 +78,9 @@
   &:active { background: v.$color-surface-raised; }
 
   &.slotDisabled {
-    opacity: 0.45;
-    .slotLabel { text-decoration: line-through; }
+    .slotInfo   { opacity: 0.45; }
+    .groupBadge { opacity: 0.45; }
+    .slotLabel  { text-decoration: line-through; }
   }
 }
 
@@ -131,7 +132,7 @@
 .deleteBtn {
   background: none;
   border: none;
-  color: v.$color-text-muted;
+  color: v.$color-primary;
   padding: v.$space-1;
   cursor: pointer;
   display: flex;
