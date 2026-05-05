@@ -215,7 +215,8 @@ export function AvailabilityPage() {
         {!isVacation && (
           <div className={styles.days}>
             {[0, 1, 2, 3, 4, 5, 6].map(dow => {
-              const daySlots = slots.filter(s => s.dayOfWeek === dow)
+              // duty slots are manager-assigned only — workers don't see them
+              const daySlots = slots.filter(s => s.dayOfWeek === dow && s.group !== 'duty')
               if (daySlots.length === 0) return null
               return (
                 <DaySection

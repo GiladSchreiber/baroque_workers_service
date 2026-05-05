@@ -62,7 +62,22 @@ const DEFAULT_TEMPLATES: SlotTemplate[] = [
   { id: 't-sat-5', dayOfWeek: 6, label: 'מטבח צהריים',   group: 'kitchen', startTime: '14:00', endTime: '20:00', sortOrder: 5, isActive: true },
   { id: 't-sat-6', dayOfWeek: 6, label: 'ערב',            group: 'main',    startTime: '20:00', endTime: '02:00', sortOrder: 6, isActive: true },
   { id: 't-sat-7', dayOfWeek: 6, label: 'תגבור ערב',     group: 'support', startTime: '16:00', endTime: '22:00', sortOrder: 7, isActive: true },
-  { id: 't-sat-8', dayOfWeek: 6, label: 'אחמ"ש',         group: 'duty',    startTime: '15:00', endTime: '22:00', sortOrder: 8, isActive: true },
+  { id: 't-sat-8', dayOfWeek: 6, label: 'אחמ"ש בוקר',   group: 'duty',    startTime: '10:00', endTime: '15:00', sortOrder: 8, isActive: true },
+  { id: 't-sat-9', dayOfWeek: 6, label: 'אחמ"ש ערב',    group: 'duty',    startTime: '15:00', endTime: '22:00', sortOrder: 9, isActive: true },
+
+  // ── אחמ"ש slots for Sun–Fri (manager-assigned only, hidden from workers) ─
+  { id: 't-sun-d1', dayOfWeek: 0, label: 'אחמ"ש בוקר',  group: 'duty', startTime: '10:00', endTime: '15:00', sortOrder: 6, isActive: true },
+  { id: 't-sun-d2', dayOfWeek: 0, label: 'אחמ"ש ערב',   group: 'duty', startTime: '15:00', endTime: '22:00', sortOrder: 7, isActive: true },
+  { id: 't-mon-d1', dayOfWeek: 1, label: 'אחמ"ש בוקר',  group: 'duty', startTime: '10:00', endTime: '15:00', sortOrder: 6, isActive: true },
+  { id: 't-mon-d2', dayOfWeek: 1, label: 'אחמ"ש ערב',   group: 'duty', startTime: '15:00', endTime: '22:00', sortOrder: 7, isActive: true },
+  { id: 't-tue-d1', dayOfWeek: 2, label: 'אחמ"ש בוקר',  group: 'duty', startTime: '10:00', endTime: '15:00', sortOrder: 6, isActive: true },
+  { id: 't-tue-d2', dayOfWeek: 2, label: 'אחמ"ש ערב',   group: 'duty', startTime: '15:00', endTime: '22:00', sortOrder: 7, isActive: true },
+  { id: 't-wed-d1', dayOfWeek: 3, label: 'אחמ"ש בוקר',  group: 'duty', startTime: '10:00', endTime: '15:00', sortOrder: 6, isActive: true },
+  { id: 't-wed-d2', dayOfWeek: 3, label: 'אחמ"ש ערב',   group: 'duty', startTime: '15:00', endTime: '22:00', sortOrder: 7, isActive: true },
+  { id: 't-thu-d1', dayOfWeek: 4, label: 'אחמ"ש בוקר',  group: 'duty', startTime: '10:00', endTime: '15:00', sortOrder: 7, isActive: true },
+  { id: 't-thu-d2', dayOfWeek: 4, label: 'אחמ"ש ערב',   group: 'duty', startTime: '15:00', endTime: '22:00', sortOrder: 8, isActive: true },
+  { id: 't-fri-d1', dayOfWeek: 5, label: 'אחמ"ש בוקר',  group: 'duty', startTime: '10:00', endTime: '15:00', sortOrder: 8, isActive: true },
+  { id: 't-fri-d2', dayOfWeek: 5, label: 'אחמ"ש ערב',   group: 'duty', startTime: '15:00', endTime: '22:00', sortOrder: 9, isActive: true },
 ]
 
 // ---------------------------------------------------------------------------
