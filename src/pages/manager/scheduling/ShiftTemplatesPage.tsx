@@ -68,13 +68,15 @@ function SlotRow({ slot }: { slot: SlotTemplate }) {
           <span className={`${styles.groupBadge} ${styles[`group-${slot.group}`]}`}>
             {SHIFT_GROUP_LABELS[slot.group]}
           </span>
-          <button
-            className={styles.deleteBtn}
-            onClick={e => { e.stopPropagation(); setConfirmOpen(true) }}
-            aria-label="מחק לתמיד"
-          >
-            <XIcon />
-          </button>
+          {!slot.isActive && (
+            <button
+              className={styles.deleteBtn}
+              onClick={e => { e.stopPropagation(); setConfirmOpen(true) }}
+              aria-label="מחק לתמיד"
+            >
+              <XIcon />
+            </button>
+          )}
         </div>
       </div>
 
