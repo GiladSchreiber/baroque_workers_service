@@ -3,8 +3,9 @@ import { useAuthStore } from '../../store/authStore'
 import styles from './BottomNav.module.scss'
 
 const EMPLOYEE_LINKS = [
-  { to: '/employee/shifts', label: 'שעות', icon: <ShiftsIcon /> },
-  { to: '/employee/report', label: 'דיווח', icon: <PlusIcon /> },
+  { to: '/employee/shifts',     label: 'שעות',  icon: <ShiftsIcon /> },
+  { to: '/employee/report',     label: 'דיווח', icon: <PlusIcon /> },
+  { to: '/employee/scheduling', label: 'סידור', icon: <SchedulingIcon /> },
 ]
 
 const MANAGER_LINKS = [
