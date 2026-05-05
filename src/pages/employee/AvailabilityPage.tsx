@@ -7,6 +7,7 @@ import type { AvailabilitySubmission, WeekSlot } from '../../types/scheduling'
 import {
   getNextWeekStart, getWeekTitle, getEffectiveSlotsForWeek, isAvailabilityOpen,
 } from '../../lib/schedulingUtils'
+import { SchedulingSubNav } from './ScheduleViewPage'
 import styles from './AvailabilityPage.module.scss'
 
 const NEXT_WEEK  = getNextWeekStart()
@@ -169,6 +170,7 @@ export function AvailabilityPage() {
     return (
       <div className={styles.page}>
         <PageHeader title="הגשת סידור" />
+        <SchedulingSubNav active="submit" />
         <div className={styles.submittedCard}>
           <span className={styles.submittedIcon}>✓</span>
           <p className={styles.submittedTitle}>ההגשה התקבלה</p>
@@ -191,6 +193,7 @@ export function AvailabilityPage() {
     return (
       <div className={styles.page}>
         <PageHeader title="הגשת סידור" />
+        <SchedulingSubNav active="submit" />
         <div className={styles.closedCard}>
           <p className={styles.closedTitle}>הגשות עוד לא פתוחות</p>
           <p className={styles.closedSub}>ניתן להגיש משמרות החל מיום שלישי</p>
@@ -202,8 +205,9 @@ export function AvailabilityPage() {
 
   // ── Form ────────────────────────────────────────────────────────────────
   return (
-    <div className={styles.page}>
+      <div className={styles.page}>
       <PageHeader title="הגשת סידור" />
+      <SchedulingSubNav active="submit" />
       <div className={styles.weekBanner}>{WEEK_TITLE}</div>
 
       <div className={styles.form}>

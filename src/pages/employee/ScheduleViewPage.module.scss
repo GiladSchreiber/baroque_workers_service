@@ -1,0 +1,206 @@
+@use '../../styles/variables' as v;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding-bottom: v.$space-16;
+}
+
+// ── Sub-nav ───────────────────────────────────────────────────────────────────
+.subNav {
+  display: flex;
+  border-bottom: 1px solid v.$color-border;
+  background: v.$color-surface;
+  direction: rtl;
+}
+
+.subTab {
+  flex: 1;
+  padding: v.$space-3 v.$space-4;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: v.$color-text-muted;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color v.$transition-fast, border-color v.$transition-fast;
+  font-family: inherit;
+  &:active { background: v.$color-surface-raised; }
+}
+
+.subTabActive {
+  color: v.$color-primary;
+  border-bottom-color: v.$color-primary;
+}
+
+// ── Week tabs ─────────────────────────────────────────────────────────────────
+.weekTabs {
+  display: flex;
+  gap: v.$space-2;
+  padding: v.$space-3 v.$space-4;
+  border-bottom: 1px solid v.$color-border;
+  direction: rtl;
+}
+
+.weekTab {
+  padding: v.$space-1 v.$space-4;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-full;
+  background: transparent;
+  color: v.$color-text-muted;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color v.$transition-fast, color v.$transition-fast;
+  &:active { background: v.$color-surface-raised; }
+}
+
+.weekTabActive {
+  border-color: v.$color-primary;
+  color: v.$color-primary;
+}
+
+// ── Unpublished state ─────────────────────────────────────────────────────────
+.unpublished {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: v.$space-2;
+  padding: v.$space-16 v.$space-4;
+  text-align: center;
+}
+
+.unpublishedTitle {
+  font-size: v.$font-size-lg;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-text;
+  margin: 0;
+}
+
+.unpublishedSub {
+  font-size: v.$font-size-sm;
+  color: v.$color-text-muted;
+  margin: 0;
+}
+
+// ── Filter row ────────────────────────────────────────────────────────────────
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+  padding: v.$space-3 v.$space-4;
+  direction: rtl;
+}
+
+.filterBtn {
+  padding: v.$space-1 v.$space-4;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-full;
+  background: transparent;
+  color: v.$color-text-muted;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color v.$transition-fast, color v.$transition-fast;
+  &:active { background: v.$color-surface-raised; }
+}
+
+.filterBtnActive {
+  border-color: v.$color-primary;
+  color: v.$color-primary;
+}
+
+.myCount {
+  font-size: v.$font-size-sm;
+  color: v.$color-text-muted;
+}
+
+// ── Days ──────────────────────────────────────────────────────────────────────
+.days {
+  padding: v.$space-3 v.$space-4;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-4;
+  direction: rtl;
+}
+
+.dayCard {
+  background: v.$color-surface;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-lg;
+  overflow: hidden;
+}
+
+.dayHeader {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  padding: v.$space-2 v.$space-3;
+  background: v.$color-surface-raised;
+  border-bottom: 1px solid v.$color-border;
+}
+
+.dayName {
+  font-weight: v.$font-weight-semibold;
+  font-size: v.$font-size-sm;
+  color: v.$color-text;
+}
+
+.dayDate {
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+}
+
+// ── Slot row ──────────────────────────────────────────────────────────────────
+.slotRow {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  padding: v.$space-2 v.$space-3;
+  border-bottom: 1px solid v.$color-border;
+  direction: rtl;
+
+  &:last-child { border-bottom: none; }
+}
+
+.slotMine {
+  background: rgba(200, 191, 160, 0.08);
+  border-right: 3px solid v.$color-primary;
+
+  .slotAssignee { color: v.$color-primary; font-weight: v.$font-weight-semibold; }
+}
+
+.slotEmpty {
+  opacity: 0.45;
+}
+
+.slotLabel {
+  flex: 1;
+  font-size: v.$font-size-sm;
+  color: v.$color-text;
+}
+
+.slotTime {
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+  white-space: nowrap;
+}
+
+.slotAssignee {
+  font-size: v.$font-size-sm;
+  color: v.$color-text;
+  min-width: 4rem;
+  text-align: left;
+}
+
+.internNote {
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+}
+
+.emptyLabel {
+  color: v.$color-text-muted;
+}

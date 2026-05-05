@@ -67,7 +67,7 @@ const DEFAULT_TEMPLATES: SlotTemplate[] = [
 
 ]
 
-const SEED_VERSION     = 'v4'
+const SEED_VERSION     = 'v5'
 const TEMPLATE_VERSION = 'v3'
 
 // ---------------------------------------------------------------------------
@@ -264,10 +264,19 @@ export const useSchedulingStore = create<SchedulingState>()(
 
         const finalSubmissions = [...enrichedSubmissions, ...extraSubs]
 
-        set(() => ({
+        const demoWeek: ScheduleWeek = {
+          id: `week-${weekStart}`,
+          weekStart,
+          isPublished: true,
+          publishedAt: new Date().toISOString(),
+          notes: '',
+        }
+
+        set(s2 => ({
           _seedVersion: SEED_VERSION,
-          submissions: [...s.submissions.filter(x => x.weekStart !== weekStart), ...finalSubmissions],
-          assignments: [...s.assignments.filter(x => x.weekStart !== weekStart), ...assignments],
+          submissions: [...s2.submissions.filter(x => x.weekStart !== weekStart), ...finalSubmissions],
+          assignments: [...s2.assignments.filter(x => x.weekStart !== weekStart), ...assignments],
+          weeks: [...s2.weeks.filter(x => x.weekStart !== weekStart), demoWeek],
         }))
       },
 
