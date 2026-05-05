@@ -80,6 +80,8 @@ const DEFAULT_TEMPLATES: SlotTemplate[] = [
   { id: 't-fri-d2', dayOfWeek: 5, label: 'אחמ"ש ערב',   group: 'duty', startTime: '15:00', endTime: '22:00', sortOrder: 9, isActive: true },
 ]
 
+const SEED_VERSION = 'v2'
+
 // ---------------------------------------------------------------------------
 // Store
 // ---------------------------------------------------------------------------
@@ -89,6 +91,7 @@ interface SchedulingState {
   submissions: AvailabilitySubmission[]
   assignments: ScheduleAssignment[]
   weeks: ScheduleWeek[]
+  _seedVersion: string
 
   // Template management
   toggleTemplate: (id: string) => void
@@ -120,11 +123,12 @@ function newId(prefix: string) { return `${prefix}-${Date.now()}-${_nextId++}` }
 export const useSchedulingStore = create<SchedulingState>()(
   persist(
     (set, get) => ({
-      templates:   DEFAULT_TEMPLATES,
-      overrides:   [],
-      submissions: [],
-      assignments: [],
-      weeks:       [],
+      templates:    DEFAULT_TEMPLATES,
+      overrides:    [],
+      submissions:  [],
+      assignments:  [],
+      weeks:        [],
+      _seedVersion: '',
 
       toggleTemplate: (id) =>
         set(s => ({
@@ -156,43 +160,94 @@ export const useSchedulingStore = create<SchedulingState>()(
 
       seedDemoData: (weekStart, employeeIds) => {
         const s = get()
-        const alreadySeeded = s.submissions.some(x => x.weekStart === weekStart)
-        if (alreadySeeded || employeeIds.length < 3) return
+        // Re-seed whenever SEED_VERSION changes or week changes
+        if (s._seedVersion === SEED_VERSION && s.submissions.some(x => x.weekStart === weekStart)) return
+        if (employeeIds.length < 3) return
 
-        const templates = s.templates.filter(t => t.isActive && t.group !== 'duty')
-        const slotIdsByDay = (dow: number) => templates.filter(t => t.dayOfWeek === dow).map(t => t.id)
+        const e = employeeIds  // shorthand
+        const now = new Date().toISOString()
 
-        const mkSub = (empId: string, dows: number[], isVacation = false, notes = ''): AvailabilitySubmission => ({
+        // ── Helpers ────────────────────────────────────────────────────────
+        const mkSub = (empId: string, slotIds: string[], isVacation = false, notes = ''): AvailabilitySubmission => ({
           id: newId('sub'),
           weekStart,
           employeeId: empId,
           isVacation,
           notes,
-          submittedAt: new Date().toISOString(),
-          selectedSlotIds: isVacation ? [] : dows.flatMap(slotIdsByDay).slice(0, 6),
+          submittedAt: now,
+          selectedSlotIds: isVacation ? [] : slotIds,
           blockedDays: [],
         })
-
-        const submissions: AvailabilitySubmission[] = [
-          mkSub(employeeIds[0], [0, 1, 2], false, 'מעדיף בוקר'),
-          mkSub(employeeIds[1], [0, 3, 4], false, ''),
-          mkSub(employeeIds[2], [1, 2, 5], false, 'רק 2 משמרות אם אפשר'),
-          ...(employeeIds[3] ? [mkSub(employeeIds[3], [], true, '')] : []),
-          ...(employeeIds[4] ? [mkSub(employeeIds[4], [4, 5, 6])] : []),
-        ]
-
-        const morningSlots = templates.filter(t => t.dayOfWeek < 5 && t.sortOrder <= 2)
-        const assignments: ScheduleAssignment[] = morningSlots.slice(0, 4).map((t, i) => ({
+        const mkAsgn = (slotId: string, empId: string | null, note: string | null = null): ScheduleAssignment => ({
           id: newId('asgn'),
           weekStart,
-          slotId: t.id,
-          employeeId: employeeIds[i % employeeIds.length],
-          internshipNote: i === 1 ? 'התלמדות' : null,
-        }))
+          slotId,
+          employeeId: empId,
+          internshipNote: note,
+        })
 
-        set(s2 => ({
-          submissions: [...s2.submissions.filter(x => x.weekStart !== weekStart), ...submissions],
-          assignments: [...s2.assignments.filter(x => x.weekStart !== weekStart), ...assignments],
+        // ── Submissions ────────────────────────────────────────────────────
+        // emp[0] – submitted, mornings Sun/Mon/Tue (will trigger 3-consecutive + double-booking warning)
+        const sub0 = mkSub(e[0], ['t-sun-1','t-sun-2','t-mon-1','t-mon-3','t-tue-1','t-tue-3'], false, 'מעדיף משמרות בוקר')
+        // emp[1] – submitted, evenings Sun/Wed/Thu
+        const sub1 = mkSub(e[1], ['t-sun-3','t-sun-4','t-wed-3','t-wed-4','t-thu-3','t-thu-5'], false, '')
+        // emp[2] – submitted, mix Mon/Tue/Fri/Sat support
+        const sub2 = mkSub(e[2], ['t-mon-3','t-mon-5','t-tue-2','t-fri-3','t-sat-3'], false, 'רק 2 משמרות שבוע זה בבקשה')
+        // emp[3] – on vacation
+        const sub3 = e[3] ? mkSub(e[3], [], true, '') : null
+        // emp[4] – submitted, Thu/Fri/Sat
+        const sub4 = e[4] ? mkSub(e[4], ['t-thu-1','t-thu-3','t-fri-1','t-fri-2','t-sat-1','t-sat-4'], false, '') : null
+        // emp[5] – NOT submitted at all (left out)
+        // emp[6] – submitted Sat only
+        const sub6 = e[6] ? mkSub(e[6], ['t-sat-1','t-sat-2','t-sat-3','t-sat-4'], false, 'זמין רק שבת') : null
+
+        const submissions = [sub0, sub1, sub2, sub3, sub4, sub6].filter((x): x is AvailabilitySubmission => !!x)
+
+        // ── Assignments (intentionally incomplete to show all scenarios) ──
+        // Sunday – emp[0] assigned to BOTH בוקר and מטבח צהריים → double-booking warning
+        //        – צהריים assigned to emp[1], ערב left empty (no one submitted it)
+        // Monday – בוקר → emp[0] (consecutive day 2)
+        //        – צהריים → emp[2] (multiple submitted: emp[1]+emp[2])
+        //        – ערב    → unassigned
+        // Tuesday – בוקר → emp[0] (consecutive day 3 → 3-consecutive warning)
+        //         – מטבח צהריים → unassigned (only emp[2] submitted, manager hasn't assigned yet)
+        // Wednesday – ערב → emp[1], everything else unassigned
+        // Thursday – בוקר → emp[4], rest unassigned (sparse Friday/Thu to show gaps)
+        // Friday – תגבור בוקר → emp[2] with internship note, rest unassigned
+        // Saturday – בוקר → emp[4], צהריים → emp[6]|emp[4], rest unassigned
+        const sat4EmpId = e[6] ?? e[4] ?? null
+
+        const assignments: ScheduleAssignment[] = [
+          // Sunday
+          mkAsgn('t-sun-1',  e[0]),                           // בוקר → emp[0]
+          mkAsgn('t-sun-2',  e[0], 'התלמדות'),               // מטבח צהריים → emp[0] (double-booking on Sun)
+          mkAsgn('t-sun-3',  e[1]),                           // צהריים → emp[1]
+          // t-sun-4 (מטבח ערב)  → unassigned (emp[1] submitted it but not yet placed)
+          // t-sun-5 (ערב)       → unassigned, nobody submitted
+          // Monday
+          mkAsgn('t-mon-1',  e[0]),                           // בוקר → emp[0] (consecutive 2)
+          mkAsgn('t-mon-3',  e[2]),                           // צהריים → emp[2] (emp[1]+emp[2] both submitted)
+          // t-mon-2 (מטבח צהריים) → unassigned
+          // t-mon-5 (ערב) → unassigned
+          // Tuesday
+          mkAsgn('t-tue-1',  e[0]),                           // בוקר → emp[0] (consecutive 3 → warning)
+          // t-tue-2 → unassigned (emp[2] submitted, not yet placed)
+          // t-tue-3 → unassigned
+          // Wednesday
+          mkAsgn('t-wed-3',  e[1]),                           // ערב → emp[1]
+          // Thu
+          e[4] ? mkAsgn('t-thu-1', e[4]) : null,             // בוקר → emp[4]
+          // Fri
+          e[2] ? mkAsgn('t-fri-3', e[2], 'התלמדות') : null, // תגבור בוקר → emp[2] with note
+          // Sat
+          e[4] ? mkAsgn('t-sat-1', e[4]) : null,             // בוקר → emp[4]
+          sat4EmpId ? mkAsgn('t-sat-4', sat4EmpId) : null,  // צהריים → emp[6] or emp[4]
+        ].filter((x): x is ScheduleAssignment => !!x)
+
+        set(() => ({
+          _seedVersion: SEED_VERSION,
+          submissions: [...s.submissions.filter(x => x.weekStart !== weekStart), ...submissions],
+          assignments: [...s.assignments.filter(x => x.weekStart !== weekStart), ...assignments],
         }))
       },
 
