@@ -13,7 +13,7 @@ const MANAGER_LINKS = [
   { to: '/manager/employees', label: 'צוות', icon: <TeamIcon /> },
   { to: '/manager/shifts', label: 'שעות', icon: <ShiftsIcon /> },
   { to: '/manager/income', label: 'הכנסות', icon: <ClosureIcon /> },
-  { to: '/manager/scheduling', label: 'סידור', icon: <SchedulingIcon /> },
+  { to: '/manager/scheduling/arrangement', label: 'סידור', icon: <SchedulingIcon /> },
 ]
 
 export function BottomNav() {

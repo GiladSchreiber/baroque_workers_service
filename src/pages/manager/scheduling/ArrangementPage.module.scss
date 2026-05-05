@@ -1,0 +1,454 @@
+@use '../../../styles/variables' as v;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding-bottom: v.$space-16;
+}
+
+// ── Sub-nav ───────────────────────────────────────────────────────────────────
+.subNav {
+  display: flex;
+  border-bottom: 1px solid v.$color-border;
+  background: v.$color-surface;
+  direction: rtl;
+}
+
+.subTab {
+  flex: 1;
+  padding: v.$space-3 v.$space-4;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: v.$color-text-muted;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color v.$transition-fast, border-color v.$transition-fast;
+
+  &:active { background: v.$color-surface-raised; }
+}
+
+.subTabActive {
+  color: v.$color-primary;
+  border-bottom-color: v.$color-primary;
+}
+
+// ── Submission status ─────────────────────────────────────────────────────────
+.statusSection {
+  padding: v.$space-3 v.$space-4;
+  border-bottom: 1px solid v.$color-border;
+}
+
+.statusRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-2;
+  direction: rtl;
+}
+
+.statusChip {
+  padding: v.$space-1 v.$space-2;
+  border-radius: v.$radius-full;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-medium;
+  border: 1px solid v.$color-border;
+}
+
+.chipIcon {
+  margin-right: 2px;
+}
+
+.status_submitted { color: v.$color-success; border-color: rgba(34,197,94,.35); }
+.status_vacation  { color: v.$color-text-muted; border-color: v.$color-border; }
+.status_missing   { color: v.$color-danger; border-color: rgba(239,68,68,.35); }
+
+// ── Notes ─────────────────────────────────────────────────────────────────────
+.notesSection {
+  border-bottom: 1px solid v.$color-border;
+  direction: rtl;
+}
+
+.notesToggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: v.$space-3 v.$space-4;
+  background: transparent;
+  border: none;
+  color: v.$color-text-muted;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+  text-align: right;
+
+  &:active { background: v.$color-surface-raised; }
+}
+
+.chevron {
+  font-size: v.$font-size-xs;
+}
+
+.notesList {
+  padding: 0 v.$space-4 v.$space-3;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+}
+
+.noteItem {
+  display: flex;
+  gap: v.$space-2;
+  font-size: v.$font-size-sm;
+}
+
+.noteName {
+  color: v.$color-primary;
+  font-weight: v.$font-weight-medium;
+  white-space: nowrap;
+}
+
+.noteText {
+  color: v.$color-text-muted;
+}
+
+// ── Counters ──────────────────────────────────────────────────────────────────
+.countersSection {
+  padding: v.$space-2 v.$space-4;
+  border-bottom: 1px solid v.$color-border;
+}
+
+.countersRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-2;
+  direction: rtl;
+}
+
+.counterChip {
+  display: flex;
+  align-items: center;
+  gap: v.$space-1;
+  padding: v.$space-1 v.$space-2;
+  background: v.$color-surface-raised;
+  border-radius: v.$radius-full;
+  font-size: v.$font-size-xs;
+  color: v.$color-text;
+}
+
+.counterBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: v.$radius-full;
+  background: v.$color-primary;
+  color: v.$color-text-on-primary;
+  font-size: 0.7rem;
+  font-weight: v.$font-weight-bold;
+}
+
+// ── Warnings ──────────────────────────────────────────────────────────────────
+.warnings {
+  padding: v.$space-2 v.$space-4;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-1;
+  direction: rtl;
+}
+
+.warning {
+  font-size: v.$font-size-sm;
+  color: v.$color-warning;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: v.$radius-sm;
+  padding: v.$space-2 v.$space-3;
+}
+
+// ── Day cards ─────────────────────────────────────────────────────────────────
+.days {
+  padding: v.$space-3 v.$space-4;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-4;
+  direction: rtl;
+}
+
+.dayCard {
+  background: v.$color-surface;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-lg;
+  overflow: hidden;
+}
+
+.dayHeader {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  padding: v.$space-2 v.$space-3;
+  background: v.$color-surface-raised;
+  border-bottom: 1px solid v.$color-border;
+}
+
+.dayName {
+  font-weight: v.$font-weight-semibold;
+  font-size: v.$font-size-sm;
+  color: v.$color-text;
+}
+
+.dayDate {
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+}
+
+// ── Slot row ──────────────────────────────────────────────────────────────────
+.slotRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: v.$space-2 v.$space-3;
+  border-bottom: 1px solid v.$color-border;
+  cursor: pointer;
+  gap: v.$space-3;
+  transition: background v.$transition-fast;
+
+  &:last-child { border-bottom: none; }
+  &:active { background: v.$color-surface-raised; }
+}
+
+.slotUnassigned {
+  .emptySlot { color: v.$color-primary; }
+}
+
+.slotMeta {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  flex: 1;
+  min-width: 0;
+  direction: rtl;
+}
+
+.slotLabel {
+  font-size: v.$font-size-sm;
+  color: v.$color-text;
+  white-space: nowrap;
+}
+
+.groupBadge {
+  font-size: 0.65rem;
+  font-weight: v.$font-weight-medium;
+  padding: 1px 6px;
+  border-radius: v.$radius-full;
+  white-space: nowrap;
+}
+
+.group_main    { background: rgba(59,130,246,.18); color: #60a5fa; }
+.group_kitchen { background: rgba(249,115,22,.18); color: #fb923c; }
+.group_support { background: rgba(34,197,94,.18);  color: #4ade80; }
+.group_duty    { background: rgba(200,191,160,.18); color: v.$color-primary; }
+
+.slotTime {
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+  white-space: nowrap;
+}
+
+.slotAssignee {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  flex-shrink: 0;
+  direction: rtl;
+}
+
+.assigneeName {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: v.$color-text;
+}
+
+.internTag {
+  font-size: v.$font-size-xs;
+  color: v.$color-primary;
+  background: rgba(200,191,160,.12);
+  border-radius: v.$radius-full;
+  padding: 1px 6px;
+}
+
+.emptySlot {
+  font-size: v.$font-size-sm;
+  color: v.$color-text-muted;
+  font-weight: v.$font-weight-medium;
+}
+
+// ── Publish bar ───────────────────────────────────────────────────────────────
+.publishBar {
+  position: fixed;
+  bottom: v.$bottom-nav-height;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: v.$space-3;
+  padding: v.$space-3 v.$space-4;
+  background: v.$color-surface;
+  border-top: 1px solid v.$color-border;
+  direction: rtl;
+  max-width: v.$max-content-width;
+  margin: 0 auto;
+}
+
+.publishedBadge {
+  font-size: v.$font-size-sm;
+  color: v.$color-success;
+}
+
+.publishBtn {
+  padding: v.$space-2 v.$space-6;
+  background: v.$color-primary;
+  color: v.$color-text-on-primary;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  border: none;
+  border-radius: v.$radius-md;
+  cursor: pointer;
+  transition: background v.$transition-fast;
+
+  &:active { background: v.$color-primary-dark; }
+  &:disabled { opacity: 0.6; cursor: default; }
+}
+
+.publishCopied {
+  background: v.$color-success;
+  color: #fff;
+}
+
+// ── Assign modal ──────────────────────────────────────────────────────────────
+.assignModal {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-3;
+  direction: rtl;
+}
+
+.assignSlotInfo {
+  font-size: v.$font-size-sm;
+  color: v.$color-text-muted;
+  margin: 0;
+}
+
+.empList {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-1;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.empGroupLabel {
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+  padding: v.$space-1 0;
+  font-weight: v.$font-weight-medium;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.empRow {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  padding: v.$space-2 v.$space-3;
+  background: v.$color-surface-raised;
+  border: 1px solid transparent;
+  border-radius: v.$radius-md;
+  cursor: pointer;
+  text-align: right;
+  transition: border-color v.$transition-fast;
+  width: 100%;
+
+  &:active { background: v.$color-border; }
+}
+
+.empAvail {
+  border-color: rgba(34,197,94,.2);
+}
+
+.empSelected {
+  border-color: v.$color-primary;
+  background: rgba(200,191,160,.1);
+}
+
+.empName {
+  flex: 1;
+  font-size: v.$font-size-sm;
+  color: v.$color-text;
+}
+
+.empCount {
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+}
+
+.empCheck {
+  color: v.$color-success;
+  font-size: v.$font-size-sm;
+}
+
+.noteLabel {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-1;
+  font-size: v.$font-size-sm;
+  color: v.$color-text-muted;
+}
+
+.noteInput {
+  padding: v.$space-2 v.$space-3;
+  background: v.$color-surface-raised;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-md;
+  color: v.$color-text;
+  font-size: v.$font-size-sm;
+  direction: rtl;
+
+  &:focus {
+    outline: none;
+    border-color: v.$color-primary;
+  }
+}
+
+.assignActions {
+  display: flex;
+  gap: v.$space-2;
+  justify-content: flex-end;
+}
+
+.saveBtn {
+  padding: v.$space-2 v.$space-5;
+  background: v.$color-primary;
+  color: v.$color-text-on-primary;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  border: none;
+  border-radius: v.$radius-md;
+  cursor: pointer;
+  &:active { background: v.$color-primary-dark; }
+}
+
+.cancelBtn {
+  padding: v.$space-2 v.$space-4;
+  background: transparent;
+  color: v.$color-text-muted;
+  font-size: v.$font-size-sm;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-md;
+  cursor: pointer;
+  &:active { background: v.$color-surface-raised; }
+}

@@ -100,12 +100,15 @@ interface SchedulingState {
   addOverride: (o: Omit<WeekSlotOverride, 'id'>) => void
   removeOverride: (id: string) => void
 
+  // Demo seeding (dev only)
+  seedDemoData: (weekStart: string, employeeIds: string[]) => void
+
   // Availability
   upsertSubmission: (s: AvailabilitySubmission) => void
 
   // Assignments
   upsertAssignment: (a: ScheduleAssignment) => void
-  removeAssignment: (id: string) => void
+  removeAssignment: (weekStart: string, slotId: string) => void
 
   // Weeks
   upsertWeek: (w: ScheduleWeek) => void
@@ -151,6 +154,48 @@ export const useSchedulingStore = create<SchedulingState>()(
       removeOverride: (id) =>
         set(s => ({ overrides: s.overrides.filter(o => o.id !== id) })),
 
+      seedDemoData: (weekStart, employeeIds) => {
+        const s = get()
+        const alreadySeeded = s.submissions.some(x => x.weekStart === weekStart)
+        if (alreadySeeded || employeeIds.length < 3) return
+
+        const templates = s.templates.filter(t => t.isActive && t.group !== 'duty')
+        const slotIdsByDay = (dow: number) => templates.filter(t => t.dayOfWeek === dow).map(t => t.id)
+
+        const mkSub = (empId: string, dows: number[], isVacation = false, notes = ''): AvailabilitySubmission => ({
+          id: newId('sub'),
+          weekStart,
+          employeeId: empId,
+          isVacation,
+          notes,
+          submittedAt: new Date().toISOString(),
+          selectedSlotIds: isVacation ? [] : dows.flatMap(slotIdsByDay).slice(0, 6),
+          blockedDays: [],
+        })
+
+        const submissions: AvailabilitySubmission[] = [
+          mkSub(employeeIds[0], [0, 1, 2], false, 'מעדיף בוקר'),
+          mkSub(employeeIds[1], [0, 3, 4], false, ''),
+          mkSub(employeeIds[2], [1, 2, 5], false, 'רק 2 משמרות אם אפשר'),
+          ...(employeeIds[3] ? [mkSub(employeeIds[3], [], true, '')] : []),
+          ...(employeeIds[4] ? [mkSub(employeeIds[4], [4, 5, 6])] : []),
+        ]
+
+        const morningSlots = templates.filter(t => t.dayOfWeek < 5 && t.sortOrder <= 2)
+        const assignments: ScheduleAssignment[] = morningSlots.slice(0, 4).map((t, i) => ({
+          id: newId('asgn'),
+          weekStart,
+          slotId: t.id,
+          employeeId: employeeIds[i % employeeIds.length],
+          internshipNote: i === 1 ? 'התלמדות' : null,
+        }))
+
+        set(s2 => ({
+          submissions: [...s2.submissions.filter(x => x.weekStart !== weekStart), ...submissions],
+          assignments: [...s2.assignments.filter(x => x.weekStart !== weekStart), ...assignments],
+        }))
+      },
+
       upsertSubmission: (sub) =>
         set(s => ({
           submissions: [
@@ -169,8 +214,8 @@ export const useSchedulingStore = create<SchedulingState>()(
           ],
         })),
 
-      removeAssignment: (id) =>
-        set(s => ({ assignments: s.assignments.filter(a => a.id !== id) })),
+      removeAssignment: (weekStart, slotId) =>
+        set(s => ({ assignments: s.assignments.filter(a => !(a.weekStart === weekStart && a.slotId === slotId)) })),
 
       upsertWeek: (w) =>
         set(s => ({

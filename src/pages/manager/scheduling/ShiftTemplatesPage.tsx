@@ -1,10 +1,25 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useSchedulingStore } from '../../../store/schedulingStore'
 import { PageHeader } from '../../../components/layout/PageHeader'
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog'
 import { DAY_NAMES, SHIFT_GROUP_LABELS } from '../../../types/scheduling'
 import type { SlotTemplate, ShiftGroup } from '../../../types/scheduling'
 import styles from './ShiftTemplatesPage.module.scss'
+
+function SchedulingSubNav() {
+  const navigate = useNavigate()
+  return (
+    <div className={styles.subNav}>
+      <button className={styles.subTab} onClick={() => navigate('/manager/scheduling/arrangement')}>
+        סידור שבועי
+      </button>
+      <button className={[styles.subTab, styles.subTabActive].join(' ')}>
+        הגדרת משמרות
+      </button>
+    </div>
+  )
+}
 
 const GROUP_OPTIONS: { value: ShiftGroup; label: string }[] = [
   { value: 'main',    label: SHIFT_GROUP_LABELS.main },
@@ -120,6 +135,7 @@ export function ShiftTemplatesPage() {
   return (
     <div className={styles.page}>
       <PageHeader title="הגדרת משמרות" />
+      <SchedulingSubNav />
       <div className={styles.content}>
         {[0, 1, 2, 3, 4, 5, 6].map(dow => (
           <DaySection key={dow} dayOfWeek={dow} slots={templates.filter(t => t.dayOfWeek === dow)} />

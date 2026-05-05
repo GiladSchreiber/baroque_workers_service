@@ -6,6 +6,33 @@
   min-height: 100%;
 }
 
+// Sub-nav (shared style with ArrangementPage)
+.subNav {
+  display: flex;
+  border-bottom: 1px solid v.$color-border;
+  background: v.$color-surface;
+  direction: rtl;
+}
+
+.subTab {
+  flex: 1;
+  padding: v.$space-3 v.$space-4;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: v.$color-text-muted;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color v.$transition-fast, border-color v.$transition-fast;
+  &:active { background: v.$color-surface-raised; }
+}
+
+.subTabActive {
+  color: v.$color-primary;
+  border-bottom-color: v.$color-primary;
+}
+
 .hint {
   margin: 0;
   padding: v.$space-3 v.$space-4;
