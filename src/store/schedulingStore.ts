@@ -79,6 +79,7 @@ interface SchedulingState {
   toggleTemplate: (id: string) => void
   updateTemplate: (id: string, patch: Partial<SlotTemplate>) => void
   addTemplate: (t: Omit<SlotTemplate, 'id'>) => void
+  deleteTemplate: (id: string) => void
 
   // Week overrides
   addOverride: (o: Omit<WeekSlotOverride, 'id'>) => void
@@ -123,6 +124,9 @@ export const useSchedulingStore = create<SchedulingState>()(
         set(s => ({
           templates: [...s.templates, { ...t, id: newId('t') }],
         })),
+
+      deleteTemplate: (id) =>
+        set(s => ({ templates: s.templates.filter(t => t.id !== id) })),
 
       addOverride: (o) =>
         set(s => ({

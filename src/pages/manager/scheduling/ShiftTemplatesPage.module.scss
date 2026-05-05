@@ -6,28 +6,12 @@
   min-height: 100%;
 }
 
-.toolbar {
+.hint {
+  margin: 0;
   padding: v.$space-3 v.$space-4;
-  border-bottom: 1px solid v.$color-border;
-  display: flex;
-  align-items: center;
-  gap: v.$space-3;
-}
-
-.toggleLabel {
-  display: flex;
-  align-items: center;
-  gap: v.$space-2;
-  font-size: v.$font-size-sm;
+  font-size: v.$font-size-xs;
   color: v.$color-text-muted;
-  cursor: pointer;
-}
-
-.checkbox {
-  accent-color: v.$color-primary;
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
+  border-bottom: 1px solid v.$color-border;
 }
 
 .content {
@@ -85,21 +69,24 @@
   justify-content: space-between;
   padding: v.$space-3 v.$space-4;
   border-bottom: 1px solid v.$color-border;
+  cursor: pointer;
   gap: v.$space-3;
-  transition: opacity v.$transition-fast;
+  transition: background v.$transition-fast;
+  user-select: none;
 
   &:last-child { border-bottom: none; }
+  &:active { background: v.$color-surface-raised; }
 
-  &.slotInactive {
-    opacity: 0.4;
+  &.slotDisabled {
+    opacity: 0.45;
+    .slotLabel { text-decoration: line-through; }
   }
 }
 
-.slotToggle {
+.slotInfo {
   display: flex;
-  align-items: center;
-  gap: v.$space-2;
-  cursor: pointer;
+  flex-direction: column;
+  gap: 2px;
   flex: 1;
   min-width: 0;
 }
@@ -107,23 +94,19 @@
 .slotLabel {
   font-size: v.$font-size-sm;
   color: v.$color-text;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.slotMeta {
-  display: flex;
-  align-items: center;
-  gap: v.$space-2;
-  flex-shrink: 0;
 }
 
 .slotTime {
   font-size: v.$font-size-xs;
   color: v.$color-text-muted;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+}
+
+.slotRight {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  flex-shrink: 0;
 }
 
 .groupBadge {
@@ -139,7 +122,13 @@
   &.group-duty    { background: rgba(139,92,246,0.18);  color: #c4b5fd; }
 }
 
-.editSlotBtn {
+.disabledTag {
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+  font-style: italic;
+}
+
+.deleteBtn {
   background: none;
   border: none;
   color: v.$color-text-muted;
@@ -149,13 +138,12 @@
   align-items: center;
   border-radius: v.$radius-sm;
   transition: color v.$transition-fast;
-  opacity: 0;
+  flex-shrink: 0;
 
-  .slotRow:hover & { opacity: 1; }
-  &:hover { color: v.$color-primary; }
+  &:hover { color: v.$color-danger; }
 }
 
-// ── Add / edit inline form ────────────────────────────────────────────────
+// ── Add form ──────────────────────────────────────────────────────────────
 .addForm {
   padding: v.$space-3 v.$space-4;
   background: v.$color-surface;
@@ -178,10 +166,7 @@
   width: 100%;
   text-align: right;
 
-  &:focus {
-    outline: none;
-    border-color: v.$color-primary;
-  }
+  &:focus { outline: none; border-color: v.$color-primary; }
 }
 
 .addRow {
@@ -198,7 +183,7 @@
   color: v.$color-text;
   font-family: v.$font-family;
   font-size: v.$font-size-sm;
-  padding: v.$space-2 v.$space-2;
+  padding: v.$space-2;
   cursor: pointer;
   text-align: right;
 
@@ -213,7 +198,7 @@
   color-scheme: dark;
   font-family: v.$font-family;
   font-size: v.$font-size-sm;
-  padding: v.$space-2 v.$space-2;
+  padding: v.$space-2;
   width: 5.5rem;
 
   &:focus { outline: none; border-color: v.$color-primary; }
@@ -240,7 +225,6 @@
   font-size: v.$font-size-sm;
   font-weight: v.$font-weight-semibold;
   cursor: pointer;
-
   &:active { opacity: 0.8; }
 }
 
@@ -253,6 +237,5 @@
   font-family: v.$font-family;
   font-size: v.$font-size-sm;
   cursor: pointer;
-
   &:active { opacity: 0.8; }
 }
