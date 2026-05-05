@@ -247,7 +247,7 @@ export function AvailabilityPage() {
         </div>
 
         <button className={styles.submitBtn} onClick={handleSubmit}>
-          {editing ? 'ערוך משמרות' : 'שלח משמרות'}
+          {editing ? 'עריכת משמרות' : 'שליחת משמרות'}
         </button>
       </div>
     </div>
