@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useSchedulingStore } from '../../../store/schedulingStore'
 import { PageHeader } from '../../../components/layout/PageHeader'
+import { SchedulingSubNav } from './SchedulingSubNav'
 import { DAY_NAMES, SHIFT_GROUP_LABELS } from '../../../types/scheduling'
 import type { SlotTemplate, ShiftGroup } from '../../../types/scheduling'
 import styles from './ShiftTemplatesPage.module.scss'
@@ -149,7 +150,8 @@ export function ShiftTemplatesPage() {
 
   return (
     <div className={styles.page}>
-      <PageHeader title="הגדרת משמרות" />
+      <PageHeader title="סידור" />
+      <SchedulingSubNav />
 
       <div className={styles.toolbar}>
         <label className={styles.toggleLabel}>
