@@ -8,6 +8,12 @@ const EMPLOYEE_LINKS = [
   { to: '/employee/scheduling', label: 'סידור', icon: <SchedulingIcon /> },
 ]
 
+const SCHEDULER_LINKS = [
+  { to: '/scheduler/shifts',               label: 'שעות',  icon: <ShiftsIcon /> },
+  { to: '/scheduler/report',               label: 'דיווח', icon: <PlusIcon /> },
+  { to: '/scheduler/scheduling/arrangement', label: 'סידור', icon: <SchedulingIcon /> },
+]
+
 const MANAGER_LINKS = [
   { to: '/manager/dashboard', label: 'סקירה', icon: <DashboardIcon /> },
   { to: '/manager/employees', label: 'צוות', icon: <TeamIcon /> },
@@ -20,7 +26,7 @@ export function BottomNav() {
   const role = useAuthStore(s => s.currentUser?.role)
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const links = role === 'manager' ? MANAGER_LINKS : EMPLOYEE_LINKS
+  const links = role === 'manager' ? MANAGER_LINKS : role === 'scheduler' ? SCHEDULER_LINKS : EMPLOYEE_LINKS
 
   return (
     <nav className={styles.nav}>

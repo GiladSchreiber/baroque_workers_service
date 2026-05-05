@@ -33,10 +33,11 @@ export interface SlotTemplate {
 // ---------------------------------------------------------------------------
 export interface WeekSlotOverride {
   id: string
-  weekStart: string        // YYYY-MM-DD (always the Sunday of that week)
-  templateId: string | null // null = brand-new custom slot (action must be 'add')
-  action: 'add' | 'remove'
-  // populated only for custom additions (templateId === null):
+  weekStart: string   // YYYY-MM-DD (always the Sunday of that week)
+  /** non-null = hide/modify an existing template; null = brand-new custom slot */
+  slotId?: string
+  isRemoved: boolean  // true = hide slotId for this week; false = custom addition
+  // populated only for custom additions (slotId === undefined, isRemoved === false):
   dayOfWeek?: number
   label?: string
   group?: ShiftGroup
@@ -83,8 +84,10 @@ export interface ScheduleAssignment {
 }
 
 export interface ScheduleWeek {
+  id: string               // uuid
   weekStart: string        // YYYY-MM-DD (Sunday)
-  title: string            // auto-generated "סידור DD.MM.YY"
+  title?: string           // auto-generated "סידור DD.MM.YY"
   isPublished: boolean
-  publishedAt: string | null
+  publishedAt?: string
+  notes?: string
 }

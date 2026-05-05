@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuthStore } from '../../../store/authStore'
 import { useSchedulingStore } from '../../../store/schedulingStore'
 import { useEmployeeStore } from '../../../store/employeeStore'
 import { PageHeader } from '../../../components/layout/PageHeader'
@@ -19,22 +20,46 @@ import type { WeekSlot } from '../../../types/scheduling'
 import styles from './ArrangementPage.module.scss'
 
 // ── Sub-nav tabs ─────────────────────────────────────────────────────────────
-function SchedulingSubNav() {
+export function SchedulingSubNav({
+  active,
+  onWeekChange,
+}: {
+  active: 'current' | 'next' | 'templates' | 'submit'
+  onWeekChange?: (k: 'current' | 'next') => void
+}) {
   const navigate  = useNavigate()
+  const role      = useAuthStore(s => s.currentUser?.role)
+  const base      = role === 'scheduler' ? '/scheduler' : '/manager'
+  const isScheduler = role === 'scheduler'
+
   return (
     <div className={styles.subNav}>
       <button
-        className={[styles.subTab, styles.subTabActive].join(' ')}
-        onClick={() => navigate('/manager/scheduling/arrangement')}
+        className={[styles.subTab, active === 'current' ? styles.subTabActive : ''].join(' ')}
+        onClick={() => { navigate(`${base}/scheduling/arrangement`); onWeekChange?.('current') }}
       >
-        סידור שבועי
+        שבוע נוכחי
       </button>
       <button
-        className={styles.subTab}
-        onClick={() => navigate('/manager/scheduling/templates')}
+        className={[styles.subTab, active === 'next' ? styles.subTabActive : ''].join(' ')}
+        onClick={() => { navigate(`${base}/scheduling/arrangement`); onWeekChange?.('next') }}
+      >
+        שבוע הבא
+      </button>
+      <button
+        className={[styles.subTab, active === 'templates' ? styles.subTabActive : ''].join(' ')}
+        onClick={() => navigate(`${base}/scheduling/templates`)}
       >
         הגדרת משמרות
       </button>
+      {isScheduler && (
+        <button
+          className={[styles.subTab, active === 'submit' ? styles.subTabActive : ''].join(' ')}
+          onClick={() => navigate(`${base}/scheduling/submit`)}
+        >
+          הגשת סידור
+        </button>
+      )}
     </div>
   )
 }
@@ -317,7 +342,11 @@ function SlotRow({ slot, weekStart }: SlotRowProps) {
           return (
             <button
               key={emp.id}
-              className={[styles.submitterBtn, isSelected ? styles.submitterSelected : ''].join(' ')}
+              className={[
+                styles.submitterBtn,
+                isSelected ? styles.submitterSelected : '',
+                isSelected && assignment?.internshipNote ? styles.submitterWithIntern : '',
+              ].join(' ')}
               onClick={e => { e.stopPropagation(); handleToggle(emp.id) }}
             >
               {emp.name.split(' ')[0]}
@@ -378,9 +407,91 @@ function DayCard({ dow, slots, weekStart }: {
   )
 }
 
+// ── Add Shifts modal ──────────────────────────────────────────────────────────
+function AddShiftsModal({ slots, weekStart, onClose }: {
+  slots: WeekSlot[]
+  weekStart: string
+  onClose: () => void
+}) {
+  const { assignments, upsertAssignment } = useSchedulingStore()
+  const { employees } = useEmployeeStore()
+
+  const allActive = useMemo(
+    () => employees.filter(e => e.isActive).sort((a, b) => a.name.localeCompare(b.name, 'he')),
+    [employees],
+  )
+
+  type Row = { empId: string; slotId: string }
+  const [rows, setRows] = useState<Row[]>([{ empId: '', slotId: '' }])
+
+  function updateRow(i: number, patch: Partial<Row>) {
+    setRows(r => r.map((row, idx) => idx === i ? { ...row, ...patch } : row))
+  }
+
+  function handleSave() {
+    const valid = rows.filter(r => r.empId && r.slotId)
+    for (const r of valid) {
+      const existing = assignments.find(a => a.weekStart === weekStart && a.slotId === r.slotId)
+      upsertAssignment({
+        id: `asgn-${weekStart}-${r.slotId}`,
+        weekStart,
+        slotId: r.slotId,
+        employeeId: r.empId,
+        internshipNote: existing?.internshipNote ?? null,
+      })
+    }
+    onClose()
+  }
+
+  return (
+    <Modal isOpen title="הוספת משמרות" onClose={onClose}>
+      <div className={styles.internsModal}>
+        {rows.map((row, i) => (
+          <div key={i} className={styles.internsRow}>
+            <select
+              className={styles.internsSelect}
+              value={row.slotId}
+              onChange={e => updateRow(i, { slotId: e.target.value })}
+            >
+              <option value="">בחר משמרת</option>
+              {slots.map(s => (
+                <option key={s.id} value={s.id}>
+                  {DAY_NAMES[s.dayOfWeek]} – {s.label}
+                </option>
+              ))}
+            </select>
+            <select
+              className={styles.internsSelect}
+              value={row.empId}
+              onChange={e => updateRow(i, { empId: e.target.value })}
+            >
+              <option value="">בחר עובד</option>
+              {allActive.map(e => (
+                <option key={e.id} value={e.id}>{e.name}</option>
+              ))}
+            </select>
+            <button
+              className={styles.internsRemoveBtn}
+              onClick={() => setRows(r => r.filter((_, idx) => idx !== i))}
+              disabled={rows.length === 1}
+            >–</button>
+          </div>
+        ))}
+        <button
+          className={styles.internsAddBtn}
+          onClick={() => setRows(r => [...r, { empId: '', slotId: '' }])}
+        >
+          + הוסף
+        </button>
+        <button className={styles.internsSaveBtn} onClick={handleSave}>שמור</button>
+      </div>
+    </Modal>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 export function ArrangementPage() {
-  const { templates, overrides, submissions, assignments, weeks, upsertWeek, seedDemoData } = useSchedulingStore()
+  const { templates, overrides, submissions, assignments, weeks, upsertWeek, fetchTemplates, fetchWeekData, loadingWeek } = useSchedulingStore()
   const { employees, fetchAll } = useEmployeeStore()
 
   const [weekKey, setWeekKey] = useState<'next' | 'current'>('next')
@@ -415,17 +526,16 @@ export function ArrangementPage() {
   const [publishing, setPublishing]         = useState(false)
   const [copied, setCopied]                 = useState(false)
   const [internsOpen, setInternsOpen]       = useState(false)
+  const [addShiftsOpen, setAddShiftsOpen]   = useState(false)
 
   useEffect(() => {
     fetchAll()
+    fetchTemplates()
   }, [])
 
   useEffect(() => {
-    if (employees.length > 0) {
-      const ids = employees.filter(e => e.isActive).map(e => e.id)
-      seedDemoData(weekStart, ids)
-    }
-  }, [employees.length])
+    fetchWeekData(weekStart)
+  }, [weekStart])
 
   // ── Counters ──────────────────────────────────────────────────────────────
   const counters = useMemo(() => {
@@ -493,12 +603,13 @@ export function ArrangementPage() {
 
   // ── Submission status ─────────────────────────────────────────────────────
   const submissionStatus = useMemo(() => {
-    return activeEmployees.map(emp => {
+    return activeEmployees.flatMap(emp => {
       const sub = weekSubmissions.find(s => s.employeeId === emp.id)
-      return {
-        emp,
-        status: sub ? (sub.isVacation ? 'vacation' : 'submitted') : 'missing',
-      } as const
+      if (!sub && emp.role !== 'employee') return []
+      const effectiveStatus = sub
+        ? (sub.isVacation ? 'vacation' : 'submitted')
+        : 'missing'
+      return [{ emp, status: effectiveStatus } as const]
     })
   }, [activeEmployees, weekSubmissions])
 
@@ -517,31 +628,25 @@ export function ArrangementPage() {
       setTimeout(() => setCopied(false), 3000)
     } catch {/* ignore */ }
 
-    upsertWeek({ weekStart, title: weekTitle, isPublished: true, publishedAt: new Date().toISOString() })
+    const existingWeek = weeks.find(w => w.weekStart === weekStart)
+    upsertWeek({
+      id: existingWeek?.id ?? '',
+      weekStart,
+      title: weekTitle,
+      isPublished: true,
+      publishedAt: new Date().toISOString(),
+    })
     setPublishing(false)
   }
 
 
+  const isLoadingThisWeek = loadingWeek[weekStart]
+
   return (
     <div className={styles.page}>
       <PageHeader title={weekTitle} />
-      <SchedulingSubNav />
-
-      {/* Week selector */}
-      <div className={styles.weekTabs}>
-        <button
-          className={[styles.weekTab, weekKey === 'next' ? styles.weekTabActive : ''].join(' ')}
-          onClick={() => setWeekKey('next')}
-        >
-          שבוע הבא
-        </button>
-        <button
-          className={[styles.weekTab, weekKey === 'current' ? styles.weekTabActive : ''].join(' ')}
-          onClick={() => setWeekKey('current')}
-        >
-          שבוע נוכחי
-        </button>
-      </div>
+      <SchedulingSubNav active={weekKey} onWeekChange={setWeekKey} />
+      {isLoadingThisWeek && <div className={styles.loadingBar}>טוען...</div>}
 
       {/* Submission status – 3 buttons in one row, expands below */}
       <section className={styles.statusSection}>
@@ -639,9 +744,14 @@ export function ArrangementPage() {
 
       {/* Publish bar */}
       <div className={styles.publishBar}>
-        <button className={styles.internsBtn} onClick={() => setInternsOpen(true)}>
-          התלמדויות
-        </button>
+        <div className={styles.publishBarActions}>
+          <button className={styles.internsBtn} onClick={() => setInternsOpen(true)}>
+            התלמדויות
+          </button>
+          <button className={styles.internsBtn} onClick={() => setAddShiftsOpen(true)}>
+            הוספת משמרות
+          </button>
+        </div>
         <button
           className={[styles.publishBtn, copied ? styles.publishCopied : ''].join(' ')}
           onClick={handlePublish}
@@ -657,6 +767,15 @@ export function ArrangementPage() {
           slots={slots}
           weekStart={weekStart}
           onClose={() => setInternsOpen(false)}
+        />
+      )}
+
+      {/* Add shifts modal */}
+      {addShiftsOpen && (
+        <AddShiftsModal
+          slots={slots}
+          weekStart={weekStart}
+          onClose={() => setAddShiftsOpen(false)}
         />
       )}
     </div>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { useSchedulingStore } from '../../store/schedulingStore'
 import { PageHeader } from '../../components/layout/PageHeader'
@@ -8,6 +8,7 @@ import {
   getNextWeekStart, getWeekTitle, getEffectiveSlotsForWeek, isAvailabilityOpen,
 } from '../../lib/schedulingUtils'
 import { SchedulingSubNav } from './ScheduleViewPage'
+import { SchedulingSubNav as ManagerSchedulingSubNav } from '../manager/scheduling/ArrangementPage'
 import styles from './AvailabilityPage.module.scss'
 
 const NEXT_WEEK  = getNextWeekStart()
@@ -86,13 +87,26 @@ function DaySection({ dow, slots, selected, blocked, onToggleSlot, onSelectAll, 
   )
 }
 
+function SubNav() {
+  const role = useAuthStore(s => s.currentUser?.role)
+  if (role === 'scheduler') return <ManagerSchedulingSubNav active="submit" />
+  return <SchedulingSubNav active="submit" />
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────
 export function AvailabilityPage() {
-  const currentUser = useAuthStore(s => s.currentUser)!
-  const templates   = useSchedulingStore(s => s.templates)
-  const overrides   = useSchedulingStore(s => s.overrides)
-  const submissions = useSchedulingStore(s => s.submissions)
-  const upsertSub   = useSchedulingStore(s => s.upsertSubmission)
+  const currentUser    = useAuthStore(s => s.currentUser)!
+  const templates      = useSchedulingStore(s => s.templates)
+  const overrides      = useSchedulingStore(s => s.overrides)
+  const submissions    = useSchedulingStore(s => s.submissions)
+  const upsertSub      = useSchedulingStore(s => s.upsertSubmission)
+  const fetchTemplates = useSchedulingStore(s => s.fetchTemplates)
+  const fetchWeekData  = useSchedulingStore(s => s.fetchWeekData)
+
+  useEffect(() => {
+    fetchTemplates()
+    fetchWeekData(NEXT_WEEK)
+  }, [])
 
   const slots = useMemo(
     () => getEffectiveSlotsForWeek(NEXT_WEEK, templates, overrides),
@@ -170,7 +184,7 @@ export function AvailabilityPage() {
     return (
       <div className={styles.page}>
         <PageHeader title="הגשת סידור" />
-        <SchedulingSubNav active="submit" />
+        <SubNav />
         <div className={styles.submittedCard}>
           <span className={styles.submittedIcon}>✓</span>
           <p className={styles.submittedTitle}>ההגשה התקבלה</p>
@@ -193,7 +207,7 @@ export function AvailabilityPage() {
     return (
       <div className={styles.page}>
         <PageHeader title="הגשת סידור" />
-        <SchedulingSubNav active="submit" />
+        <SubNav />
         <div className={styles.closedCard}>
           <p className={styles.closedTitle}>הגשות עוד לא פתוחות</p>
           <p className={styles.closedSub}>ניתן להגיש משמרות החל מיום שלישי</p>
@@ -207,7 +221,7 @@ export function AvailabilityPage() {
   return (
       <div className={styles.page}>
       <PageHeader title="הגשת סידור" />
-      <SchedulingSubNav active="submit" />
+      <SubNav />
       <div className={styles.weekBanner}>{WEEK_TITLE}</div>
 
       <div className={styles.form}>

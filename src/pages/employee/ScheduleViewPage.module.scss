@@ -35,33 +35,6 @@
   border-bottom-color: v.$color-primary;
 }
 
-// ── Week tabs ─────────────────────────────────────────────────────────────────
-.weekTabs {
-  display: flex;
-  gap: v.$space-2;
-  padding: v.$space-3 v.$space-4;
-  border-bottom: 1px solid v.$color-border;
-  direction: rtl;
-}
-
-.weekTab {
-  padding: v.$space-1 v.$space-4;
-  border: 1px solid v.$color-border;
-  border-radius: v.$radius-full;
-  background: transparent;
-  color: v.$color-text-muted;
-  font-size: v.$font-size-sm;
-  cursor: pointer;
-  font-family: inherit;
-  transition: border-color v.$transition-fast, color v.$transition-fast;
-  &:active { background: v.$color-surface-raised; }
-}
-
-.weekTabActive {
-  border-color: v.$color-primary;
-  color: v.$color-primary;
-}
-
 // ── Unpublished state ─────────────────────────────────────────────────────────
 .unpublished {
   display: flex;
@@ -118,6 +91,83 @@
   color: v.$color-text-muted;
 }
 
+// ── My shifts flat table ──────────────────────────────────────────────────────
+.myTable {
+  margin: v.$space-3 v.$space-4;
+  background: v.$color-surface;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-lg;
+  overflow: hidden;
+  direction: rtl;
+}
+
+.myRow {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  padding: v.$space-2 v.$space-3;
+  border-bottom: 1px solid v.$color-border;
+  &:last-child { border-bottom: none; }
+}
+
+.myDayName {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-text;
+  flex-shrink: 0;
+  width: 2.2rem;
+}
+
+.myDayDate {
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+  flex-shrink: 0;
+  width: 2.8rem;
+}
+
+.myShiftName {
+  font-size: v.$font-size-sm;
+  color: v.$color-primary;
+  font-weight: v.$font-weight-medium;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.myShiftGroup {
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  padding: 2px v.$space-2;
+  border-radius: v.$radius-full;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &.group-main    { background: rgba(59,130,246,0.18);  color: #93c5fd; }
+  &.group-kitchen { background: rgba(249,115,22,0.18);  color: #fdba74; }
+  &.group-support { background: rgba(34,197,94,0.18);   color: #86efac; }
+  &.group-duty    { background: rgba(139,92,246,0.18);  color: #c4b5fd; }
+}
+
+.myHours {
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.myIntern {
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+  flex-shrink: 0;
+}
+
+.myRowPast {
+  opacity: 0.5;
+  .myShiftName { text-decoration: line-through; }
+  .myDayName   { text-decoration: line-through; }
+}
+
 // ── Days ──────────────────────────────────────────────────────────────────────
 .days {
   padding: v.$space-3 v.$space-4;
@@ -141,6 +191,18 @@
   padding: v.$space-2 v.$space-3;
   background: v.$color-surface-raised;
   border-bottom: 1px solid v.$color-border;
+  cursor: pointer;
+  user-select: none;
+}
+
+.dayCardPast > .dayHeader {
+  opacity: 0.55;
+}
+
+.chevron {
+  margin-right: auto;
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
 }
 
 .dayName {
@@ -169,31 +231,64 @@
 .slotMine {
   background: rgba(200, 191, 160, 0.08);
   border-right: 3px solid v.$color-primary;
-
-  .slotAssignee { color: v.$color-primary; font-weight: v.$font-weight-semibold; }
 }
 
 .slotEmpty {
   opacity: 0.45;
 }
 
-.slotLabel {
+.slotInfo {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+}
+
+.slotLabel {
   font-size: v.$font-size-sm;
   color: v.$color-text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.slotGroup {
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  padding: 1px v.$space-1;
+  border-radius: v.$radius-full;
+  white-space: nowrap;
+  align-self: flex-start;
+
+  &.group-main    { background: rgba(59,130,246,0.18);  color: #93c5fd; }
+  &.group-kitchen { background: rgba(249,115,22,0.18);  color: #fdba74; }
+  &.group-support { background: rgba(34,197,94,0.18);   color: #86efac; }
+  &.group-duty    { background: rgba(139,92,246,0.18);  color: #c4b5fd; }
 }
 
 .slotTime {
   font-size: v.$font-size-xs;
   color: v.$color-text-muted;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .slotAssignee {
   font-size: v.$font-size-sm;
   color: v.$color-text;
-  min-width: 4rem;
+  min-width: 6rem;
+  max-width: 9rem;
   text-align: left;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.slotAssigneeMe {
+  color: v.$color-primary;
+  font-weight: v.$font-weight-semibold;
 }
 
 .internNote {

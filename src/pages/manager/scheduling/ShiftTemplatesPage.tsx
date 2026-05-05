@@ -1,25 +1,11 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { useSchedulingStore } from '../../../store/schedulingStore'
 import { PageHeader } from '../../../components/layout/PageHeader'
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog'
 import { DAY_NAMES, SHIFT_GROUP_LABELS } from '../../../types/scheduling'
 import type { SlotTemplate, ShiftGroup } from '../../../types/scheduling'
+import { SchedulingSubNav } from './ArrangementPage'
 import styles from './ShiftTemplatesPage.module.scss'
-
-function SchedulingSubNav() {
-  const navigate = useNavigate()
-  return (
-    <div className={styles.subNav}>
-      <button className={styles.subTab} onClick={() => navigate('/manager/scheduling/arrangement')}>
-        סידור שבועי
-      </button>
-      <button className={[styles.subTab, styles.subTabActive].join(' ')}>
-        הגדרת משמרות
-      </button>
-    </div>
-  )
-}
 
 const GROUP_OPTIONS: { value: ShiftGroup; label: string }[] = [
   { value: 'main',    label: SHIFT_GROUP_LABELS.main },
@@ -131,12 +117,17 @@ function DaySection({ dayOfWeek, slots }: { dayOfWeek: number; slots: SlotTempla
 // ── Page ──────────────────────────────────────────────────────────────────
 export function ShiftTemplatesPage() {
   const templates = useSchedulingStore(s => s.templates)
+  const fetchTemplates = useSchedulingStore(s => s.fetchTemplates)
+  const loadingTemplates = useSchedulingStore(s => s.loadingTemplates)
+
+  useEffect(() => { fetchTemplates() }, [])
 
   return (
     <div className={styles.page}>
       <PageHeader title="הגדרת משמרות" />
-      <SchedulingSubNav />
+      <SchedulingSubNav active="templates" />
       <div className={styles.content}>
+        {loadingTemplates && <div style={{ padding: '1rem', color: 'var(--text-muted)', textAlign: 'center' }}>טוען...</div>}
         {[0, 1, 2, 3, 4, 5, 6].map(dow => (
           <DaySection key={dow} dayOfWeek={dow} slots={templates.filter(t => t.dayOfWeek === dow)} />
         ))}

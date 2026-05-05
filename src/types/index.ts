@@ -1,4 +1,4 @@
-export type Role = 'employee' | 'manager'
+export type Role = 'employee' | 'manager' | 'scheduler'
 export type ShiftType = 'regular' | 'morning' | 'afternoon' | 'evening' | 'kitchen' | 'support' | 'manager' | 'overlap' | 'general' | 'global' | 'taxi' | 'cashier'
 export type BlockType = 'morning' | 'afternoon' | 'evening'
 /** Override the automatic weekday/Shabbat detection for a shift day. */

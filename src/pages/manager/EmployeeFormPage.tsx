@@ -10,8 +10,9 @@ import { hashPassword } from '../../lib/utils'
 import styles from './EmployeeFormPage.module.scss'
 
 const ROLE_OPTIONS = [
-  { value: 'employee', label: 'עובד' },
-  { value: 'manager', label: 'מנהל' },
+  { value: 'employee',  label: 'עובד' },
+  { value: 'scheduler', label: 'סידור' },
+  { value: 'manager',   label: 'מנהל' },
 ]
 
 export function EmployeeFormPage() {

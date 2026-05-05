@@ -58,14 +58,14 @@ export function getEffectiveSlotsForWeek(
   overrides: WeekSlotOverride[],
 ): WeekSlot[] {
   const weekOverrides = overrides.filter(o => o.weekStart === weekStart)
-  const removedTemplateIds = new Set(
+  const removedSlotIds = new Set(
     weekOverrides
-      .filter(o => o.action === 'remove' && o.templateId)
-      .map(o => o.templateId!),
+      .filter(o => o.isRemoved && o.slotId)
+      .map(o => o.slotId!),
   )
 
   const fromTemplates: WeekSlot[] = templates
-    .filter(t => t.isActive && !removedTemplateIds.has(t.id))
+    .filter(t => t.isActive && !removedSlotIds.has(t.id))
     .map(t => ({
       id: t.id,
       dayOfWeek: t.dayOfWeek,
@@ -78,7 +78,7 @@ export function getEffectiveSlotsForWeek(
     }))
 
   const custom: WeekSlot[] = weekOverrides
-    .filter(o => o.action === 'add' && o.templateId === null)
+    .filter(o => !o.isRemoved && !o.slotId)
     .map(o => ({
       id: o.id,
       dayOfWeek: o.dayOfWeek!,
