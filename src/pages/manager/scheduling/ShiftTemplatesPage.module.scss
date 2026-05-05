@@ -1,0 +1,257 @@
+@use '../../../styles/variables' as v;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.toolbar {
+  padding: v.$space-3 v.$space-4;
+  border-bottom: 1px solid v.$color-border;
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  font-size: v.$font-size-sm;
+  color: v.$color-text-muted;
+  cursor: pointer;
+}
+
+.checkbox {
+  accent-color: v.$color-primary;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.content {
+  padding: v.$space-4;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-5;
+}
+
+// ── Day section ──────────────────────────────────────────────────────────
+.daySection {
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-lg;
+  overflow: hidden;
+}
+
+.dayHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: v.$space-3 v.$space-4;
+  background: v.$color-surface-raised;
+  border-bottom: 1px solid v.$color-border;
+}
+
+.dayName {
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-primary;
+  font-size: v.$font-size-base;
+}
+
+.addSlotBtn {
+  background: none;
+  border: none;
+  color: v.$color-text-muted;
+  padding: v.$space-1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: v.$radius-sm;
+  transition: color v.$transition-fast;
+
+  &:hover { color: v.$color-primary; }
+}
+
+.slotList {
+  display: flex;
+  flex-direction: column;
+}
+
+// ── Slot row ─────────────────────────────────────────────────────────────
+.slotRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: v.$space-3 v.$space-4;
+  border-bottom: 1px solid v.$color-border;
+  gap: v.$space-3;
+  transition: opacity v.$transition-fast;
+
+  &:last-child { border-bottom: none; }
+
+  &.slotInactive {
+    opacity: 0.4;
+  }
+}
+
+.slotToggle {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+}
+
+.slotLabel {
+  font-size: v.$font-size-sm;
+  color: v.$color-text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.slotMeta {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  flex-shrink: 0;
+}
+
+.slotTime {
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.groupBadge {
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  padding: 2px v.$space-2;
+  border-radius: v.$radius-full;
+  white-space: nowrap;
+
+  &.group-main    { background: rgba(59,130,246,0.18);  color: #93c5fd; }
+  &.group-kitchen { background: rgba(249,115,22,0.18);  color: #fdba74; }
+  &.group-support { background: rgba(34,197,94,0.18);   color: #86efac; }
+  &.group-duty    { background: rgba(139,92,246,0.18);  color: #c4b5fd; }
+}
+
+.editSlotBtn {
+  background: none;
+  border: none;
+  color: v.$color-text-muted;
+  padding: v.$space-1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: v.$radius-sm;
+  transition: color v.$transition-fast;
+  opacity: 0;
+
+  .slotRow:hover & { opacity: 1; }
+  &:hover { color: v.$color-primary; }
+}
+
+// ── Add / edit inline form ────────────────────────────────────────────────
+.addForm {
+  padding: v.$space-3 v.$space-4;
+  background: v.$color-surface;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-3;
+  border-bottom: 1px solid v.$color-border;
+
+  &:last-child { border-bottom: none; }
+}
+
+.addInput {
+  background: v.$color-surface-raised;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-sm;
+  color: v.$color-text;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+  padding: v.$space-2 v.$space-3;
+  width: 100%;
+  text-align: right;
+
+  &:focus {
+    outline: none;
+    border-color: v.$color-primary;
+  }
+}
+
+.addRow {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+}
+
+.addSelect {
+  flex: 1;
+  background: v.$color-surface-raised;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-sm;
+  color: v.$color-text;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+  padding: v.$space-2 v.$space-2;
+  cursor: pointer;
+  text-align: right;
+
+  &:focus { outline: none; border-color: v.$color-primary; }
+}
+
+.addTime {
+  background: v.$color-surface-raised;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-sm;
+  color: v.$color-text;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+  padding: v.$space-2 v.$space-2;
+  width: 5.5rem;
+
+  &:focus { outline: none; border-color: v.$color-primary; }
+}
+
+.timeSep {
+  color: v.$color-text-muted;
+  font-size: v.$font-size-sm;
+}
+
+.addActions {
+  display: flex;
+  gap: v.$space-2;
+  flex-direction: row-reverse;
+}
+
+.saveBtn {
+  background: v.$color-primary;
+  color: v.$color-text-on-primary;
+  border: none;
+  border-radius: v.$radius-sm;
+  padding: v.$space-2 v.$space-4;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  cursor: pointer;
+
+  &:active { opacity: 0.8; }
+}
+
+.cancelBtn {
+  background: none;
+  color: v.$color-text-muted;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-sm;
+  padding: v.$space-2 v.$space-4;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+
+  &:active { opacity: 0.8; }
+}
