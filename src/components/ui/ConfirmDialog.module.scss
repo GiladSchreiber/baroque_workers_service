@@ -26,11 +26,40 @@
   animation: slideUp 150ms ease;
 }
 
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: v.$space-2;
+}
+
 .title {
   font-size: v.$font-size-lg;
   font-weight: v.$font-weight-semibold;
   color: v.$color-text;
   margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: v.$space-2;
+  flex: 1;
+}
+
+.closeBtn {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: v.$color-text-muted;
+  font-size: v.$font-size-base;
+  cursor: pointer;
+  padding: 0 v.$space-1;
+  line-height: 1;
+  &:active { color: v.$color-text; }
+}
+
+.titleSub {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-normal;
+  color: v.$color-text-muted;
 }
 
 .message {

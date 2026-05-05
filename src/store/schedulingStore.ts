@@ -39,7 +39,7 @@ const DEFAULT_TEMPLATES: SlotTemplate[] = [
 
   // ── Thursday (4) ────────────────────────────────────────────────────────
   { id: 't-thu-1', dayOfWeek: 4, label: 'בוקר',        group: 'main',    startTime: '07:30', endTime: '14:00', sortOrder: 1, isActive: true },
-  { id: 't-thu-2', dayOfWeek: 4, label: 'מטבח',        group: 'kitchen', startTime: '11:00', endTime: '17:00', sortOrder: 2, isActive: true },
+  { id: 't-thu-2', dayOfWeek: 4, label: 'מטבח בוקר',   group: 'kitchen', startTime: '11:00', endTime: '17:00', sortOrder: 2, isActive: true },
   { id: 't-thu-3', dayOfWeek: 4, label: 'צהריים',       group: 'main',    startTime: '14:00', endTime: '20:00', sortOrder: 3, isActive: true },
   { id: 't-thu-4', dayOfWeek: 4, label: 'מטבח ערב',    group: 'kitchen', startTime: '17:00', endTime: '00:00', sortOrder: 4, isActive: true },
   { id: 't-thu-5', dayOfWeek: 4, label: 'ערב',          group: 'main',    startTime: '20:00', endTime: '02:00', sortOrder: 5, isActive: true },
@@ -65,22 +65,10 @@ const DEFAULT_TEMPLATES: SlotTemplate[] = [
   { id: 't-sat-8', dayOfWeek: 6, label: 'אחמ"ש בוקר',   group: 'duty',    startTime: '10:00', endTime: '15:00', sortOrder: 8, isActive: true },
   { id: 't-sat-9', dayOfWeek: 6, label: 'אחמ"ש ערב',    group: 'duty',    startTime: '15:00', endTime: '22:00', sortOrder: 9, isActive: true },
 
-  // ── אחמ"ש slots for Sun–Fri (manager-assigned only, hidden from workers) ─
-  { id: 't-sun-d1', dayOfWeek: 0, label: 'אחמ"ש בוקר',  group: 'duty', startTime: '10:00', endTime: '15:00', sortOrder: 6, isActive: true },
-  { id: 't-sun-d2', dayOfWeek: 0, label: 'אחמ"ש ערב',   group: 'duty', startTime: '15:00', endTime: '22:00', sortOrder: 7, isActive: true },
-  { id: 't-mon-d1', dayOfWeek: 1, label: 'אחמ"ש בוקר',  group: 'duty', startTime: '10:00', endTime: '15:00', sortOrder: 6, isActive: true },
-  { id: 't-mon-d2', dayOfWeek: 1, label: 'אחמ"ש ערב',   group: 'duty', startTime: '15:00', endTime: '22:00', sortOrder: 7, isActive: true },
-  { id: 't-tue-d1', dayOfWeek: 2, label: 'אחמ"ש בוקר',  group: 'duty', startTime: '10:00', endTime: '15:00', sortOrder: 6, isActive: true },
-  { id: 't-tue-d2', dayOfWeek: 2, label: 'אחמ"ש ערב',   group: 'duty', startTime: '15:00', endTime: '22:00', sortOrder: 7, isActive: true },
-  { id: 't-wed-d1', dayOfWeek: 3, label: 'אחמ"ש בוקר',  group: 'duty', startTime: '10:00', endTime: '15:00', sortOrder: 6, isActive: true },
-  { id: 't-wed-d2', dayOfWeek: 3, label: 'אחמ"ש ערב',   group: 'duty', startTime: '15:00', endTime: '22:00', sortOrder: 7, isActive: true },
-  { id: 't-thu-d1', dayOfWeek: 4, label: 'אחמ"ש בוקר',  group: 'duty', startTime: '10:00', endTime: '15:00', sortOrder: 7, isActive: true },
-  { id: 't-thu-d2', dayOfWeek: 4, label: 'אחמ"ש ערב',   group: 'duty', startTime: '15:00', endTime: '22:00', sortOrder: 8, isActive: true },
-  { id: 't-fri-d1', dayOfWeek: 5, label: 'אחמ"ש בוקר',  group: 'duty', startTime: '10:00', endTime: '15:00', sortOrder: 8, isActive: true },
-  { id: 't-fri-d2', dayOfWeek: 5, label: 'אחמ"ש ערב',   group: 'duty', startTime: '15:00', endTime: '22:00', sortOrder: 9, isActive: true },
 ]
 
-const SEED_VERSION = 'v2'
+const SEED_VERSION     = 'v4'
+const TEMPLATE_VERSION = 'v3'
 
 // ---------------------------------------------------------------------------
 // Store
@@ -92,6 +80,7 @@ interface SchedulingState {
   assignments: ScheduleAssignment[]
   weeks: ScheduleWeek[]
   _seedVersion: string
+  _templateVersion: string
 
   // Template management
   toggleTemplate: (id: string) => void
@@ -123,12 +112,13 @@ function newId(prefix: string) { return `${prefix}-${Date.now()}-${_nextId++}` }
 export const useSchedulingStore = create<SchedulingState>()(
   persist(
     (set, get) => ({
-      templates:    DEFAULT_TEMPLATES,
-      overrides:    [],
-      submissions:  [],
-      assignments:  [],
-      weeks:        [],
-      _seedVersion: '',
+      templates:        DEFAULT_TEMPLATES,
+      overrides:        [],
+      submissions:      [],
+      assignments:      [],
+      weeks:            [],
+      _seedVersion:     '',
+      _templateVersion: '',
 
       toggleTemplate: (id) =>
         set(s => ({
@@ -160,93 +150,123 @@ export const useSchedulingStore = create<SchedulingState>()(
 
       seedDemoData: (weekStart, employeeIds) => {
         const s = get()
+
+        // Reset templates if version changed
+        if (s._templateVersion !== TEMPLATE_VERSION) {
+          set({ templates: DEFAULT_TEMPLATES, _templateVersion: TEMPLATE_VERSION })
+        }
+
         // Re-seed whenever SEED_VERSION changes or week changes
         if (s._seedVersion === SEED_VERSION && s.submissions.some(x => x.weekStart === weekStart)) return
         if (employeeIds.length < 3) return
 
-        const e = employeeIds  // shorthand
+        const e = employeeIds  // shorthand – use as many as available
+        const n = e.length
         const now = new Date().toISOString()
 
-        // ── Helpers ────────────────────────────────────────────────────────
         const mkSub = (empId: string, slotIds: string[], isVacation = false, notes = ''): AvailabilitySubmission => ({
-          id: newId('sub'),
-          weekStart,
-          employeeId: empId,
-          isVacation,
-          notes,
-          submittedAt: now,
-          selectedSlotIds: isVacation ? [] : slotIds,
-          blockedDays: [],
+          id: newId('sub'), weekStart, employeeId: empId, isVacation, notes,
+          submittedAt: now, selectedSlotIds: isVacation ? [] : slotIds, blockedDays: [],
         })
         const mkAsgn = (slotId: string, empId: string | null, note: string | null = null): ScheduleAssignment => ({
-          id: newId('asgn'),
-          weekStart,
-          slotId,
-          employeeId: empId,
-          internshipNote: note,
+          id: newId('asgn'), weekStart, slotId, employeeId: empId, internshipNote: note,
         })
+        const emp = (i: number) => e[i % n]  // safe wrap
 
-        // ── Submissions ────────────────────────────────────────────────────
-        // emp[0] – submitted, mornings Sun/Mon/Tue (will trigger 3-consecutive + double-booking warning)
-        const sub0 = mkSub(e[0], ['t-sun-1','t-sun-2','t-mon-1','t-mon-3','t-tue-1','t-tue-3'], false, 'מעדיף משמרות בוקר')
-        // emp[1] – submitted, evenings Sun/Wed/Thu
-        const sub1 = mkSub(e[1], ['t-sun-3','t-sun-4','t-wed-3','t-wed-4','t-thu-3','t-thu-5'], false, '')
-        // emp[2] – submitted, mix Mon/Tue/Fri/Sat support
-        const sub2 = mkSub(e[2], ['t-mon-3','t-mon-5','t-tue-2','t-fri-3','t-sat-3'], false, 'רק 2 משמרות שבוע זה בבקשה')
-        // emp[3] – on vacation
-        const sub3 = e[3] ? mkSub(e[3], [], true, '') : null
-        // emp[4] – submitted, Thu/Fri/Sat
-        const sub4 = e[4] ? mkSub(e[4], ['t-thu-1','t-thu-3','t-fri-1','t-fri-2','t-sat-1','t-sat-4'], false, '') : null
-        // emp[5] – NOT submitted at all (left out)
-        // emp[6] – submitted Sat only
-        const sub6 = e[6] ? mkSub(e[6], ['t-sat-1','t-sat-2','t-sat-3','t-sat-4'], false, 'זמין רק שבת') : null
+        // ── Submissions ─────────────────────────────────────────────────────
+        // Most workers submit. e[last] doesn't submit; e[last-1] is on vacation.
+        // Only t-fri-6 (שישי ערב) and t-sat-6 (שבת ערב) have no submitters.
+        const submissions: AvailabilitySubmission[] = [
+          mkSub(e[0], ['t-sun-1','t-sun-2','t-mon-1','t-mon-2','t-tue-1','t-tue-3'], false, 'מעדיף משמרות בוקר'),
+          mkSub(e[1], ['t-sun-3','t-sun-4','t-wed-3','t-wed-4','t-thu-3','t-thu-5'], false, ''),
+          mkSub(e[2], ['t-mon-3','t-mon-5','t-tue-2','t-fri-3','t-fri-4','t-sat-3'], false, 'רק 2 משמרות שבוע זה'),
+          ...(n > 3 ? [mkSub(e[3], [], true, '')] : []),                                  // vacation
+          ...(n > 4 ? [mkSub(e[4], ['t-thu-1','t-thu-2','t-fri-1','t-fri-2','t-sat-1','t-sat-4'], false, '')] : []),
+          // e[5] – does NOT submit (left out intentionally)
+          ...(n > 6 ? [mkSub(e[6], ['t-sat-1','t-sat-2','t-sat-3','t-sat-4','t-sat-7'], false, 'זמין רק שבת')] : []),
+          ...(n > 7 ? [mkSub(e[7], ['t-mon-1','t-mon-2','t-tue-2','t-wed-1','t-wed-2','t-thu-2'], false, '')] : []),
+          ...(n > 8 ? [mkSub(e[8], ['t-sun-4','t-sun-5','t-mon-4','t-mon-5','t-tue-4','t-thu-4','t-thu-5'], false, '')] : []),
+          ...(n > 9 ? [mkSub(e[9], ['t-wed-1','t-wed-2','t-thu-1','t-thu-2','t-fri-1','t-fri-2'], false, '')] : []),
+          ...(n > 10? [mkSub(e[10],['t-sun-3','t-mon-3','t-tue-3','t-wed-3','t-fri-3','t-fri-4','t-sat-3','t-sat-7'], false, '')] : []),
+        ]
 
-        const submissions = [sub0, sub1, sub2, sub3, sub4, sub6].filter((x): x is AvailabilitySubmission => !!x)
-
-        // ── Assignments (intentionally incomplete to show all scenarios) ──
-        // Sunday – emp[0] assigned to BOTH בוקר and מטבח צהריים → double-booking warning
-        //        – צהריים assigned to emp[1], ערב left empty (no one submitted it)
-        // Monday – בוקר → emp[0] (consecutive day 2)
-        //        – צהריים → emp[2] (multiple submitted: emp[1]+emp[2])
-        //        – ערב    → unassigned
-        // Tuesday – בוקר → emp[0] (consecutive day 3 → 3-consecutive warning)
-        //         – מטבח צהריים → unassigned (only emp[2] submitted, manager hasn't assigned yet)
-        // Wednesday – ערב → emp[1], everything else unassigned
-        // Thursday – בוקר → emp[4], rest unassigned (sparse Friday/Thu to show gaps)
-        // Friday – תגבור בוקר → emp[2] with internship note, rest unassigned
-        // Saturday – בוקר → emp[4], צהריים → emp[6]|emp[4], rest unassigned
-        const sat4EmpId = e[6] ?? e[4] ?? null
-
+        // ── Assignments – most slots filled, a few left open ────────────────
+        // Intentionally leave some unassigned to show the "+" state.
+        // Leave t-fri-6 and t-sat-6 with no submitters AND unassigned.
         const assignments: ScheduleAssignment[] = [
-          // Sunday
-          mkAsgn('t-sun-1',  e[0]),                           // בוקר → emp[0]
-          mkAsgn('t-sun-2',  e[0], 'התלמדות'),               // מטבח צהריים → emp[0] (double-booking on Sun)
-          mkAsgn('t-sun-3',  e[1]),                           // צהריים → emp[1]
-          // t-sun-4 (מטבח ערב)  → unassigned (emp[1] submitted it but not yet placed)
-          // t-sun-5 (ערב)       → unassigned, nobody submitted
-          // Monday
-          mkAsgn('t-mon-1',  e[0]),                           // בוקר → emp[0] (consecutive 2)
-          mkAsgn('t-mon-3',  e[2]),                           // צהריים → emp[2] (emp[1]+emp[2] both submitted)
-          // t-mon-2 (מטבח צהריים) → unassigned
-          // t-mon-5 (ערב) → unassigned
+          // Sunday – mostly filled, מטבח ערב left open
+          mkAsgn('t-sun-1', e[0]),
+          mkAsgn('t-sun-2', n > 7 ? e[7] : e[0], n > 7 ? 'התלמדות' : null),
+          mkAsgn('t-sun-3', e[1]),
+          mkAsgn('t-sun-4', n > 8 ? e[8] : e[1]),
+          // t-sun-5 (ערב) – unassigned (only e[8] submitted, not placed yet)
+          // Monday – fully filled except מטבח ערב
+          mkAsgn('t-mon-1', e[0]),
+          mkAsgn('t-mon-2', n > 7 ? e[7] : emp(2)),
+          mkAsgn('t-mon-3', e[2]),
+          mkAsgn('t-mon-4', n > 8 ? e[8] : emp(1)),
+          mkAsgn('t-mon-5', n > 8 ? e[8] : emp(2)),
           // Tuesday
-          mkAsgn('t-tue-1',  e[0]),                           // בוקר → emp[0] (consecutive 3 → warning)
-          // t-tue-2 → unassigned (emp[2] submitted, not yet placed)
-          // t-tue-3 → unassigned
-          // Wednesday
-          mkAsgn('t-wed-3',  e[1]),                           // ערב → emp[1]
-          // Thu
-          e[4] ? mkAsgn('t-thu-1', e[4]) : null,             // בוקר → emp[4]
-          // Fri
-          e[2] ? mkAsgn('t-fri-3', e[2], 'התלמדות') : null, // תגבור בוקר → emp[2] with note
-          // Sat
-          e[4] ? mkAsgn('t-sat-1', e[4]) : null,             // בוקר → emp[4]
-          sat4EmpId ? mkAsgn('t-sat-4', sat4EmpId) : null,  // צהריים → emp[6] or emp[4]
+          mkAsgn('t-tue-1', e[0]),
+          mkAsgn('t-tue-2', e[2]),
+          mkAsgn('t-tue-3', n > 10 ? e[10] : e[1]),
+          mkAsgn('t-tue-4', n > 8 ? e[8] : emp(1)),
+          // t-tue-5 (ערב) – unassigned
+          // Wednesday – a couple open
+          mkAsgn('t-wed-1', n > 7 ? e[7] : emp(0)),
+          mkAsgn('t-wed-2', n > 9 ? e[9] : emp(7)),
+          mkAsgn('t-wed-3', e[1]),
+          mkAsgn('t-wed-4', n > 8 ? e[8] : emp(1)),
+          // t-wed-5 (ערב) – unassigned
+          // Thursday
+          mkAsgn('t-thu-1', n > 4 ? e[4] : emp(0)),
+          mkAsgn('t-thu-2', n > 9 ? e[9] : emp(4)),
+          mkAsgn('t-thu-3', e[1]),
+          mkAsgn('t-thu-4', n > 8 ? e[8] : emp(2)),
+          mkAsgn('t-thu-5', n > 8 ? e[8] : emp(1)),
+          mkAsgn('t-thu-6', n > 10 ? e[10] : emp(2)),
+          // Friday – תגבור + kitchen filled, ערב left open (no submitters)
+          mkAsgn('t-fri-1', n > 4 ? e[4] : emp(0)),
+          mkAsgn('t-fri-2', n > 4 ? e[4] : emp(9)),
+          mkAsgn('t-fri-3', e[2], 'התלמדות'),
+          mkAsgn('t-fri-4', n > 10 ? e[10] : emp(2)),
+          mkAsgn('t-fri-5', n > 9 ? e[9] : emp(4)),
+          // t-fri-6 (ערב) – NO submitters, left unassigned
+          mkAsgn('t-fri-7', n > 10 ? e[10] : emp(2)),
+          // Saturday – well-filled, ערב has no submitters
+          mkAsgn('t-sat-1', n > 4 ? e[4] : emp(0)),
+          mkAsgn('t-sat-2', n > 6 ? e[6] : emp(4)),
+          mkAsgn('t-sat-3', e[2]),
+          mkAsgn('t-sat-4', n > 6 ? e[6] : emp(4)),
+          mkAsgn('t-sat-5', n > 4 ? e[4] : emp(6)),
+          // t-sat-6 (ערב) – NO submitters, left unassigned
+          mkAsgn('t-sat-7', n > 6 ? e[6] : emp(10)),
+          mkAsgn('t-sat-8', n > 6 ? e[6] : emp(4)),
         ].filter((x): x is ScheduleAssignment => !!x)
+
+        // Add 3 "popular" slots to ALL workers (including vacation + non-submitters)
+        // so we can test the pill-wrapping UI with many names
+        const popularSlots = ['t-tue-5', 't-thu-3', 't-sat-3']
+
+        // First enrich existing submissions
+        const enrichedSubmissions = submissions.map(sub => ({
+          ...sub,
+          selectedSlotIds: sub.isVacation
+            ? [...popularSlots]   // even vacation workers "submitted" these popular shifts for the demo
+            : [...new Set([...sub.selectedSlotIds, ...popularSlots])],
+        }))
+
+        // Add fake submissions for employees that never submitted at all (e.g. e[5])
+        const alreadySubmitted = new Set(enrichedSubmissions.map(s => s.employeeId))
+        const extraSubs: AvailabilitySubmission[] = employeeIds
+          .filter(id => !alreadySubmitted.has(id))
+          .map(id => mkSub(id, [...popularSlots]))
+
+        const finalSubmissions = [...enrichedSubmissions, ...extraSubs]
 
         set(() => ({
           _seedVersion: SEED_VERSION,
-          submissions: [...s.submissions.filter(x => x.weekStart !== weekStart), ...submissions],
+          submissions: [...s.submissions.filter(x => x.weekStart !== weekStart), ...finalSubmissions],
           assignments: [...s.assignments.filter(x => x.weekStart !== weekStart), ...assignments],
         }))
       },
@@ -264,7 +284,7 @@ export const useSchedulingStore = create<SchedulingState>()(
       upsertAssignment: (a) =>
         set(s => ({
           assignments: [
-            ...s.assignments.filter(x => x.id !== a.id),
+            ...s.assignments.filter(x => !(x.weekStart === a.weekStart && x.slotId === a.slotId)),
             a,
           ],
         })),

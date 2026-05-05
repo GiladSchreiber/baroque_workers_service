@@ -49,19 +49,15 @@ interface AssignModalProps {
 
 function AssignWorkerModal({ slot, weekStart, currentEmployeeId, currentNote, onClose }: AssignModalProps) {
   const { employees } = useEmployeeStore()
-  const { submissions, assignments, upsertAssignment, removeAssignment } = useSchedulingStore()
+  const { submissions, assignments, upsertAssignment } = useSchedulingStore()
 
-  const [selectedId, setSelectedId]  = useState<string | null>(currentEmployeeId)
-  const [note, setNote]               = useState(currentNote ?? '')
+  const [note, setNote]         = useState(currentNote ?? '')
+  const [restOpen, setRestOpen] = useState(false)
+  const [noteOpen, setNoteOpen] = useState(!!currentNote)
 
   const weekAssignments = useMemo(
     () => assignments.filter(a => a.weekStart === weekStart),
     [assignments, weekStart],
-  )
-
-  const submission = useMemo(
-    () => submissions.filter(s => s.weekStart === weekStart),
-    [submissions, weekStart],
   )
 
   const activeEmployees = useMemo(
@@ -69,95 +65,164 @@ function AssignWorkerModal({ slot, weekStart, currentEmployeeId, currentNote, on
     [employees],
   )
 
-  function shiftCountFor(empId: string) {
-    return weekAssignments.filter(a => a.employeeId === empId).length
+  const submittedIds = useMemo(
+    () => new Set(submissions.filter(s => s.weekStart === weekStart && s.selectedSlotIds.includes(slot.id)).map(s => s.employeeId)),
+    [submissions, weekStart, slot.id],
+  )
+
+  const rest = useMemo(
+    () => activeEmployees.filter(e => !submittedIds.has(e.id)),
+    [activeEmployees, submittedIds],
+  )
+
+  function handleSelectFromRest(empId: string) {
+    upsertAssignment({
+      id: `asgn-${weekStart}-${slot.id}`,
+      weekStart,
+      slotId: slot.id,
+      employeeId: empId,
+      internshipNote: note.trim() || null,
+    })
+    onClose()
   }
 
-  function submittedThisSlot(empId: string) {
-    return submission.find(s => s.employeeId === empId)?.selectedSlotIds.includes(slot.id) ?? false
+  function saveNote(n: string | null) {
+    if (!currentEmployeeId) return
+    upsertAssignment({
+      id: `asgn-${weekStart}-${slot.id}`,
+      weekStart,
+      slotId: slot.id,
+      employeeId: currentEmployeeId,
+      internshipNote: n,
+    })
+    onClose()
+  }
+
+  return (
+    <Modal isOpen title={slot.label} onClose={onClose} subtitle={`${slot.startTime}–${slot.endTime}`}>
+      <div className={styles.assignModal}>
+
+        <div className={styles.togglesRow}>
+          {rest.length > 0 && (
+            <button className={[styles.toggleBtn, restOpen ? styles.toggleBtnActive : ''].join(' ')} onClick={() => setRestOpen(o => !o)}>
+              לא הגישו ({rest.length})
+            </button>
+          )}
+          <button className={[styles.toggleBtn, noteOpen ? styles.toggleBtnActive : ''].join(' ')} onClick={() => setNoteOpen(o => !o)}>
+            התלמדות
+          </button>
+        </div>
+
+        {restOpen && (
+          <div className={styles.empList}>
+            {rest.map(emp => (
+              <button
+                key={emp.id}
+                className={[styles.empRow, currentEmployeeId === emp.id ? styles.empSelected : ''].join(' ')}
+                onClick={() => handleSelectFromRest(emp.id)}
+              >
+                <span className={styles.empName}>{emp.name}</span>
+                <span className={styles.empCount}>{weekAssignments.filter(a => a.employeeId === emp.id).length} משמרות</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {noteOpen && (
+          <div className={styles.noteRow}>
+            <input
+              className={styles.noteInput}
+              type="text"
+              placeholder="שם המתלמד/ת"
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              autoFocus
+            />
+            {currentEmployeeId && currentNote && (
+              <button className={styles.noteClearBtn} onClick={() => saveNote(null)} aria-label="הסר התלמדות">✕</button>
+            )}
+            {currentEmployeeId && (
+              <button className={styles.noteConfirmBtn} onClick={() => saveNote(note.trim() || null)}>✓</button>
+            )}
+          </div>
+        )}
+
+      </div>
+    </Modal>
+  )
+}
+
+// ── Internships modal ─────────────────────────────────────────────────────────
+function InternshipsModal({ slots, weekStart, onClose }: {
+  slots: WeekSlot[]
+  weekStart: string
+  onClose: () => void
+}) {
+  const { assignments, upsertAssignment } = useSchedulingStore()
+  const weekAssignments = assignments.filter(a => a.weekStart === weekStart && a.employeeId)
+
+  type Row = { slotId: string; internName: string }
+  const [rows, setRows] = useState<Row[]>(() => {
+    const existing = weekAssignments
+      .filter(a => a.internshipNote)
+      .map(a => ({ slotId: a.slotId, internName: a.internshipNote! }))
+    return existing.length > 0 ? existing : [{ slotId: '', internName: '' }]
+  })
+
+  function updateRow(i: number, patch: Partial<Row>) {
+    setRows(r => r.map((row, idx) => idx === i ? { ...row, ...patch } : row))
   }
 
   function handleSave() {
-    if (!selectedId) {
-      removeAssignment(weekStart, slot.id)
-    } else {
-      upsertAssignment({
-        id: `asgn-${weekStart}-${slot.id}`,
-        weekStart,
-        slotId: slot.id,
-        employeeId: selectedId,
-        internshipNote: note.trim() || null,
-      })
+    // Remove internship notes from all assigned slots first, then apply new ones
+    const toSave = rows.filter(r => r.slotId && r.internName.trim())
+    for (const a of weekAssignments) {
+      const match = toSave.find(r => r.slotId === a.slotId)
+      upsertAssignment({ ...a, internshipNote: match ? match.internName.trim() : null })
     }
     onClose()
   }
 
-  const grouped = useMemo(() => {
-    const submitted  = activeEmployees.filter(e => submittedThisSlot(e.id))
-    const rest       = activeEmployees.filter(e => !submittedThisSlot(e.id))
-    return { submitted, rest }
-  }, [activeEmployees, slot.id])
+  const assignedSlots = slots.filter(s => weekAssignments.some(a => a.slotId === s.id))
 
   return (
-    <Modal isOpen title={`שיבוץ – ${slot.label}`} onClose={onClose}>
-      <div className={styles.assignModal}>
-        <p className={styles.assignSlotInfo}>
-          {SHIFT_GROUP_LABELS[slot.group]} · {slot.startTime}–{slot.endTime}
-        </p>
-
-        <div className={styles.empList}>
-          <button
-            className={[styles.empRow, selectedId === null ? styles.empSelected : ''].join(' ')}
-            onClick={() => setSelectedId(null)}
-          >
-            <span className={styles.empName}>ריק (אין שיבוץ)</span>
-          </button>
-
-          {grouped.submitted.length > 0 && (
-            <div className={styles.empGroupLabel}>הגישו את המשמרת</div>
-          )}
-          {grouped.submitted.map(emp => (
-            <button
-              key={emp.id}
-              className={[styles.empRow, styles.empAvail, selectedId === emp.id ? styles.empSelected : ''].join(' ')}
-              onClick={() => setSelectedId(emp.id)}
+    <Modal isOpen title="התלמדויות" onClose={onClose}>
+      <div className={styles.internsModal}>
+        {rows.map((row, i) => (
+          <div key={i} className={styles.internsRow}>
+            <select
+              className={styles.internsSelect}
+              value={row.slotId}
+              onChange={e => updateRow(i, { slotId: e.target.value })}
             >
-              <span className={styles.empName}>{emp.name}</span>
-              <span className={styles.empCount}>{shiftCountFor(emp.id)} משמרות</span>
-              <span className={styles.empCheck}>✓</span>
-            </button>
-          ))}
-
-          {grouped.rest.length > 0 && (
-            <div className={styles.empGroupLabel}>לא הגישו</div>
-          )}
-          {grouped.rest.map(emp => (
+              <option value="">בחר משמרת</option>
+              {assignedSlots.map(s => (
+                <option key={s.id} value={s.id}>
+                  {DAY_NAMES[s.dayOfWeek]} – {s.label}
+                </option>
+              ))}
+            </select>
+            <input
+              className={styles.internsInput}
+              type="text"
+              placeholder="שם המתלמד/ת"
+              value={row.internName}
+              onChange={e => updateRow(i, { internName: e.target.value })}
+            />
             <button
-              key={emp.id}
-              className={[styles.empRow, selectedId === emp.id ? styles.empSelected : ''].join(' ')}
-              onClick={() => setSelectedId(emp.id)}
-            >
-              <span className={styles.empName}>{emp.name}</span>
-              <span className={styles.empCount}>{shiftCountFor(emp.id)} משמרות</span>
-            </button>
-          ))}
-        </div>
-
-        <label className={styles.noteLabel}>
-          הערה (למשל: התלמדות)
-          <input
-            className={styles.noteInput}
-            type="text"
-            placeholder="אופציונלי"
-            value={note}
-            onChange={e => setNote(e.target.value)}
-          />
-        </label>
-
-        <div className={styles.assignActions}>
-          <button className={styles.saveBtn} onClick={handleSave}>שמור</button>
-          <button className={styles.cancelBtn} onClick={onClose}>ביטול</button>
-        </div>
+              className={styles.internsRemoveBtn}
+              onClick={() => setRows(r => r.filter((_, idx) => idx !== i))}
+              disabled={rows.length === 1}
+            >–</button>
+          </div>
+        ))}
+        <button
+          className={styles.internsAddBtn}
+          onClick={() => setRows(r => [...r, { slotId: '', internName: '' }])}
+        >
+          + הוסף
+        </button>
+        <button className={styles.internsSaveBtn} onClick={handleSave}>שמור</button>
       </div>
     </Modal>
   )
@@ -167,68 +232,146 @@ function AssignWorkerModal({ slot, weekStart, currentEmployeeId, currentNote, on
 interface SlotRowProps {
   slot: WeekSlot
   weekStart: string
-  onAssign: (slot: WeekSlot) => void
 }
 
-function SlotRow({ slot, weekStart, onAssign }: SlotRowProps) {
-  const assignments = useSchedulingStore(s => s.assignments)
-  const { employees } = useEmployeeStore()
+function SlotRow({ slot, weekStart }: SlotRowProps) {
+  const assignments      = useSchedulingStore(s => s.assignments)
+  const submissions      = useSchedulingStore(s => s.submissions)
+  const upsertAssignment = useSchedulingStore(s => s.upsertAssignment)
+  const removeAssignment = useSchedulingStore(s => s.removeAssignment)
+  const { employees }    = useEmployeeStore()
 
   const assignment = assignments.find(a => a.weekStart === weekStart && a.slotId === slot.id)
-  const employee   = employees.find(e => e.id === assignment?.employeeId)
 
-  const isUnassigned = !assignment?.employeeId
+  // Workers who submitted this slot — never changes based on assignment state
+  const submitters = useMemo(() =>
+    submissions
+      .filter(s => s.weekStart === weekStart && s.selectedSlotIds.includes(slot.id))
+      .map(s => employees.find(e => e.id === s.employeeId))
+      .filter((e): e is typeof employees[0] => !!e),
+    [submissions, weekStart, slot.id, employees],
+  )
+
+  // Track workers manually added via modal even after they're deselected
+  const [manualExtras, setManualExtras] = useState<Set<string>>(() => {
+    const initial = new Set<string>()
+    if (assignment?.employeeId && !submitters.some(e => e.id === assignment.employeeId)) {
+      initial.add(assignment.employeeId)
+    }
+    return initial
+  })
+
+  // When a new non-submitter gets assigned, add them to the persistent extra set
+  useEffect(() => {
+    if (assignment?.employeeId && !submitters.some(e => e.id === assignment.employeeId)) {
+      setManualExtras(prev => {
+        if (prev.has(assignment.employeeId!)) return prev
+        return new Set([...prev, assignment.employeeId!])
+      })
+    }
+  }, [assignment?.employeeId])
+
+  const allPills = useMemo(() => {
+    const extras = [...manualExtras]
+      .map(id => employees.find(e => e.id === id))
+      .filter((e): e is typeof employees[0] => !!e && !submitters.some(s => s.id === e.id))
+    return [...submitters, ...extras]
+  }, [submitters, manualExtras, employees])
+
+  const slotState = assignment?.employeeId ? 'assigned'
+    : submitters.length > 0               ? 'available'
+    :                                        'empty'
+
+  const [expanded, setExpanded] = useState(false)
+
+  function handleToggle(empId: string) {
+    if (assignment?.employeeId === empId) {
+      removeAssignment(weekStart, slot.id)
+    } else {
+      upsertAssignment({
+        id: `asgn-${weekStart}-${slot.id}`,
+        weekStart,
+        slotId: slot.id,
+        employeeId: empId,
+        internshipNote: assignment?.internshipNote ?? null,
+      })
+      setExpanded(false)
+    }
+  }
+
+  function handleRowClick() {
+    if (allPills.length === 0) setExpanded(e => !e)
+  }
 
   return (
     <div
-      className={[styles.slotRow, isUnassigned ? styles.slotUnassigned : ''].join(' ')}
-      onClick={() => onAssign(slot)}
+      className={[styles.slotRow, styles[`slot_${slotState}`], allPills.length === 0 ? styles.slotClickable : ''].join(' ')}
+      onClick={handleRowClick}
     >
-      <div className={styles.slotMeta}>
-        <span className={styles.slotLabel}>{slot.label}</span>
-        <span className={[styles.groupBadge, styles[`group_${slot.group}`]].join(' ')}>
-          {SHIFT_GROUP_LABELS[slot.group]}
-        </span>
-        <span className={styles.slotTime}>{slot.startTime}–{slot.endTime}</span>
-      </div>
-      <div className={styles.slotAssignee}>
-        {employee ? (
-          <>
-            <span className={styles.assigneeName}>{employee.name.split(' ')[0]}</span>
-            {assignment?.internshipNote && (
-              <span className={styles.internTag}>{assignment.internshipNote}</span>
-            )}
-          </>
-        ) : (
-          <span className={styles.emptySlot}>+ שבץ</span>
+      <span className={styles.slotLabel}>{slot.label}</span>
+
+      <div className={styles.submitterBtns}>
+        {allPills.map(emp => {
+          const isSelected = assignment?.employeeId === emp.id
+          return (
+            <button
+              key={emp.id}
+              className={[styles.submitterBtn, isSelected ? styles.submitterSelected : ''].join(' ')}
+              onClick={e => { e.stopPropagation(); handleToggle(emp.id) }}
+            >
+              {emp.name.split(' ')[0]}
+              {isSelected && assignment?.internshipNote && (
+                <span className={styles.internNote}> ({assignment.internshipNote})</span>
+              )}
+            </button>
+          )
+        })}
+        {allPills.length === 0 && !expanded && (
+          <span className={styles.noSubmitters}>אין מועמדים</span>
         )}
       </div>
+
+      {expanded && (
+        <div className={styles.inlinePickerOverlay} onClick={e => e.stopPropagation()}>
+          {employees.filter(e => e.isActive).sort((a, b) => a.name.localeCompare(b.name, 'he')).map(emp => (
+            <button
+              key={emp.id}
+              className={styles.inlinePickerBtn}
+              onClick={() => handleToggle(emp.id)}
+            >
+              {emp.name.split(' ')[0]}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
 // ── Day card ──────────────────────────────────────────────────────────────────
-function DayCard({ dow, slots, weekStart, onAssign }: {
+function DayCard({ dow, slots, weekStart }: {
   dow: number
   slots: WeekSlot[]
   weekStart: string
-  onAssign: (slot: WeekSlot) => void
 }) {
   const daySlots = slots.filter(s => s.dayOfWeek === dow)
   if (daySlots.length === 0) return null
+
+  const [collapsed, setCollapsed] = useState(false)
 
   const [y, m, d] = weekStart.split('-').map(Number)
   const dayDate = new Date(y, m - 1, d + dow)
   const dateStr = `${String(dayDate.getDate()).padStart(2, '0')}.${String(dayDate.getMonth() + 1).padStart(2, '0')}`
 
   return (
-    <div className={styles.dayCard}>
-      <div className={styles.dayHeader}>
+    <div className={[styles.dayCard, collapsed ? styles.dayCardCollapsed : ''].join(' ')}>
+      <button className={styles.dayHeader} onClick={() => setCollapsed(c => !c)}>
         <span className={styles.dayName}>{DAY_NAMES[dow]}</span>
         <span className={styles.dayDate}>{dateStr}</span>
-      </div>
-      {daySlots.map(slot => (
-        <SlotRow key={slot.id} slot={slot} weekStart={weekStart} onAssign={onAssign} />
+        <span className={styles.dayChevron}>{collapsed ? '▶' : '▼'}</span>
+      </button>
+      {!collapsed && daySlots.map(slot => (
+        <SlotRow key={slot.id} slot={slot} weekStart={weekStart} />
       ))}
     </div>
   )
@@ -265,10 +408,11 @@ export function ArrangementPage() {
   const weekRecord = weeks.find(w => w.weekStart === weekStart)
   const isPublished = weekRecord?.isPublished ?? false
 
-  const [assigningSlot, setAssigningSlot] = useState<WeekSlot | null>(null)
-  const [notesOpen, setNotesOpen]         = useState(false)
-  const [publishing, setPublishing]       = useState(false)
-  const [copied, setCopied]               = useState(false)
+  const [notesOpen, setNotesOpen]           = useState(false)
+  const [statusOpen, setStatusOpen]         = useState<'submitted'|'vacation'|'missing'|null>(null)
+  const [publishing, setPublishing]         = useState(false)
+  const [copied, setCopied]                 = useState(false)
+  const [internsOpen, setInternsOpen]       = useState(false)
 
   useEffect(() => {
     fetchAll()
@@ -375,35 +519,39 @@ export function ArrangementPage() {
     setPublishing(false)
   }
 
-  // ── Assign modal state ────────────────────────────────────────────────────
-  const assigningAssignment = assigningSlot
-    ? weekAssignments.find(a => a.slotId === assigningSlot.id)
-    : null
 
   return (
     <div className={styles.page}>
       <PageHeader title={weekTitle} />
       <SchedulingSubNav />
 
-      {/* Submission status chips */}
+      {/* Submission status – 3 buttons in one row, expands below */}
       <section className={styles.statusSection}>
-        <div className={styles.statusRow}>
-          {submissionStatus.map(({ emp, status }) => (
-            <span
-              key={emp.id}
-              className={[
-                styles.statusChip,
-                styles[`status_${status}`],
-              ].join(' ')}
-              title={emp.name}
-            >
-              {emp.name.split(' ')[0]}
-              {status === 'submitted' && <span className={styles.chipIcon}> ✓</span>}
-              {status === 'vacation'  && <span className={styles.chipIcon}> 🏖</span>}
-              {status === 'missing'   && <span className={styles.chipIcon}> ✗</span>}
-            </span>
-          ))}
+        <div className={styles.statusBtnRow}>
+          {(
+            [
+              { key: 'submitted' as const, label: 'הגישו',    cls: styles.statusSubmitted },
+              { key: 'vacation'  as const, label: 'חופשה',    cls: styles.statusVacation  },
+              { key: 'missing'   as const, label: 'לא הגישו', cls: styles.statusMissing   },
+            ] as const
+          ).map(({ key, label, cls }) => {
+            const names = submissionStatus.filter(x => x.status === key).map(x => x.emp.name.split(' ')[0])
+            if (names.length === 0) return null
+            return (
+              <button
+                key={key}
+                className={[styles.statusBtn, cls, statusOpen === key ? styles.statusBtnActive : ''].join(' ')}
+                onClick={() => setStatusOpen(statusOpen === key ? null : key)}
+              >
+                {label} ({names.length})
+              </button>
+            )
+          })}
         </div>
+        {statusOpen && (() => {
+          const names = submissionStatus.filter(x => x.status === statusOpen).map(x => x.emp.name.split(' ')[0])
+          return <div className={styles.statusExpanded}>{names.join(', ')}</div>
+        })()}
       </section>
 
       {/* Notes */}
@@ -429,20 +577,38 @@ export function ArrangementPage() {
         </section>
       )}
 
-      {/* Counters */}
+      {/* Counters – all workers who submitted, 0-count highlighted */}
       <section className={styles.countersSection}>
         <div className={styles.countersRow}>
           {activeEmployees
-            .filter(emp => (counters[emp.id] ?? 0) > 0)
-            .sort((a, b) => (counters[b.id] ?? 0) - (counters[a.id] ?? 0))
-            .map(emp => (
-              <span key={emp.id} className={styles.counterChip}>
-                {emp.name.split(' ')[0]}
-                <span className={styles.counterBadge}>{counters[emp.id]}</span>
-              </span>
-            ))}
+            .filter(emp => weekSubmissions.some(s => s.employeeId === emp.id && !s.isVacation))
+            .sort((a, b) => (counters[a.id] ?? 0) - (counters[b.id] ?? 0))
+            .map(emp => {
+              const count = counters[emp.id] ?? 0
+              return (
+                <span
+                  key={emp.id}
+                  className={[styles.counterChip, count === 0 ? styles.counterChipZero : ''].join(' ')}
+                >
+                  {emp.name.split(' ')[0]}
+                  <span className={styles.counterBadge}>{count}</span>
+                </span>
+              )
+            })}
         </div>
       </section>
+
+      {/* Day cards */}
+      <div className={styles.days}>
+        {[0, 1, 2, 3, 4, 5, 6].map(dow => (
+          <DayCard
+            key={dow}
+            dow={dow}
+            slots={slots}
+            weekStart={weekStart}
+          />
+        ))}
+      </div>
 
       {/* Warnings */}
       {warnings.length > 0 && (
@@ -453,41 +619,26 @@ export function ArrangementPage() {
         </section>
       )}
 
-      {/* Day cards */}
-      <div className={styles.days}>
-        {[0, 1, 2, 3, 4, 5, 6].map(dow => (
-          <DayCard
-            key={dow}
-            dow={dow}
-            slots={slots}
-            weekStart={weekStart}
-            onAssign={setAssigningSlot}
-          />
-        ))}
-      </div>
-
-      {/* Publish button */}
+      {/* Publish bar */}
       <div className={styles.publishBar}>
-        {isPublished && (
-          <span className={styles.publishedBadge}>פורסם ✓</span>
-        )}
+        <button className={styles.internsBtn} onClick={() => setInternsOpen(true)}>
+          התלמדויות
+        </button>
         <button
           className={[styles.publishBtn, copied ? styles.publishCopied : ''].join(' ')}
           onClick={handlePublish}
           disabled={publishing}
         >
-          {copied ? 'הועתק ✓' : isPublished ? 'פרסם מחדש + העתק' : 'פרסם + העתק'}
+          {copied ? 'הועתק ✓' : isPublished ? 'עדכן' : 'פרסם'}
         </button>
       </div>
 
-      {/* Assign modal */}
-      {assigningSlot && (
-        <AssignWorkerModal
-          slot={assigningSlot}
+      {/* Internships modal */}
+      {internsOpen && (
+        <InternshipsModal
+          slots={slots}
           weekStart={weekStart}
-          currentEmployeeId={assigningAssignment?.employeeId ?? null}
-          currentNote={assigningAssignment?.internshipNote ?? null}
-          onClose={() => setAssigningSlot(null)}
+          onClose={() => setInternsOpen(false)}
         />
       )}
     </div>
