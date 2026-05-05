@@ -36,11 +36,9 @@
     border-color: v.$color-danger;
   }
 
-  &[type='date']::-webkit-calendar-picker-indicator,
-  &[type='time']::-webkit-calendar-picker-indicator {
-    filter: invert(1) brightness(0.88) sepia(0.18);
-    cursor: pointer;
-    opacity: 1;
+  &[type='date'],
+  &[type='time'] {
+    color-scheme: dark;
   }
 }
 
