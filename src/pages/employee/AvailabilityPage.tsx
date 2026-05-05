@@ -2,22 +2,96 @@ import { useMemo, useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { useSchedulingStore } from '../../store/schedulingStore'
 import { PageHeader } from '../../components/layout/PageHeader'
-import { DAY_NAMES } from '../../types/scheduling'
-import type { AvailabilitySubmission } from '../../types/scheduling'
+import { DAY_NAMES, SHIFT_GROUP_LABELS } from '../../types/scheduling'
+import type { AvailabilitySubmission, WeekSlot } from '../../types/scheduling'
 import {
   getNextWeekStart, getWeekTitle, getEffectiveSlotsForWeek, isAvailabilityOpen,
 } from '../../lib/schedulingUtils'
 import styles from './AvailabilityPage.module.scss'
 
-const NEXT_WEEK = getNextWeekStart()
+const NEXT_WEEK  = getNextWeekStart()
 const WEEK_TITLE = getWeekTitle(NEXT_WEEK)
 
+// ── Single slot row ───────────────────────────────────────────────────────
+function SlotRow({ slot, selected, disabled, onToggle }: {
+  slot: WeekSlot
+  selected: boolean
+  disabled: boolean
+  onToggle: () => void
+}) {
+  return (
+    <div
+      className={`${styles.slotRow} ${selected ? styles.slotSelected : ''} ${disabled ? styles.slotDisabled : ''}`}
+      onClick={disabled ? undefined : onToggle}
+    >
+      <span className={styles.slotName}>{slot.label}</span>
+      <span className={`${styles.groupBadge} ${styles[`group-${slot.group}`]}`}>
+        {SHIFT_GROUP_LABELS[slot.group]}
+      </span>
+      <span className={styles.slotTime}>{slot.startTime}–{slot.endTime}</span>
+      <span className={styles.checkmark}>{selected ? <CheckIcon /> : null}</span>
+    </div>
+  )
+}
+
+// ── Day section ───────────────────────────────────────────────────────────
+function DaySection({ dow, slots, selected, blocked, onToggleSlot, onSelectAll, onBlockDay }: {
+  dow: number
+  slots: WeekSlot[]
+  selected: Set<string>
+  blocked: boolean
+  onToggleSlot: (id: string) => void
+  onSelectAll: (dow: number) => void
+  onBlockDay:  (dow: number) => void
+}) {
+  return (
+    <div className={`${styles.dayCard} ${blocked ? styles.dayCardBlocked : ''}`}>
+      <div className={styles.dayHeader}>
+        <span className={styles.dayName}>{DAY_NAMES[dow]}</span>
+        <div className={styles.dayActions}>
+          <button
+            className={`${styles.dayBtn} ${styles.dayBtnCheck} ${!blocked && slots.every(s => selected.has(s.id)) ? styles.dayBtnActive : ''}`}
+            onClick={() => onSelectAll(dow)}
+            type="button"
+            aria-label="בחר הכל"
+          >
+            <CheckIcon />
+          </button>
+          <button
+            className={`${styles.dayBtn} ${styles.dayBtnX} ${blocked ? styles.dayBtnActive : ''}`}
+            onClick={() => onBlockDay(dow)}
+            type="button"
+            aria-label="לא פנוי"
+          >
+            <XIcon />
+          </button>
+        </div>
+      </div>
+
+      {!blocked && (
+        <div className={styles.slotList}>
+          {slots.map(slot => (
+            <SlotRow
+              key={slot.id}
+              slot={slot}
+              selected={selected.has(slot.id)}
+              disabled={false}
+              onToggle={() => onToggleSlot(slot.id)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────
 export function AvailabilityPage() {
-  const currentUser  = useAuthStore(s => s.currentUser)!
-  const templates    = useSchedulingStore(s => s.templates)
-  const overrides    = useSchedulingStore(s => s.overrides)
-  const submissions  = useSchedulingStore(s => s.submissions)
-  const upsertSub    = useSchedulingStore(s => s.upsertSubmission)
+  const currentUser = useAuthStore(s => s.currentUser)!
+  const templates   = useSchedulingStore(s => s.templates)
+  const overrides   = useSchedulingStore(s => s.overrides)
+  const submissions = useSchedulingStore(s => s.submissions)
+  const upsertSub   = useSchedulingStore(s => s.upsertSubmission)
 
   const slots = useMemo(
     () => getEffectiveSlotsForWeek(NEXT_WEEK, templates, overrides),
@@ -28,18 +102,15 @@ export function AvailabilityPage() {
     s => s.employeeId === currentUser.id && s.weekStart === NEXT_WEEK,
   )
 
-  const [submitted, setSubmitted] = useState(!!existing)
-  const [editing,   setEditing]   = useState(false)
-
-  // form state — initialise from existing submission if any
-  const [isVacation,   setIsVacation]   = useState(existing?.isVacation ?? false)
-  const [selected,     setSelected]     = useState<Set<string>>(new Set(existing?.selectedSlotIds ?? []))
-  const [blockedDays,  setBlockedDays]  = useState<Set<number>>(new Set(existing?.blockedDays ?? []))
-  const [notes,        setNotes]        = useState(existing?.notes ?? '')
+  const [submitted,   setSubmitted]   = useState(!!existing)
+  const [editing,     setEditing]     = useState(false)
+  const [isVacation,  setIsVacation]  = useState(existing?.isVacation ?? false)
+  const [selected,    setSelected]    = useState<Set<string>>(new Set(existing?.selectedSlotIds ?? []))
+  const [blockedDays, setBlockedDays] = useState<Set<number>>(new Set(existing?.blockedDays ?? []))
+  const [notes,       setNotes]       = useState(existing?.notes ?? '')
 
   const isOpen = isAvailabilityOpen(NEXT_WEEK)
 
-  // ── Helpers ────────────────────────────────────────────────────────────
   function toggleSlot(slotId: string) {
     setSelected(prev => {
       const next = new Set(prev)
@@ -48,24 +119,22 @@ export function AvailabilityPage() {
     })
   }
 
-  function toggleDay(dow: number) {
-    const daySlotIds = slots.filter(s => s.dayOfWeek === dow).map(s => s.id)
-    setBlockedDays(prev => {
-      const next = new Set(prev)
-      if (next.has(dow)) {
-        // un-block
-        next.delete(dow)
-      } else {
-        // block — also deselect all slots for that day
-        next.add(dow)
-        setSelected(sel => {
-          const ns = new Set(sel)
-          daySlotIds.forEach(id => ns.delete(id))
-          return ns
-        })
-      }
-      return next
-    })
+  function selectAll(dow: number) {
+    const ids = slots.filter(s => s.dayOfWeek === dow).map(s => s.id)
+    setBlockedDays(prev => { const n = new Set(prev); n.delete(dow); return n })
+    setSelected(prev => { const n = new Set(prev); ids.forEach(id => n.add(id)); return n })
+  }
+
+  function blockDay(dow: number) {
+    const ids = slots.filter(s => s.dayOfWeek === dow).map(s => s.id)
+    if (blockedDays.has(dow)) {
+      // un-block (expand without selecting)
+      setBlockedDays(prev => { const n = new Set(prev); n.delete(dow); return n })
+    } else {
+      // block: collapse + deselect all
+      setBlockedDays(prev => { const n = new Set(prev); n.add(dow); return n })
+      setSelected(prev => { const n = new Set(prev); ids.forEach(id => n.delete(id)); return n })
+    }
   }
 
   function handleSubmit() {
@@ -86,9 +155,7 @@ export function AvailabilityPage() {
 
   // ── Submitted view ──────────────────────────────────────────────────────
   if (submitted && !editing) {
-    const sub = submissions.find(
-      s => s.employeeId === currentUser.id && s.weekStart === NEXT_WEEK,
-    )
+    const sub   = submissions.find(s => s.employeeId === currentUser.id && s.weekStart === NEXT_WEEK)
     const count = sub?.selectedSlotIds.length ?? 0
     return (
       <div className={styles.page}>
@@ -97,18 +164,13 @@ export function AvailabilityPage() {
           <span className={styles.submittedIcon}>✓</span>
           <p className={styles.submittedTitle}>ההגשה התקבלה</p>
           <p className={styles.submittedSub}>{WEEK_TITLE}</p>
-          {sub?.isVacation ? (
-            <p className={styles.submittedDetail}>חופשה שבועית</p>
-          ) : (
-            <p className={styles.submittedDetail}>{count} משמרות נבחרו</p>
-          )}
-          {sub?.notes && (
-            <p className={styles.submittedNotes}>"{sub.notes}"</p>
-          )}
+          {sub?.isVacation
+            ? <p className={styles.submittedDetail}>חופשה שבועית</p>
+            : <p className={styles.submittedDetail}>{count} משמרות נבחרו</p>
+          }
+          {sub?.notes && <p className={styles.submittedNotes}>"{sub.notes}"</p>}
           {isOpen && (
-            <button className={styles.editBtn} onClick={() => setEditing(true)}>
-              עריכת הגשה
-            </button>
+            <button className={styles.editBtn} onClick={() => setEditing(true)}>עריכת הגשה</button>
           )}
         </div>
       </div>
@@ -129,78 +191,41 @@ export function AvailabilityPage() {
     )
   }
 
-  // ── Submission form ─────────────────────────────────────────────────────
+  // ── Form ────────────────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
       <PageHeader title="הגשת סידור" />
-
       <div className={styles.weekBanner}>{WEEK_TITLE}</div>
 
       <div className={styles.form}>
-        {/* Vacation toggle */}
         <label className={styles.vacationRow}>
-          <input
-            type="checkbox"
-            checked={isVacation}
-            onChange={e => setIsVacation(e.target.checked)}
-            className={styles.vacationCheck}
-          />
+          <input type="checkbox" checked={isVacation} onChange={e => setIsVacation(e.target.checked)} className={styles.vacationCheck} />
           <span className={styles.vacationLabel}>אני בחופשה השבוע</span>
         </label>
 
-        {/* Slot selection (hidden when on vacation) */}
         {!isVacation && (
           <div className={styles.days}>
             {[0, 1, 2, 3, 4, 5, 6].map(dow => {
               const daySlots = slots.filter(s => s.dayOfWeek === dow)
               if (daySlots.length === 0) return null
-              const isBlocked = blockedDays.has(dow)
-
               return (
-                <div key={dow} className={`${styles.dayCard} ${isBlocked ? styles.dayBlocked : ''}`}>
-                  <div className={styles.dayCardHeader}>
-                    <span className={styles.dayCardName}>{DAY_NAMES[dow]}</span>
-                    <button
-                      className={`${styles.blockDayBtn} ${isBlocked ? styles.blockDayActive : ''}`}
-                      onClick={() => toggleDay(dow)}
-                      type="button"
-                    >
-                      {isBlocked ? 'לא פנוי – שחרר' : 'לא פנוי כל היום'}
-                    </button>
-                  </div>
-
-                  <div className={styles.slotGrid}>
-                    {daySlots.map(slot => {
-                      const checked = selected.has(slot.id)
-                      return (
-                        <label
-                          key={slot.id}
-                          className={`${styles.slotChip} ${checked ? styles.slotChipSelected : ''} ${isBlocked ? styles.slotChipDisabled : ''}`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            disabled={isBlocked}
-                            onChange={() => toggleSlot(slot.id)}
-                            className={styles.hiddenCheck}
-                          />
-                          <span className={styles.chipLabel}>{slot.label}</span>
-                          <span className={styles.chipTime}>{slot.startTime}–{slot.endTime}</span>
-                        </label>
-                      )
-                    })}
-                  </div>
-                </div>
+                <DaySection
+                  key={dow}
+                  dow={dow}
+                  slots={daySlots}
+                  selected={selected}
+                  blocked={blockedDays.has(dow)}
+                  onToggleSlot={toggleSlot}
+                  onSelectAll={selectAll}
+                  onBlockDay={blockDay}
+                />
               )
             })}
           </div>
         )}
 
-        {/* Notes */}
         <div className={styles.notesSection}>
-          <label className={styles.notesLabel} htmlFor="notes">
-            הערות (אופציונלי)
-          </label>
+          <label className={styles.notesLabel} htmlFor="notes">הערות (אופציונלי)</label>
           <textarea
             id="notes"
             className={styles.notesInput}
@@ -211,11 +236,26 @@ export function AvailabilityPage() {
           />
         </div>
 
-        {/* Submit */}
         <button className={styles.submitBtn} onClick={handleSubmit}>
           {editing ? 'עדכן הגשה' : 'שלח הגשה'}
         </button>
       </div>
     </div>
+  )
+}
+
+function CheckIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M2 7l4 4 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function XIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+    </svg>
   )
 }
