@@ -68,7 +68,6 @@ function SlotRow({ slot }: { slot: SlotTemplate }) {
           <span className={`${styles.groupBadge} ${styles[`group-${slot.group}`]}`}>
             {SHIFT_GROUP_LABELS[slot.group]}
           </span>
-          {!slot.isActive && <span className={styles.disabledTag}>מושבת</span>}
           <button
             className={styles.deleteBtn}
             onClick={e => { e.stopPropagation(); setConfirmOpen(true) }}
@@ -119,7 +118,6 @@ export function ShiftTemplatesPage() {
   return (
     <div className={styles.page}>
       <PageHeader title="הגדרת משמרות" />
-      <p className={styles.hint}>לחץ על משמרת להשבית אותה זמנית. לחץ X למחיקה קבועה.</p>
       <div className={styles.content}>
         {[0, 1, 2, 3, 4, 5, 6].map(dow => (
           <DaySection key={dow} dayOfWeek={dow} slots={templates.filter(t => t.dayOfWeek === dow)} />
