@@ -179,7 +179,7 @@ export function AvailabilityPage() {
           }
           {sub?.notes && <p className={styles.submittedNotes}>"{sub.notes}"</p>}
           {isOpen && (
-            <button className={styles.editBtn} onClick={() => setEditing(true)}>עריכת הגשה</button>
+            <button className={styles.editBtn} onClick={() => setEditing(true)}>עדכון משמרות</button>
           )}
         </div>
       </div>

@@ -248,11 +248,12 @@
 .editBtn {
   margin-top: v.$space-2;
   background: none;
-  border: 1px solid v.$color-border;
+  border: 1px solid v.$color-primary;
   border-radius: v.$radius-md;
-  color: v.$color-text-muted;
+  color: v.$color-primary;
   font-family: v.$font-family;
   font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
   padding: v.$space-2 v.$space-5;
   cursor: pointer;
   &:active { opacity: 0.7; }
