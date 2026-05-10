@@ -12,10 +12,7 @@ import {
   getEffectiveSlotsForWeek,
   buildArrangementMessage,
 } from '../../../lib/schedulingUtils'
-import {
-  DAY_NAMES,
-  SHIFT_GROUP_LABELS,
-} from '../../../types/scheduling'
+import { DAY_NAMES } from '../../../types/scheduling'
 import type { WeekSlot } from '../../../types/scheduling'
 import styles from './ArrangementPage.module.scss'
 
@@ -64,119 +61,6 @@ export function SchedulingSubNav({
   )
 }
 
-// ── Assign Worker Modal ───────────────────────────────────────────────────────
-interface AssignModalProps {
-  slot: WeekSlot
-  weekStart: string
-  currentEmployeeId: string | null
-  currentNote: string | null
-  onClose: () => void
-}
-
-function AssignWorkerModal({ slot, weekStart, currentEmployeeId, currentNote, onClose }: AssignModalProps) {
-  const { employees } = useEmployeeStore()
-  const { submissions, assignments, upsertAssignment } = useSchedulingStore()
-
-  const [note, setNote]         = useState(currentNote ?? '')
-  const [restOpen, setRestOpen] = useState(false)
-  const [noteOpen, setNoteOpen] = useState(!!currentNote)
-
-  const weekAssignments = useMemo(
-    () => assignments.filter(a => a.weekStart === weekStart),
-    [assignments, weekStart],
-  )
-
-  const activeEmployees = useMemo(
-    () => employees.filter(e => e.isActive).sort((a, b) => a.name.localeCompare(b.name, 'he')),
-    [employees],
-  )
-
-  const submittedIds = useMemo(
-    () => new Set(submissions.filter(s => s.weekStart === weekStart && s.selectedSlotIds.includes(slot.id)).map(s => s.employeeId)),
-    [submissions, weekStart, slot.id],
-  )
-
-  const rest = useMemo(
-    () => activeEmployees.filter(e => !submittedIds.has(e.id)),
-    [activeEmployees, submittedIds],
-  )
-
-  function handleSelectFromRest(empId: string) {
-    upsertAssignment({
-      id: `asgn-${weekStart}-${slot.id}`,
-      weekStart,
-      slotId: slot.id,
-      employeeId: empId,
-      internshipNote: note.trim() || null,
-    })
-    onClose()
-  }
-
-  function saveNote(n: string | null) {
-    if (!currentEmployeeId) return
-    upsertAssignment({
-      id: `asgn-${weekStart}-${slot.id}`,
-      weekStart,
-      slotId: slot.id,
-      employeeId: currentEmployeeId,
-      internshipNote: n,
-    })
-    onClose()
-  }
-
-  return (
-    <Modal isOpen title={slot.label} onClose={onClose} subtitle={`${slot.startTime}–${slot.endTime}`}>
-      <div className={styles.assignModal}>
-
-        <div className={styles.togglesRow}>
-          {rest.length > 0 && (
-            <button className={[styles.toggleBtn, restOpen ? styles.toggleBtnActive : ''].join(' ')} onClick={() => setRestOpen(o => !o)}>
-              לא הגישו ({rest.length})
-            </button>
-          )}
-          <button className={[styles.toggleBtn, noteOpen ? styles.toggleBtnActive : ''].join(' ')} onClick={() => setNoteOpen(o => !o)}>
-            התלמדות
-          </button>
-        </div>
-
-        {restOpen && (
-          <div className={styles.empList}>
-            {rest.map(emp => (
-              <button
-                key={emp.id}
-                className={[styles.empRow, currentEmployeeId === emp.id ? styles.empSelected : ''].join(' ')}
-                onClick={() => handleSelectFromRest(emp.id)}
-              >
-                <span className={styles.empName}>{emp.name}</span>
-                <span className={styles.empCount}>{weekAssignments.filter(a => a.employeeId === emp.id).length} משמרות</span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {noteOpen && (
-          <div className={styles.noteRow}>
-            <input
-              className={styles.noteInput}
-              type="text"
-              placeholder="שם המתלמד/ת"
-              value={note}
-              onChange={e => setNote(e.target.value)}
-              autoFocus
-            />
-            {currentEmployeeId && currentNote && (
-              <button className={styles.noteClearBtn} onClick={() => saveNote(null)} aria-label="הסר התלמדות">✕</button>
-            )}
-            {currentEmployeeId && (
-              <button className={styles.noteConfirmBtn} onClick={() => saveNote(note.trim() || null)}>✓</button>
-            )}
-          </div>
-        )}
-
-      </div>
-    </Modal>
-  )
-}
 
 // ── Internships modal ─────────────────────────────────────────────────────────
 function InternshipsModal({ slots, weekStart, onClose }: {

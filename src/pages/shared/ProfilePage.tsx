@@ -4,7 +4,7 @@ import { PageHeader } from '../../components/layout/PageHeader'
 import { Button } from '../../components/ui/Button'
 import styles from './ProfilePage.module.scss'
 
-const ROLE_LABELS = { employee: 'עובד', manager: 'מנהל' }
+const ROLE_LABELS: Record<string, string> = { employee: 'עובד', duty: 'אחמ"ש', scheduler: 'סידור', manager: 'מנהל' }
 
 export function ProfilePage() {
   const navigate = useNavigate()

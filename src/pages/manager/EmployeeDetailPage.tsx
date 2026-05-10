@@ -7,7 +7,7 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import styles from './EmployeeDetailPage.module.scss'
 
-const ROLE_LABELS = { employee: 'עובד', manager: 'מנהל' }
+const ROLE_LABELS: Record<string, string> = { employee: 'עובד', duty: 'אחמ"ש', scheduler: 'סידור', manager: 'מנהל' }
 
 function Row({ label, value }: { label: string; value?: string | number }) {
   if (!value && value !== 0) return null
