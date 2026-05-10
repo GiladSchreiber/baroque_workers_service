@@ -9,7 +9,7 @@ create table public.employees (
   name            text not null,
   email           text unique not null,
   password_hash   text,                        -- null for employees; plain-text password for managers
-  role            text not null default 'employee' check (role in ('employee', 'manager')),
+  role            text not null default 'employee' check (role in ('employee', 'duty', 'manager', 'scheduler')),
   hourly_wage     numeric(10,2) not null default 0,
   is_active       boolean not null default true,
   id_number       text,
@@ -62,8 +62,101 @@ create table public.monthly_summaries (
   is_historical boolean not null default true  -- false = computed from live shifts
 );
 
+-- =====================================================
+-- Scheduling tables
+-- =====================================================
+
+-- Shift templates (the weekly recurring slot definitions)
+create table public.shift_templates (
+  id          text primary key,                -- e.g. 't-sun-1'
+  day_of_week smallint not null check (day_of_week between 0 and 6),
+  label       text not null,
+  grp         text not null,                   -- 'main' | 'kitchen' | 'support' | 'duty'
+  start_time  text not null,                   -- HH:mm
+  end_time    text not null,                   -- HH:mm
+  sort_order  smallint not null default 0,
+  is_active   boolean not null default true,
+  created_at  timestamptz not null default now()
+);
+
+-- Per-week slot overrides (add/remove slots for a specific week)
+create table public.week_slot_overrides (
+  id           uuid primary key default gen_random_uuid(),
+  week_start   date not null,                  -- Monday ISO date
+  slot_id      text,                           -- null = new slot, non-null = override existing
+  label        text,
+  grp          text,
+  day_of_week  smallint,
+  start_time   text,
+  end_time     text,
+  sort_order   smallint,
+  is_removed   boolean not null default false, -- true = hide this slot for the week
+  created_at   timestamptz not null default now()
+);
+
+-- Published schedule weeks
+create table public.schedule_weeks (
+  id           uuid primary key default gen_random_uuid(),
+  week_start   date unique not null,
+  title        text,
+  is_published boolean not null default false,
+  published_at timestamptz,
+  notes        text,
+  created_at   timestamptz not null default now()
+);
+
+-- Worker availability submissions
+create table public.availability_submissions (
+  id              uuid primary key default gen_random_uuid(),
+  week_start      date not null,
+  employee_id     uuid not null references public.employees(id) on delete cascade,
+  is_vacation     boolean not null default false,
+  notes           text,
+  submitted_at    timestamptz not null default now(),
+  unique (week_start, employee_id)
+);
+
+-- Selected slot IDs per submission (normalised)
+create table public.availability_selected_slots (
+  submission_id  uuid not null references public.availability_submissions(id) on delete cascade,
+  slot_id        text not null,
+  primary key (submission_id, slot_id)
+);
+
+-- Blocked days per submission
+create table public.availability_blocked_days (
+  submission_id  uuid not null references public.availability_submissions(id) on delete cascade,
+  day_of_week    smallint not null check (day_of_week between 0 and 6),
+  primary key (submission_id, day_of_week)
+);
+
+-- Schedule assignments (manager assigns worker to slot for a week)
+create table public.schedule_assignments (
+  id               uuid primary key default gen_random_uuid(),
+  week_start       date not null,
+  slot_id          text not null,
+  employee_id      uuid references public.employees(id) on delete set null,
+  internship_note  text,
+  created_at       timestamptz not null default now(),
+  unique (week_start, slot_id)
+);
+
+-- =====================================================
+-- Migrations (run these if updating an existing DB)
+-- =====================================================
+-- ALTER TABLE public.employees DROP COLUMN IF EXISTS is_duty_officer;
+-- ALTER TABLE public.employees DROP CONSTRAINT IF EXISTS employees_role_check;
+-- ALTER TABLE public.employees ADD CONSTRAINT employees_role_check CHECK (role IN ('employee', 'duty', 'manager', 'scheduler'));
+
 -- Disable RLS (internal app — no public access expected)
-alter table public.employees          disable row level security;
-alter table public.shifts             disable row level security;
-alter table public.closures           disable row level security;
-alter table public.monthly_summaries  disable row level security;
+alter table public.employees                  disable row level security;
+alter table public.shifts                     disable row level security;
+alter table public.closures                   disable row level security;
+alter table public.monthly_summaries          disable row level security;
+alter table public.shift_templates            disable row level security;
+alter table public.week_slot_overrides        disable row level security;
+alter table public.schedule_weeks             disable row level security;
+alter table public.availability_submissions   disable row level security;
+alter table public.availability_selected_slots disable row level security;
+alter table public.availability_blocked_days  disable row level security;
+alter table public.schedule_assignments       disable row level security;

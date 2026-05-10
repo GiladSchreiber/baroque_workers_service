@@ -93,3 +93,23 @@
   white-space: nowrap;
 }
 
+.roleDuty {
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  color: #c47a2e;
+  background-color: rgba(196, 122, 46, 0.12);
+  padding: v.$space-1 v.$space-2;
+  border-radius: v.$radius-sm;
+  white-space: nowrap;
+}
+
+.roleScheduler {
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  color: #7c4dbd;
+  background-color: rgba(124, 77, 189, 0.12);
+  padding: v.$space-1 v.$space-2;
+  border-radius: v.$radius-sm;
+  white-space: nowrap;
+}
+

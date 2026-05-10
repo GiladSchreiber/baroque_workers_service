@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { Button } from '../../components/ui/Button'
@@ -21,10 +21,12 @@ export function LoginPage() {
   const [passwordError, setPasswordError] = useState('')
   const [isPasswordLoading, setIsPasswordLoading] = useState(false)
 
-  if (currentUser) {
-    navigate(currentUser.role === 'manager' ? '/manager/dashboard' : '/employee/report', { replace: true })
-    return null
-  }
+  useEffect(() => {
+    if (!currentUser) return
+    if (currentUser.role === 'manager') navigate('/manager/dashboard', { replace: true })
+    else if (currentUser.role === 'scheduler') navigate('/scheduler/scheduling', { replace: true })
+    else navigate('/employee/report', { replace: true })
+  }, [currentUser])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

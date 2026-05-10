@@ -1,0 +1,269 @@
+@use '../../../styles/variables' as v;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+// Sub-nav (shared style with ArrangementPage)
+.subNav {
+  display: flex;
+  border-bottom: 1px solid v.$color-border;
+  background: v.$color-surface;
+  direction: rtl;
+}
+
+.subTab {
+  flex: 1;
+  padding: v.$space-3 v.$space-4;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: v.$color-text-muted;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color v.$transition-fast, border-color v.$transition-fast;
+  &:active { background: v.$color-surface-raised; }
+}
+
+.subTabActive {
+  color: v.$color-primary;
+  border-bottom-color: v.$color-primary;
+}
+
+.hint {
+  margin: 0;
+  padding: v.$space-3 v.$space-4;
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+  border-bottom: 1px solid v.$color-border;
+}
+
+.content {
+  padding: v.$space-4;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-5;
+}
+
+// ── Day section ──────────────────────────────────────────────────────────
+.daySection {
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-lg;
+  overflow: hidden;
+}
+
+.dayHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: v.$space-3 v.$space-4;
+  background: v.$color-surface-raised;
+  border-bottom: 1px solid v.$color-border;
+}
+
+.dayName {
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-primary;
+  font-size: v.$font-size-base;
+}
+
+.addSlotBtn {
+  background: none;
+  border: none;
+  color: v.$color-text-muted;
+  padding: v.$space-1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: v.$radius-sm;
+  transition: color v.$transition-fast;
+
+  &:hover { color: v.$color-primary; }
+}
+
+.slotList {
+  display: flex;
+  flex-direction: column;
+}
+
+// ── Slot row ─────────────────────────────────────────────────────────────
+.slotRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: v.$space-3 v.$space-4;
+  border-bottom: 1px solid v.$color-border;
+  cursor: pointer;
+  gap: v.$space-3;
+  transition: background v.$transition-fast;
+  user-select: none;
+
+  &:last-child { border-bottom: none; }
+  &:active { background: v.$color-surface-raised; }
+
+  &.slotDisabled {
+    .slotInfo   { opacity: 0.45; }
+    .groupBadge { opacity: 0.45; }
+    .slotLabel  { text-decoration: line-through; }
+  }
+}
+
+.slotInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.slotLabel {
+  font-size: v.$font-size-sm;
+  color: v.$color-text;
+}
+
+.slotTime {
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+  font-variant-numeric: tabular-nums;
+}
+
+.slotRight {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  flex-shrink: 0;
+}
+
+.groupBadge {
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  padding: 2px v.$space-2;
+  border-radius: v.$radius-full;
+  white-space: nowrap;
+
+  &.group-main    { background: rgba(59,130,246,0.18);  color: #93c5fd; }
+  &.group-kitchen { background: rgba(249,115,22,0.18);  color: #fdba74; }
+  &.group-support { background: rgba(34,197,94,0.18);   color: #86efac; }
+  &.group-duty    { background: rgba(139,92,246,0.18);  color: #c4b5fd; }
+}
+
+.disabledTag {
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+  font-style: italic;
+}
+
+.deleteBtn {
+  background: none;
+  border: none;
+  color: v.$color-primary;
+  padding: v.$space-1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: v.$radius-sm;
+  transition: color v.$transition-fast;
+  flex-shrink: 0;
+
+  &:hover { color: v.$color-danger; }
+}
+
+// ── Add form ──────────────────────────────────────────────────────────────
+.addForm {
+  padding: v.$space-3 v.$space-4;
+  background: v.$color-surface;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-3;
+  border-bottom: 1px solid v.$color-border;
+
+  &:last-child { border-bottom: none; }
+}
+
+.addInput {
+  background: v.$color-surface-raised;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-sm;
+  color: v.$color-text;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+  padding: v.$space-2 v.$space-3;
+  width: 100%;
+  text-align: right;
+
+  &:focus { outline: none; border-color: v.$color-primary; }
+}
+
+.addRow {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+}
+
+.addSelect {
+  flex: 1;
+  background: v.$color-surface-raised;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-sm;
+  color: v.$color-text;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+  padding: v.$space-2;
+  cursor: pointer;
+  text-align: right;
+
+  &:focus { outline: none; border-color: v.$color-primary; }
+}
+
+.addTime {
+  background: v.$color-surface-raised;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-sm;
+  color: v.$color-text;
+  color-scheme: dark;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+  padding: v.$space-2;
+  width: 5.5rem;
+
+  &:focus { outline: none; border-color: v.$color-primary; }
+}
+
+.timeSep {
+  color: v.$color-text-muted;
+  font-size: v.$font-size-sm;
+}
+
+.addActions {
+  display: flex;
+  gap: v.$space-2;
+  flex-direction: row-reverse;
+}
+
+.saveBtn {
+  background: v.$color-primary;
+  color: v.$color-text-on-primary;
+  border: none;
+  border-radius: v.$radius-sm;
+  padding: v.$space-2 v.$space-4;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  cursor: pointer;
+  &:active { opacity: 0.8; }
+}
+
+.cancelBtn {
+  background: none;
+  color: v.$color-text-muted;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-sm;
+  padding: v.$space-2 v.$space-4;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+  &:active { opacity: 0.8; }
+}

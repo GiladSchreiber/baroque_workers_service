@@ -14,11 +14,19 @@ import { EmployeeDetailPage } from '../pages/manager/EmployeeDetailPage'
 import { ManagerShiftFormPage } from '../pages/manager/ManagerShiftFormPage'
 import { IncomePage } from '../pages/manager/IncomePage'
 import { SubmitClosurePage } from '../pages/shared/SubmitClosurePage'
-function RequireAuth({ children, role }: { children: React.ReactNode; role?: 'employee' | 'manager' }) {
+import { ShiftTemplatesPage } from '../pages/manager/scheduling/ShiftTemplatesPage'
+import { ArrangementPage } from '../pages/manager/scheduling/ArrangementPage'
+import { AvailabilityPage } from '../pages/employee/AvailabilityPage'
+import { ScheduleViewPage } from '../pages/employee/ScheduleViewPage'
+
+function RequireAuth({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
   const currentUser = useAuthStore(s => s.currentUser)
   if (!currentUser) return <Navigate to="/login" replace />
-  if (role && currentUser.role !== role) {
-    return <Navigate to={currentUser.role === 'manager' ? '/manager/dashboard' : '/employee/report'} replace />
+  if (roles && !roles.includes(currentUser.role)) {
+    const fallback = currentUser.role === 'manager' ? '/manager/dashboard'
+      : currentUser.role === 'scheduler' ? '/scheduler/scheduling'
+      : '/employee/report'
+    return <Navigate to={fallback} replace />
   }
   return <>{children}</>
 }
@@ -26,8 +34,18 @@ function RequireAuth({ children, role }: { children: React.ReactNode; role?: 'em
 function RootRedirect() {
   const currentUser = useAuthStore(s => s.currentUser)
   if (!currentUser) return <Navigate to="/login" replace />
-  return <Navigate to={currentUser.role === 'manager' ? '/manager/dashboard' : '/employee/report'} replace />
+  if (currentUser.role === 'manager') return <Navigate to="/manager/dashboard" replace />
+  if (currentUser.role === 'scheduler') return <Navigate to="/scheduler/scheduling" replace />
+  return <Navigate to="/employee/report" replace />  // employee + duty
 }
+
+// Shared scheduling children (used by both manager and scheduler)
+const schedulingChildren = [
+  { path: 'scheduling/arrangement', element: <ArrangementPage /> },
+  { path: 'scheduling/templates', element: <ShiftTemplatesPage /> },
+  { path: 'scheduling/submit', element: <AvailabilityPage /> },
+  { path: 'scheduling/view', element: <ScheduleViewPage /> },
+]
 
 export const router = createHashRouter([
   { path: '/', element: <RootRedirect /> },
@@ -35,18 +53,33 @@ export const router = createHashRouter([
   { path: '/register', element: <RegisterPage /> },
   {
     path: '/employee',
-    element: <RequireAuth role="employee"><AppShell /></RequireAuth>,
+    element: <RequireAuth roles={['employee', 'duty']}><AppShell /></RequireAuth>,
     children: [
       { index: true, element: <Navigate to="report" replace /> },
       { path: 'report', element: <ReportShiftPage /> },
       { path: 'closure', element: <SubmitClosurePage /> },
       { path: 'shifts', element: <MyShiftsPage /> },
       { path: 'shifts/:id/edit', element: <EditShiftPage /> },
+      { path: 'scheduling', element: <AvailabilityPage /> },
+      { path: 'scheduling/view', element: <ScheduleViewPage /> },
+    ],
+  },
+  {
+    path: '/scheduler',
+    element: <RequireAuth roles={['scheduler']}><AppShell /></RequireAuth>,
+    children: [
+      { index: true, element: <Navigate to="/scheduler/scheduling/arrangement" replace /> },
+      { path: 'scheduling', element: <Navigate to="/scheduler/scheduling/arrangement" replace /> },
+      { path: 'report', element: <ReportShiftPage /> },
+      { path: 'closure', element: <SubmitClosurePage /> },
+      { path: 'shifts', element: <MyShiftsPage /> },
+      { path: 'shifts/:id/edit', element: <EditShiftPage /> },
+      ...schedulingChildren,
     ],
   },
   {
     path: '/manager',
-    element: <RequireAuth role="manager"><AppShell /></RequireAuth>,
+    element: <RequireAuth roles={['manager']}><AppShell /></RequireAuth>,
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
       { path: 'dashboard', element: <DashboardPage /> },
@@ -57,6 +90,8 @@ export const router = createHashRouter([
       { path: 'shifts/new', element: <ManagerShiftFormPage /> },
       { path: 'shifts/:id/edit', element: <ManagerShiftFormPage /> },
       { path: 'income', element: <IncomePage /> },
+      { path: 'scheduling', element: <Navigate to="/manager/scheduling/arrangement" replace /> },
+      ...schedulingChildren,
     ],
   },
 ])

@@ -284,7 +284,7 @@ export function AllShiftsPage() {
                     >
                       <td className={styles.dateCell}>{formatDateShort(s.date)}</td>
                       <td><Badge type={s.type} label={SHIFT_TYPE_LABELS[s.type]} /></td>
-                      <td className={styles.numCell}>{isFlat ? '—' : fmtH(h.regular)}</td>
+                      <td className={styles.numCell}>{isFlat ? '—' : fmtH(h.regular + h.support)}</td>
                       <td className={styles.numCell}>{isFlat ? '—' : fmtH(h.shabbat)}</td>
                       <td className={styles.numCell}>₪{fmtMoney(shiftSalary)}</td>
                     </tr>
@@ -334,7 +334,7 @@ export function AllShiftsPage() {
                     onClick={() => setSelectedId(d.employee.id)}
                   >
                     <td className={styles.nameCell}>{d.employee.name}</td>
-                    <td className={styles.numCell}>{fmtH(d.regular)}</td>
+                    <td className={styles.numCell}>{fmtH(d.regular + d.support)}</td>
                     <td className={styles.numCell}>{fmtH(d.shabbat)}</td>
                     <td className={styles.numCell}>
                       {d.shiftCount > 0 ? `₪${fmtMoney(d.salary)}` : '—'}

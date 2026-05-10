@@ -31,7 +31,7 @@ export function ReportShiftPage() {
     <div className={styles.page}>
       <PageHeader title="דיווח שעות" />
       <div className={styles.content}>
-        <ShiftForm employeeId={currentUser.id} onSubmit={handleSubmit} />
+        <ShiftForm employeeId={currentUser.id} onSubmit={handleSubmit} showDutyShift={['duty', 'manager', 'scheduler'].includes(currentUser.role)} />
       </div>
     </div>
   )

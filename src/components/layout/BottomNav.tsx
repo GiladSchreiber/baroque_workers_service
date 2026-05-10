@@ -3,8 +3,15 @@ import { useAuthStore } from '../../store/authStore'
 import styles from './BottomNav.module.scss'
 
 const EMPLOYEE_LINKS = [
-  { to: '/employee/shifts', label: 'שעות', icon: <ShiftsIcon /> },
-  { to: '/employee/report', label: 'דיווח', icon: <PlusIcon /> },
+  { to: '/employee/shifts',     label: 'שעות',  icon: <ShiftsIcon /> },
+  { to: '/employee/report',     label: 'דיווח', icon: <PlusIcon /> },
+  { to: '/employee/scheduling', label: 'סידור', icon: <SchedulingIcon /> },
+]
+
+const SCHEDULER_LINKS = [
+  { to: '/scheduler/shifts',               label: 'שעות',  icon: <ShiftsIcon /> },
+  { to: '/scheduler/report',               label: 'דיווח', icon: <PlusIcon /> },
+  { to: '/scheduler/scheduling/arrangement', label: 'סידור', icon: <SchedulingIcon /> },
 ]
 
 const MANAGER_LINKS = [
@@ -12,13 +19,14 @@ const MANAGER_LINKS = [
   { to: '/manager/employees', label: 'צוות', icon: <TeamIcon /> },
   { to: '/manager/shifts', label: 'שעות', icon: <ShiftsIcon /> },
   { to: '/manager/income', label: 'הכנסות', icon: <ClosureIcon /> },
+  { to: '/manager/scheduling/arrangement', label: 'סידור', icon: <SchedulingIcon /> },
 ]
 
 export function BottomNav() {
   const role = useAuthStore(s => s.currentUser?.role)
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const links = role === 'manager' ? MANAGER_LINKS : EMPLOYEE_LINKS
+  const links = role === 'manager' ? MANAGER_LINKS : role === 'scheduler' ? SCHEDULER_LINKS : EMPLOYEE_LINKS  // employee + duty
 
   return (
     <nav className={styles.nav}>
@@ -76,6 +84,16 @@ function ClosureIcon() {
       <rect x="3" y="8" width="16" height="11" rx="2" stroke="currentColor" strokeWidth="1.75"/>
       <path d="M7 8V6a4 4 0 018 0v2" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
       <circle cx="11" cy="13.5" r="1.5" fill="currentColor"/>
+    </svg>
+  )
+}
+
+function SchedulingIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <rect x="3" y="5" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="1.75"/>
+      <path d="M7 3v4M15 3v4M3 9h16" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
+      <path d="M7 13h2M11 13h4M7 16h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
   )
 }

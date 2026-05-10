@@ -2,7 +2,7 @@ import type { Employee, CreateEmployeeInput } from '../../types'
 import type { EmployeeRepository } from '../interfaces/EmployeeRepository'
 import { LocalStore } from './LocalStore'
 
-const SEED_VERSION = 'v4'
+const SEED_VERSION = 'v6'
 const SEED_VERSION_KEY = 'baroque_seed_v'
 
 const SEED: Employee[] = [
