@@ -141,7 +141,7 @@ export function MyShiftsPage() {
                     >
                       <td className={styles.dateCell}>{formatDateShort(shift.date)}</td>
                       <td><Badge type={shift.type} label={SHIFT_TYPE_LABELS[shift.type]} /></td>
-                      <td className={styles.numCell}>{isFlat ? '—' : fmtH(h.regular)}</td>
+                      <td className={styles.numCell}>{isFlat ? '—' : fmtH(h.regular + h.support)}</td>
                       <td className={styles.numCell}>{isFlat ? '—' : fmtH(h.shabbat)}</td>
                       <td className={styles.numCell}>₪{fmtMoney(salary)}</td>
                     </tr>

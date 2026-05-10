@@ -26,7 +26,7 @@ export function BottomNav() {
   const role = useAuthStore(s => s.currentUser?.role)
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const links = role === 'manager' ? MANAGER_LINKS : role === 'scheduler' ? SCHEDULER_LINKS : EMPLOYEE_LINKS
+  const links = role === 'manager' ? MANAGER_LINKS : role === 'scheduler' ? SCHEDULER_LINKS : EMPLOYEE_LINKS  // employee + duty
 
   return (
     <nav className={styles.nav}>

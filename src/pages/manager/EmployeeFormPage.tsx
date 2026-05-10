@@ -11,6 +11,7 @@ import styles from './EmployeeFormPage.module.scss'
 
 const ROLE_OPTIONS = [
   { value: 'employee',  label: 'עובד' },
+  { value: 'duty',      label: 'אחמ"ש' },
   { value: 'scheduler', label: 'סידור' },
   { value: 'manager',   label: 'מנהל' },
 ]

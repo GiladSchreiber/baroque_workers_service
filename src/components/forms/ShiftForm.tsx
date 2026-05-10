@@ -6,12 +6,11 @@ import { Button } from '../ui/Button'
 import { todayString, currentTimeString } from '../../lib/utils'
 import styles from './ShiftForm.module.scss'
 
-const SHIFT_TYPE_OPTIONS = [
+const BASE_SHIFT_TYPE_OPTIONS = [
   { value: 'morning', label: 'בוקר' },
   { value: 'afternoon', label: 'צהריים' },
   { value: 'evening', label: 'ערב' },
   { value: 'kitchen', label: 'מטבח' },
-  { value: 'support', label: 'אחמ"ש' },
   { value: 'manager', label: 'פיק' },
   { value: 'overlap', label: 'חפיפה' },
   { value: 'general', label: 'כללי' },
@@ -19,6 +18,7 @@ const SHIFT_TYPE_OPTIONS = [
   { value: 'taxi',    label: 'מוניות' },
   { value: 'cashier', label: 'נתוני קופה בלבד' },
 ]
+const DUTY_SHIFT_TYPE_OPTION = { value: 'support', label: 'אחמ"ש' }
 
 interface ShiftFormProps {
   employeeId: string
@@ -27,6 +27,8 @@ interface ShiftFormProps {
   submitLabel?: string
   /** When true, 'global' type option appears first and is the default */
   managerMode?: boolean
+  /** When true, the אחמ"ש (support) shift type is shown */
+  showDutyShift?: boolean
   isEdit?: boolean
 }
 
@@ -38,7 +40,10 @@ interface FormErrors {
   amount?: string
 }
 
-export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = 'שלח דיווח', managerMode = false, isEdit = false }: ShiftFormProps) {
+export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = 'שלח דיווח', managerMode = false, showDutyShift = false, isEdit = false }: ShiftFormProps) {
+  const shiftTypeOptions = showDutyShift
+    ? [...BASE_SHIFT_TYPE_OPTIONS.slice(0, 4), DUTY_SHIFT_TYPE_OPTION, ...BASE_SHIFT_TYPE_OPTIONS.slice(4)]
+    : BASE_SHIFT_TYPE_OPTIONS
   const [date, setDate] = useState(initialValues?.date ?? todayString())
   const [type, setType] = useState<ShiftType>(initialValues?.type ?? (managerMode ? 'global' : 'morning'))
   const [startTime, setStartTime] = useState(initialValues?.startTime ?? '')
@@ -100,8 +105,8 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
   }
 
   const typeOptions = managerMode
-    ? SHIFT_TYPE_OPTIONS
-    : SHIFT_TYPE_OPTIONS.filter(o => o.value !== 'global')
+    ? shiftTypeOptions
+    : shiftTypeOptions.filter(o => o.value !== 'global')
 
   return (
     <form className={styles.form} onSubmit={handleSubmit}>

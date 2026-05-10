@@ -8,8 +8,17 @@ import type { Role } from '../../types'
 import styles from './EmployeesPage.module.scss'
 
 const ROLE_LABELS: Record<Role, string> = {
-  employee: 'עובד',
-  manager: 'מנהל',
+  employee:  'עובד',
+  duty:      'אחמ"ש',
+  scheduler: 'סידור',
+  manager:   'מנהל',
+}
+
+const ROLE_STYLE: Record<Role, string> = {
+  employee:  'roleEmployee',
+  duty:      'roleDuty',
+  scheduler: 'roleScheduler',
+  manager:   'roleManager',
 }
 
 export function EmployeesPage() {
@@ -47,7 +56,7 @@ export function EmployeesPage() {
                 >
                   <td className={styles.nameCell}>{emp.name}</td>
                   <td>
-                    <span className={emp.role === 'manager' ? styles.roleManager : styles.roleEmployee}>
+                    <span className={styles[ROLE_STYLE[emp.role]]}>
                       {ROLE_LABELS[emp.role]}
                     </span>
                   </td>

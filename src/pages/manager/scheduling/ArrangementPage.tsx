@@ -605,7 +605,7 @@ export function ArrangementPage() {
   const submissionStatus = useMemo(() => {
     return activeEmployees.flatMap(emp => {
       const sub = weekSubmissions.find(s => s.employeeId === emp.id)
-      if (!sub && emp.role !== 'employee') return []
+      if (!sub && emp.role !== 'employee' && emp.role !== 'duty') return []
       const effectiveStatus = sub
         ? (sub.isVacation ? 'vacation' : 'submitted')
         : 'missing'

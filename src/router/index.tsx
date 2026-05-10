@@ -23,7 +23,9 @@ function RequireAuth({ children, roles }: { children: React.ReactNode; roles?: s
   const currentUser = useAuthStore(s => s.currentUser)
   if (!currentUser) return <Navigate to="/login" replace />
   if (roles && !roles.includes(currentUser.role)) {
-    const fallback = currentUser.role === 'manager' ? '/manager/dashboard' : '/employee/report'
+    const fallback = currentUser.role === 'manager' ? '/manager/dashboard'
+      : currentUser.role === 'scheduler' ? '/scheduler/scheduling'
+      : '/employee/report'
     return <Navigate to={fallback} replace />
   }
   return <>{children}</>
@@ -34,7 +36,7 @@ function RootRedirect() {
   if (!currentUser) return <Navigate to="/login" replace />
   if (currentUser.role === 'manager') return <Navigate to="/manager/dashboard" replace />
   if (currentUser.role === 'scheduler') return <Navigate to="/scheduler/scheduling" replace />
-  return <Navigate to="/employee/report" replace />
+  return <Navigate to="/employee/report" replace />  // employee + duty
 }
 
 // Shared scheduling children (used by both manager and scheduler)
@@ -51,7 +53,7 @@ export const router = createHashRouter([
   { path: '/register', element: <RegisterPage /> },
   {
     path: '/employee',
-    element: <RequireAuth roles={['employee']}><AppShell /></RequireAuth>,
+    element: <RequireAuth roles={['employee', 'duty']}><AppShell /></RequireAuth>,
     children: [
       { index: true, element: <Navigate to="report" replace /> },
       { path: 'report', element: <ReportShiftPage /> },

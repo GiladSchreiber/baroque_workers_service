@@ -108,9 +108,14 @@ export function AvailabilityPage() {
     fetchWeekData(NEXT_WEEK)
   }, [])
 
-  const slots = useMemo(
+  const allSlots = useMemo(
     () => getEffectiveSlotsForWeek(NEXT_WEEK, templates, overrides),
     [templates, overrides],
+  )
+  const hasDutyAccess = ['duty', 'manager', 'scheduler'].includes(currentUser.role)
+  const slots = useMemo(
+    () => hasDutyAccess ? allSlots : allSlots.filter(s => s.group !== 'duty'),
+    [allSlots, hasDutyAccess],
   )
 
   const existing = submissions.find(

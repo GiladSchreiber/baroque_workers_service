@@ -9,7 +9,7 @@ create table public.employees (
   name            text not null,
   email           text unique not null,
   password_hash   text,                        -- null for employees; plain-text password for managers
-  role            text not null default 'employee' check (role in ('employee', 'manager', 'scheduler')),
+  role            text not null default 'employee' check (role in ('employee', 'duty', 'manager', 'scheduler')),
   hourly_wage     numeric(10,2) not null default 0,
   is_active       boolean not null default true,
   id_number       text,
@@ -140,6 +140,13 @@ create table public.schedule_assignments (
   created_at       timestamptz not null default now(),
   unique (week_start, slot_id)
 );
+
+-- =====================================================
+-- Migrations (run these if updating an existing DB)
+-- =====================================================
+-- ALTER TABLE public.employees DROP COLUMN IF EXISTS is_duty_officer;
+-- ALTER TABLE public.employees DROP CONSTRAINT IF EXISTS employees_role_check;
+-- ALTER TABLE public.employees ADD CONSTRAINT employees_role_check CHECK (role IN ('employee', 'duty', 'manager', 'scheduler'));
 
 -- Disable RLS (internal app — no public access expected)
 alter table public.employees                  disable row level security;
