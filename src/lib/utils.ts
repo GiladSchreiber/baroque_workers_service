@@ -270,7 +270,7 @@ export function buildShiftMessage(data: CreateShiftInput, employeeName: string):
     `📋 ${dateStr}`,
     employeeName,
     SHIFT_TYPE_LABELS[data.type],
-    `${hoursStr} שעות (${data.startTime}–${data.endTime})`,
+    ...(totalHours > 0 ? [`${hoursStr} שעות (${data.startTime}–${data.endTime})`] : []),
   ]
 
   const hasCash = data.revenue != null || data.cash != null || data.credit != null || data.tips != null
