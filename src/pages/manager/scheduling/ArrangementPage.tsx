@@ -84,16 +84,28 @@ function InternshipsModal({ slots, weekStart, onClose }: {
   }
 
   function handleSave() {
-    // Remove internship notes from all assigned slots first, then apply new ones
     const toSave = rows.filter(r => r.slotId && r.internName.trim())
+    // Update or clear notes on already-assigned slots
     for (const a of weekAssignments) {
       const match = toSave.find(r => r.slotId === a.slotId)
       upsertAssignment({ ...a, internshipNote: match ? match.internName.trim() : null })
     }
+    // Create new placeholder assignments for slots that have an intern note but no assignment yet
+    for (const r of toSave) {
+      if (!weekAssignments.some(a => a.slotId === r.slotId)) {
+        upsertAssignment({
+          id: `asgn-${weekStart}-${r.slotId}`,
+          weekStart,
+          slotId: r.slotId,
+          employeeId: null,
+          internshipNote: r.internName.trim(),
+        })
+      }
+    }
     onClose()
   }
 
-  const assignedSlots = slots.filter(s => weekAssignments.some(a => a.slotId === s.id))
+  const assignedSlots = slots
 
   return (
     <Modal isOpen title="התלמדויות" onClose={onClose}>

@@ -4,7 +4,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100%;
-  padding-bottom: v.$space-16;
+  padding-bottom: 12rem;
 }
 
 .loadingBar {
@@ -138,8 +138,17 @@
 
 // ── Counters ──────────────────────────────────────────────────────────────────
 .countersSection {
+  position: fixed;
+  bottom: calc(v.$bottom-nav-height + 4rem);
+  left: 0;
+  right: 0;
+  z-index: 25;
+  background: v.$color-surface;
   padding: v.$space-2 v.$space-4;
+  border-top: 1px solid v.$color-border;
   border-bottom: 1px solid v.$color-border;
+  max-width: v.$max-content-width;
+  margin: 0 auto;
 }
 
 .countersRow {
