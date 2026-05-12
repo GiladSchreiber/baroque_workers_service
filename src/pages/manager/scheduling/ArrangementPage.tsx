@@ -158,7 +158,7 @@ function SlotRow({ slot, weekStart }: SlotRowProps) {
     submissions
       .filter(s => s.weekStart === weekStart && s.selectedSlotIds.includes(slot.id))
       .map(s => employees.find(e => e.id === s.employeeId))
-      .filter((e): e is typeof employees[0] => !!e),
+      .filter((e): e is typeof employees[0] => !!e && e.isActive),
     [submissions, weekStart, slot.id, employees],
   )
 
