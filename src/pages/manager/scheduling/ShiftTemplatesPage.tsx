@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSchedulingStore } from '../../../store/schedulingStore'
 import { PageHeader } from '../../../components/layout/PageHeader'
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog'
@@ -50,17 +50,41 @@ function AddSlotForm({ dayOfWeek, onClose }: { dayOfWeek: number; onClose: () =>
 }
 
 // ── Single slot row ───────────────────────────────────────────────────────
-function SlotRow({ slot }: { slot: SlotTemplate }) {
+interface SlotRowProps {
+  slot: SlotTemplate
+  isDragging: boolean
+  isOver: boolean
+  onDragStart: () => void
+  onDragEnter: () => void
+  onDragEnd: () => void
+}
+
+function SlotRow({ slot, isDragging, isOver, onDragStart, onDragEnter, onDragEnd }: SlotRowProps) {
   const toggleTemplate = useSchedulingStore(s => s.toggleTemplate)
   const deleteTemplate = useSchedulingStore(s => s.deleteTemplate)
   const [confirmOpen, setConfirmOpen] = useState(false)
 
+  const rowClass = [
+    styles.slotRow,
+    !slot.isActive ? styles.slotDisabled : '',
+    isDragging ? styles.slotDragging : '',
+    isOver ? styles.slotOver : '',
+  ].filter(Boolean).join(' ')
+
   return (
     <>
       <div
-        className={`${styles.slotRow} ${!slot.isActive ? styles.slotDisabled : ''}`}
+        className={rowClass}
+        draggable
+        onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; onDragStart() }}
+        onDragEnter={e => { e.preventDefault(); onDragEnter() }}
+        onDragOver={e => e.preventDefault()}
+        onDragEnd={onDragEnd}
         onClick={() => toggleTemplate(slot.id)}
       >
+        <div className={styles.dragHandle} onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}>
+          <DragIcon />
+        </div>
         <div className={styles.slotInfo}>
           <span className={styles.slotLabel}>{slot.label}</span>
           <span className={styles.slotTime}>{slot.startTime}–{slot.endTime}</span>
@@ -95,19 +119,88 @@ function SlotRow({ slot }: { slot: SlotTemplate }) {
 
 // ── Day section ───────────────────────────────────────────────────────────
 function DaySection({ dayOfWeek, slots }: { dayOfWeek: number; slots: SlotTemplate[] }) {
-  const [addOpen, setAddOpen] = useState(false)
-  const sorted = [...slots].sort((a, b) => a.sortOrder - b.sortOrder)
+  const updateTemplate = useSchedulingStore(s => s.updateTemplate)
+  const [addOpen, setAddOpen]     = useState(false)
+  const [orderedIds, setOrderedIds] = useState<string[]>(() =>
+    [...slots].sort((a, b) => a.sortOrder - b.sortOrder).map(s => s.id),
+  )
+  const draggedId = useRef<string | null>(null)
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [overId, setOverId]         = useState<string | null>(null)
+
+  // Sync when slots change (add / delete)
+  useEffect(() => {
+    setOrderedIds(prev => {
+      const slotIds = new Set(slots.map(s => s.id))
+      const filtered = prev.filter(id => slotIds.has(id))
+      const added    = slots.filter(s => !filtered.includes(s.id)).map(s => s.id)
+      return [...filtered, ...added]
+    })
+  }, [slots])
+
+  const orderedSlots = orderedIds
+    .map(id => slots.find(s => s.id === id))
+    .filter((s): s is SlotTemplate => Boolean(s))
+
+  function handleDragStart(id: string) {
+    draggedId.current = id
+    setDraggingId(id)
+  }
+
+  function handleDragEnter(targetId: string) {
+    if (!draggedId.current || draggedId.current === targetId) return
+    setOverId(targetId)
+    setOrderedIds(prev => {
+      const from = prev.indexOf(draggedId.current!)
+      const to   = prev.indexOf(targetId)
+      if (from === -1 || to === -1) return prev
+      const next = [...prev]
+      next.splice(from, 1)
+      next.splice(to, 0, draggedId.current!)
+      return next
+    })
+  }
+
+  function handleDragEnd() {
+    draggedId.current = null
+    setDraggingId(null)
+    setOverId(null)
+    // Persist new sort orders
+    orderedIds.forEach((id, idx) => updateTemplate(id, { sortOrder: idx + 1 }))
+  }
+
+  function sortByTime() {
+    const byTime = [...slots].sort((a, b) => a.startTime.localeCompare(b.startTime))
+    const newIds = byTime.map(s => s.id)
+    setOrderedIds(newIds)
+    newIds.forEach((id, idx) => updateTemplate(id, { sortOrder: idx + 1 }))
+  }
 
   return (
     <div className={styles.daySection}>
       <div className={styles.dayHeader}>
         <span className={styles.dayName}>{DAY_NAMES[dayOfWeek]}</span>
-        <button className={styles.addSlotBtn} onClick={() => setAddOpen(v => !v)} aria-label="הוסף משמרת">
-          <PlusIcon />
-        </button>
+        <div className={styles.dayHeaderActions}>
+          <button className={styles.sortBtn} onClick={sortByTime} title="מיין לפי שעת התחלה" aria-label="מיין לפי שעה">
+            <SortIcon />
+          </button>
+          <button className={styles.addSlotBtn} onClick={() => setAddOpen(v => !v)} aria-label="הוסף משמרת">
+            <PlusIcon />
+          </button>
+        </div>
       </div>
       <div className={styles.slotList}>
-        {sorted.map(s => <SlotRow key={s.id} slot={s} />)}
+        {orderedSlots.map(s => (
+          <SlotRow
+            key={s.id}
+            slot={s}
+            isDragging={draggingId === s.id}
+            isOver={overId === s.id}
+            onDragStart={() => handleDragStart(s.id)}
+            onDragEnter={() => handleDragEnter(s.id)}
+            onDragEnd={handleDragEnd}
+          />
+        ))}
         {addOpen && <AddSlotForm dayOfWeek={dayOfWeek} onClose={() => setAddOpen(false)} />}
       </div>
     </div>
@@ -148,6 +241,27 @@ function XIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
       <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function DragIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <circle cx="4.5" cy="3.5" r="1.2" fill="currentColor"/>
+      <circle cx="9.5" cy="3.5" r="1.2" fill="currentColor"/>
+      <circle cx="4.5" cy="7"   r="1.2" fill="currentColor"/>
+      <circle cx="9.5" cy="7"   r="1.2" fill="currentColor"/>
+      <circle cx="4.5" cy="10.5" r="1.2" fill="currentColor"/>
+      <circle cx="9.5" cy="10.5" r="1.2" fill="currentColor"/>
+    </svg>
+  )
+}
+
+function SortIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
     </svg>
   )
 }

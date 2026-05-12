@@ -64,6 +64,12 @@
   border-bottom: 1px solid v.$color-border;
 }
 
+.dayHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: v.$space-1;
+}
+
 .dayName {
   font-weight: v.$font-weight-semibold;
   color: v.$color-primary;
@@ -71,6 +77,20 @@
 }
 
 .addSlotBtn {
+  background: none;
+  border: none;
+  color: v.$color-text-muted;
+  padding: v.$space-1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: v.$radius-sm;
+  transition: color v.$transition-fast;
+
+  &:hover { color: v.$color-primary; }
+}
+
+.sortBtn {
   background: none;
   border: none;
   color: v.$color-text-muted;
@@ -98,7 +118,7 @@
   border-bottom: 1px solid v.$color-border;
   cursor: pointer;
   gap: v.$space-3;
-  transition: background v.$transition-fast;
+  transition: background v.$transition-fast, opacity v.$transition-fast;
   user-select: none;
 
   &:last-child { border-bottom: none; }
@@ -109,6 +129,29 @@
     .groupBadge { opacity: 0.45; }
     .slotLabel  { text-decoration: line-through; }
   }
+
+  &.slotDragging {
+    opacity: 0.4;
+    background: v.$color-surface-raised;
+  }
+
+  &.slotOver {
+    background: rgba(var(--color-primary-rgb, 99, 102, 241), 0.08);
+    border-top: 2px solid v.$color-primary;
+  }
+}
+
+.dragHandle {
+  color: v.$color-text-muted;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  opacity: 0.5;
+  padding: 2px;
+
+  &:active { cursor: grabbing; }
+  .slotRow:hover & { opacity: 1; }
 }
 
 .slotInfo {
