@@ -6,13 +6,11 @@ import { DAY_NAMES, SHIFT_GROUP_LABELS } from '../../types/scheduling'
 import type { AvailabilitySubmission, WeekSlot } from '../../types/scheduling'
 import {
   getNextWeekStart, getWeekTitle, getEffectiveSlotsForWeek, isAvailabilityOpen,
+  normalizeWeekStart,
 } from '../../lib/schedulingUtils'
 import { SchedulingSubNav } from './ScheduleViewPage'
 import { SchedulingSubNav as ManagerSchedulingSubNav } from '../manager/scheduling/ArrangementPage'
 import styles from './AvailabilityPage.module.scss'
-
-const NEXT_WEEK  = getNextWeekStart()
-const WEEK_TITLE = getWeekTitle(NEXT_WEEK)
 
 // ── Single slot row ───────────────────────────────────────────────────────
 function SlotRow({ slot, selected, disabled, onToggle }: {
@@ -96,6 +94,8 @@ function SubNav() {
 // ── Page ─────────────────────────────────────────────────────────────────
 export function AvailabilityPage() {
   const currentUser    = useAuthStore(s => s.currentUser)!
+  const nextWeekStart  = normalizeWeekStart(getNextWeekStart())
+  const weekTitle      = getWeekTitle(nextWeekStart)
   const templates      = useSchedulingStore(s => s.templates)
   const overrides      = useSchedulingStore(s => s.overrides)
   const submissions    = useSchedulingStore(s => s.submissions)
@@ -105,12 +105,12 @@ export function AvailabilityPage() {
 
   useEffect(() => {
     fetchTemplates()
-    fetchWeekData(NEXT_WEEK)
-  }, [])
+    fetchWeekData(nextWeekStart)
+  }, [nextWeekStart])
 
   const allSlots = useMemo(
-    () => getEffectiveSlotsForWeek(NEXT_WEEK, templates, overrides),
-    [templates, overrides],
+    () => getEffectiveSlotsForWeek(nextWeekStart, templates, overrides),
+    [nextWeekStart, templates, overrides],
   )
   const hasDutyAccess = ['duty', 'manager', 'scheduler'].includes(currentUser.role)
   const slots = useMemo(
@@ -119,7 +119,7 @@ export function AvailabilityPage() {
   )
 
   const existing = submissions.find(
-    s => s.employeeId === currentUser.id && s.weekStart === NEXT_WEEK,
+    s => s.employeeId === currentUser.id && s.weekStart === nextWeekStart,
   )
 
   const [submitted,   setSubmitted]   = useState(!!existing)
@@ -129,7 +129,7 @@ export function AvailabilityPage() {
   const [blockedDays, setBlockedDays] = useState<Set<number>>(new Set(existing?.blockedDays ?? []))
   const [notes,       setNotes]       = useState(existing?.notes ?? '')
 
-  const isOpen = isAvailabilityOpen(NEXT_WEEK)
+  const isOpen = isAvailabilityOpen(nextWeekStart)
 
   function toggleSlot(slotId: string) {
     setSelected(prev => {
@@ -168,9 +168,9 @@ export function AvailabilityPage() {
 
   function handleSubmit() {
     const sub: AvailabilitySubmission = {
-      id:              existing?.id ?? `sub-${currentUser.id}-${NEXT_WEEK}`,
+      id:              existing?.id ?? `sub-${currentUser.id}-${nextWeekStart}`,
       employeeId:      currentUser.id,
-      weekStart:       NEXT_WEEK,
+      weekStart:       nextWeekStart,
       isVacation,
       notes,
       submittedAt:     new Date().toISOString(),
@@ -184,7 +184,7 @@ export function AvailabilityPage() {
 
   // ── Submitted view ──────────────────────────────────────────────────────
   if (submitted && !editing) {
-    const sub   = submissions.find(s => s.employeeId === currentUser.id && s.weekStart === NEXT_WEEK)
+    const sub   = submissions.find(s => s.employeeId === currentUser.id && s.weekStart === nextWeekStart)
     const count = sub?.selectedSlotIds.length ?? 0
     return (
       <div className={styles.page}>
@@ -193,7 +193,7 @@ export function AvailabilityPage() {
         <div className={styles.submittedCard}>
           <span className={styles.submittedIcon}>✓</span>
           <p className={styles.submittedTitle}>ההגשה התקבלה</p>
-          <p className={styles.submittedSub}>{WEEK_TITLE}</p>
+          <p className={styles.submittedSub}>{weekTitle}</p>
           {sub?.isVacation
             ? <p className={styles.submittedDetail}>חופשה שבועית</p>
             : <p className={styles.submittedDetail}>{count} משמרות נבחרו</p>
@@ -216,7 +216,7 @@ export function AvailabilityPage() {
         <div className={styles.closedCard}>
           <p className={styles.closedTitle}>הגשות עוד לא פתוחות</p>
           <p className={styles.closedSub}>ניתן להגיש משמרות החל מיום שלישי</p>
-          <p className={styles.weekLabel}>{WEEK_TITLE}</p>
+          <p className={styles.weekLabel}>{weekTitle}</p>
         </div>
       </div>
     )
@@ -227,7 +227,7 @@ export function AvailabilityPage() {
       <div className={styles.page}>
       <PageHeader title="הגשת סידור" />
       <SubNav />
-      <div className={styles.weekBanner}>{WEEK_TITLE}</div>
+      <div className={styles.weekBanner}>{weekTitle}</div>
 
       <div className={styles.form}>
         <label className={styles.vacationRow}>

@@ -11,6 +11,7 @@ import {
   getWeekTitle,
   getEffectiveSlotsForWeek,
   buildArrangementMessage,
+  normalizeWeekStart,
 } from '../../../lib/schedulingUtils'
 import { DAY_NAMES } from '../../../types/scheduling'
 import type { WeekSlot } from '../../../types/scheduling'
@@ -391,7 +392,7 @@ export function ArrangementPage() {
   const { employees, fetchAll } = useEmployeeStore()
 
   const [weekKey, setWeekKey] = useState<'next' | 'current'>('next')
-  const weekStart = weekKey === 'next' ? getNextWeekStart() : getCurrentWeekStart()
+  const weekStart = normalizeWeekStart(weekKey === 'next' ? getNextWeekStart() : getCurrentWeekStart())
   const weekTitle = getWeekTitle(weekStart)
 
   const slots = useMemo(
@@ -405,12 +406,12 @@ export function ArrangementPage() {
   )
 
   const weekSubmissions = useMemo(
-    () => submissions.filter(s => s.weekStart === weekStart),
+    () => submissions.filter(s => normalizeWeekStart(s.weekStart) === weekStart),
     [submissions, weekStart],
   )
 
   const weekAssignments = useMemo(
-    () => assignments.filter(a => a.weekStart === weekStart),
+    () => assignments.filter(a => normalizeWeekStart(a.weekStart) === weekStart),
     [assignments, weekStart],
   )
 

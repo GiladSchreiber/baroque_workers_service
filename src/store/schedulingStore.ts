@@ -5,6 +5,7 @@ import type {
   ScheduleAssignment, ScheduleWeek,
 } from '../types/scheduling'
 import { schedulingRepo } from '../repositories/supabase/SupabaseSchedulingRepository'
+import { normalizeWeekStart } from '../lib/schedulingUtils'
 
 const useSupabase = Boolean(
   import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -145,29 +146,30 @@ export const useSchedulingStore = create<SchedulingState>()(
 
       fetchWeekData: async (weekStart) => {
         if (!useSupabase) return
+        const ws = normalizeWeekStart(weekStart)
         set(s => ({ loadingWeek: { ...s.loadingWeek, [weekStart]: true } }))
         try {
           const [overrides, submissions, assignments, week] = await Promise.all([
-            schedulingRepo.getOverrides(weekStart),
-            schedulingRepo.getSubmissions(weekStart),
-            schedulingRepo.getAssignments(weekStart),
-            schedulingRepo.getWeek(weekStart),
+            schedulingRepo.getOverrides(ws),
+            schedulingRepo.getSubmissions(ws),
+            schedulingRepo.getAssignments(ws),
+            schedulingRepo.getWeek(ws),
           ])
           set(s => ({
             overrides: [
-              ...s.overrides.filter(o => o.weekStart !== weekStart),
+              ...s.overrides.filter(o => normalizeWeekStart(o.weekStart) !== ws),
               ...overrides,
             ],
             submissions: [
-              ...s.submissions.filter(sub => sub.weekStart !== weekStart),
+              ...s.submissions.filter(sub => normalizeWeekStart(sub.weekStart) !== ws),
               ...submissions,
             ],
             assignments: [
-              ...s.assignments.filter(a => a.weekStart !== weekStart),
+              ...s.assignments.filter(a => normalizeWeekStart(a.weekStart) !== ws),
               ...assignments,
             ],
             weeks: week
-              ? [...s.weeks.filter(w => w.weekStart !== weekStart), week]
+              ? [...s.weeks.filter(w => normalizeWeekStart(w.weekStart) !== ws), week]
               : s.weeks,
             loadingWeek: { ...s.loadingWeek, [weekStart]: false },
           }))
@@ -248,38 +250,41 @@ export const useSchedulingStore = create<SchedulingState>()(
       // ── Submissions ──────────────────────────────────────────────────────
 
       upsertSubmission: async (sub) => {
+        const normalized = { ...sub, weekStart: normalizeWeekStart(sub.weekStart) }
         set(s => ({
           submissions: [
             ...s.submissions.filter(
-              x => !(x.employeeId === sub.employeeId && x.weekStart === sub.weekStart),
+              x => !(x.employeeId === normalized.employeeId && normalizeWeekStart(x.weekStart) === normalized.weekStart),
             ),
-            sub,
+            normalized,
           ],
         }))
         if (useSupabase) {
-          schedulingRepo.upsertSubmission(sub).catch(console.error)
+          schedulingRepo.upsertSubmission(normalized).catch(console.error)
         }
       },
 
       // ── Assignments ──────────────────────────────────────────────────────
 
       upsertAssignment: async (a) => {
+        const normalized = { ...a, weekStart: normalizeWeekStart(a.weekStart) }
         set(s => ({
           assignments: [
-            ...s.assignments.filter(x => !(x.weekStart === a.weekStart && x.slotId === a.slotId)),
-            a,
+            ...s.assignments.filter(x => !(normalizeWeekStart(x.weekStart) === normalized.weekStart && x.slotId === normalized.slotId)),
+            normalized,
           ],
         }))
         if (useSupabase) {
-          schedulingRepo.upsertAssignment(a).catch(console.error)
+          schedulingRepo.upsertAssignment(normalized).catch(console.error)
         }
       },
 
       removeAssignment: async (weekStart, slotId) => {
+        const ws = normalizeWeekStart(weekStart)
         const prev = get().assignments
-        set(s => ({ assignments: s.assignments.filter(a => !(a.weekStart === weekStart && a.slotId === slotId)) }))
+        set(s => ({ assignments: s.assignments.filter(a => !(normalizeWeekStart(a.weekStart) === ws && a.slotId === slotId)) }))
         if (useSupabase) {
-          schedulingRepo.removeAssignment(weekStart, slotId).catch(err => {
+          schedulingRepo.removeAssignment(ws, slotId).catch(err => {
             console.error('removeAssignment:', err)
             set({ assignments: prev })
           })
@@ -289,13 +294,15 @@ export const useSchedulingStore = create<SchedulingState>()(
       // ── Weeks ────────────────────────────────────────────────────────────
 
       upsertWeek: async (w) => {
+        const normalized = { ...w, weekStart: normalizeWeekStart(w.weekStart) }
         set(s => ({
-          weeks: [...s.weeks.filter(x => x.weekStart !== w.weekStart), w],
+          weeks: [...s.weeks.filter(x => normalizeWeekStart(x.weekStart) !== normalized.weekStart), normalized],
         }))
         if (useSupabase) {
-          schedulingRepo.upsertWeek(w).then(saved => {
+          schedulingRepo.upsertWeek(normalized).then(saved => {
+            const sn = { ...saved, weekStart: normalizeWeekStart(saved.weekStart) }
             set(s => ({
-              weeks: [...s.weeks.filter(x => x.weekStart !== saved.weekStart), saved],
+              weeks: [...s.weeks.filter(x => normalizeWeekStart(x.weekStart) !== sn.weekStart), sn],
             }))
           }).catch(console.error)
         }

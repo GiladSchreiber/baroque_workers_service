@@ -3,6 +3,7 @@ import type {
   SlotTemplate, WeekSlotOverride, AvailabilitySubmission,
   ScheduleAssignment, ScheduleWeek,
 } from '../../types/scheduling'
+import { normalizeWeekStart } from '../../lib/schedulingUtils'
 
 // ── Row types ─────────────────────────────────────────────────────────────────
 
@@ -79,7 +80,7 @@ function toTemplate(r: TemplateRow): SlotTemplate {
 
 function toOverride(r: OverrideRow): WeekSlotOverride {
   return {
-    id: r.id, weekStart: r.week_start,
+    id: r.id, weekStart: normalizeWeekStart(r.week_start),
     slotId: r.slot_id ?? undefined,
     label: r.label ?? undefined,
     group: (r.grp ?? undefined) as WeekSlotOverride['group'],
@@ -93,7 +94,7 @@ function toOverride(r: OverrideRow): WeekSlotOverride {
 
 function toWeek(r: WeekRow): ScheduleWeek {
   return {
-    id: r.id, weekStart: r.week_start,
+    id: r.id, weekStart: normalizeWeekStart(r.week_start),
     title: r.title ?? undefined,
     isPublished: r.is_published,
     publishedAt: r.published_at ?? undefined,
@@ -103,7 +104,7 @@ function toWeek(r: WeekRow): ScheduleWeek {
 
 function toAssignment(r: AssignmentRow): ScheduleAssignment {
   return {
-    id: r.id, weekStart: r.week_start, slotId: r.slot_id,
+    id: r.id, weekStart: normalizeWeekStart(r.week_start), slotId: r.slot_id,
     employeeId: r.employee_id, internshipNote: r.internship_note,
   }
 }
@@ -211,11 +212,13 @@ export const schedulingRepo = {
     if (e3) throw new Error(e3.message)
 
     return (subs as SubmissionRow[]).map(s => ({
-      id: s.id, weekStart: s.week_start, employeeId: s.employee_id,
+      id: s.id, weekStart: normalizeWeekStart(s.week_start), employeeId: s.employee_id,
       isVacation: s.is_vacation, notes: s.notes ?? '',
       submittedAt: s.submitted_at,
       selectedSlotIds: (slots as SelectedSlotRow[])
-        .filter(sl => sl.submission_id === s.id).map(sl => sl.slot_id),
+        .filter(sl => sl.submission_id === s.id)
+        .map(sl => sl.slot_id)
+        .filter((id): id is string => Boolean(id)),
       blockedDays: (blocked as BlockedDayRow[])
         .filter(b => b.submission_id === s.id).map(b => b.day_of_week),
     }))

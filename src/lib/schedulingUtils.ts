@@ -4,6 +4,12 @@ import type { SlotTemplate, WeekSlotOverride, WeekSlot, ShiftGroup } from '../ty
 // Week helpers
 // ---------------------------------------------------------------------------
 
+/** Normalize any `week_start` value from DB / persisted state to `YYYY-MM-DD`. */
+export function normalizeWeekStart(ws: string): string {
+  if (!ws) return ws
+  return ws.slice(0, 10)
+}
+
 /** Returns the date string (YYYY-MM-DD) of the Sunday that starts the week
  *  containing `date`. If `date` is itself a Sunday it returns that day. */
 export function getWeekStart(date: Date): string {
