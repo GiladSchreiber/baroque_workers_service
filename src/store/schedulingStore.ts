@@ -260,6 +260,9 @@ export const useSchedulingStore = create<SchedulingState>()(
 
       upsertSubmission: async (sub) => {
         const normalized = { ...sub, weekStart: normalizeWeekStart(sub.weekStart) }
+        if (useSupabase) {
+          await schedulingRepo.upsertSubmission(normalized)
+        }
         set(s => ({
           submissions: [
             ...s.submissions.filter(
@@ -268,9 +271,6 @@ export const useSchedulingStore = create<SchedulingState>()(
             normalized,
           ],
         }))
-        if (useSupabase) {
-          schedulingRepo.upsertSubmission(normalized).catch(console.error)
-        }
       },
 
       // ── Assignments ──────────────────────────────────────────────────────

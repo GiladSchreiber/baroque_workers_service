@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useCallback } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { useSchedulingStore } from '../../store/schedulingStore'
 import { PageHeader } from '../../components/layout/PageHeader'
@@ -166,7 +166,12 @@ export function AvailabilityPage() {
     }
   }
 
-  function handleSubmit() {
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+
+  const handleSubmit = useCallback(async () => {
+    setSubmitError(null)
+    setSubmitting(true)
     const sub: AvailabilitySubmission = {
       id:              existing?.id ?? `sub-${currentUser.id}-${nextWeekStart}`,
       employeeId:      currentUser.id,
@@ -177,10 +182,17 @@ export function AvailabilityPage() {
       selectedSlotIds: isVacation ? [] : Array.from(selected),
       blockedDays:     isVacation ? [] : Array.from(blockedDays),
     }
-    upsertSub(sub)
-    setSubmitted(true)
-    setEditing(false)
-  }
+    try {
+      await upsertSub(sub)
+      setSubmitted(true)
+      setEditing(false)
+    } catch (err) {
+      setSubmitError('שמירה נכשלה, נסה שוב')
+      console.error('upsertSubmission failed:', err)
+    } finally {
+      setSubmitting(false)
+    }
+  }, [existing, currentUser.id, nextWeekStart, isVacation, notes, selected, blockedDays, upsertSub])
 
   // ── Submitted view ──────────────────────────────────────────────────────
   if (submitted && !editing) {
@@ -269,8 +281,9 @@ export function AvailabilityPage() {
           />
         </div>
 
-        <button className={styles.submitBtn} onClick={handleSubmit}>
-          {editing ? 'עדכון' : 'שליחה'}
+        {submitError && <p className={styles.submitError}>{submitError}</p>}
+        <button className={styles.submitBtn} onClick={handleSubmit} disabled={submitting}>
+          {submitting ? '...' : editing ? 'עדכון' : 'שליחה'}
         </button>
       </div>
     </div>

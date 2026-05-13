@@ -223,6 +223,14 @@
   cursor: pointer;
   width: 100%;
   &:active { opacity: 0.8; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+.submitError {
+  color: #d32f2f;
+  font-size: 0.85rem;
+  text-align: center;
+  margin: 0 0 v.$space-2;
 }
 
 // ── Submitted state ───────────────────────────────────────────────────────
