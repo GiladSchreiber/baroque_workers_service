@@ -461,26 +461,28 @@ export function ArrangementPage() {
       for (const [empId, count] of Object.entries(empMap)) {
         if (count > 1) {
           const emp = employees.find(e => e.id === empId)
-          warns.push(`${emp?.name ?? empId} משובץ ${count}× ביום ${DAY_NAMES[Number(dow)]}`)
+          const firstName = (emp?.name ?? empId).split(' ')[0]
+          warns.push(`${firstName} משובץ ${count}× ביום ${DAY_NAMES[Number(dow)]}`)
         }
       }
     }
 
-    // 3+ consecutive days for one worker
+    // 3+ consecutive days with evening shifts for one worker
     for (const emp of activeEmployees) {
-      const assignedDays = [...new Set(
+      const eveningDays = [...new Set(
         weekAssignments
           .filter(a => a.employeeId === emp.id)
-          .map(a => slots.find(s => s.id === a.slotId)?.dayOfWeek)
-          .filter((d): d is number => d !== undefined),
+          .map(a => slots.find(s => s.id === a.slotId))
+          .filter((s): s is typeof slots[0] => !!s && s.label.includes('ערב'))
+          .map(s => s.dayOfWeek),
       )].sort((a, b) => a - b)
 
       let streak = 1
-      for (let i = 1; i < assignedDays.length; i++) {
-        if (assignedDays[i] === assignedDays[i - 1] + 1) {
+      for (let i = 1; i < eveningDays.length; i++) {
+        if (eveningDays[i] === eveningDays[i - 1] + 1) {
           streak++
           if (streak >= 3) {
-            warns.push(`${emp.name} משובץ ${streak} ימים רצופים`)
+            warns.push(`${emp.name.split(' ')[0]} משובץ ${streak} ערבים רצופים`)
             break
           }
         } else {
@@ -597,11 +599,14 @@ export function ArrangementPage() {
         </section>
       )}
 
-      {/* Counters – all workers who submitted, 0-count highlighted */}
+      {/* Counters – all workers who submitted or are assigned at least one shift */}
       <section className={styles.countersSection}>
         <div className={styles.countersRow}>
           {activeEmployees
-            .filter(emp => weekSubmissions.some(s => s.employeeId === emp.id && !s.isVacation))
+            .filter(emp =>
+              weekSubmissions.some(s => s.employeeId === emp.id && !s.isVacation) ||
+              weekAssignments.some(a => a.employeeId === emp.id)
+            )
             .sort((a, b) => (counters[a.id] ?? 0) - (counters[b.id] ?? 0))
             .map(emp => {
               const count = counters[emp.id] ?? 0
