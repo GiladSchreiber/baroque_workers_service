@@ -148,35 +148,44 @@ export const useSchedulingStore = create<SchedulingState>()(
         if (!useSupabase) return
         const ws = normalizeWeekStart(weekStart)
         set(s => ({ loadingWeek: { ...s.loadingWeek, [weekStart]: true } }))
-        try {
-          const [overrides, submissions, assignments, week] = await Promise.all([
-            schedulingRepo.getOverrides(ws),
-            schedulingRepo.getSubmissions(ws),
-            schedulingRepo.getAssignments(ws),
-            schedulingRepo.getWeek(ws),
-          ])
-          set(s => ({
-            overrides: [
+
+        const [ovResult, subResult, asnResult, wkResult] = await Promise.allSettled([
+          schedulingRepo.getOverrides(ws),
+          schedulingRepo.getSubmissions(ws),
+          schedulingRepo.getAssignments(ws),
+          schedulingRepo.getWeek(ws),
+        ])
+
+        set(s => {
+          const next = { ...s, loadingWeek: { ...s.loadingWeek, [weekStart]: false } }
+          if (ovResult.status === 'fulfilled') {
+            next.overrides = [
               ...s.overrides.filter(o => normalizeWeekStart(o.weekStart) !== ws),
-              ...overrides,
-            ],
-            submissions: [
+              ...ovResult.value,
+            ]
+          }
+          if (subResult.status === 'fulfilled') {
+            next.submissions = [
               ...s.submissions.filter(sub => normalizeWeekStart(sub.weekStart) !== ws),
-              ...submissions,
-            ],
-            assignments: [
+              ...subResult.value,
+            ]
+          } else {
+            console.error('fetchWeekData submissions:', subResult.reason)
+          }
+          if (asnResult.status === 'fulfilled') {
+            next.assignments = [
               ...s.assignments.filter(a => normalizeWeekStart(a.weekStart) !== ws),
-              ...assignments,
-            ],
-            weeks: week
-              ? [...s.weeks.filter(w => normalizeWeekStart(w.weekStart) !== ws), week]
-              : s.weeks,
-            loadingWeek: { ...s.loadingWeek, [weekStart]: false },
-          }))
-        } catch (err) {
-          console.error('fetchWeekData:', err)
-          set(s => ({ loadingWeek: { ...s.loadingWeek, [weekStart]: false } }))
-        }
+              ...asnResult.value,
+            ]
+          }
+          if (wkResult.status === 'fulfilled' && wkResult.value) {
+            next.weeks = [
+              ...s.weeks.filter(w => normalizeWeekStart(w.weekStart) !== ws),
+              wkResult.value,
+            ]
+          }
+          return next
+        })
       },
 
       // ── Templates ────────────────────────────────────────────────────────
@@ -309,7 +318,7 @@ export const useSchedulingStore = create<SchedulingState>()(
       },
     }),
     {
-      name: 'scheduling-v2',
+      name: 'scheduling-v3',
     },
   ),
 )

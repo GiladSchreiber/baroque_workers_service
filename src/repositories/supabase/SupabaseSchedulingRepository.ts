@@ -203,23 +203,23 @@ export const schedulingRepo = {
 
     const subIds = (subs as SubmissionRow[]).map(s => s.id)
 
-    const { data: slots, error: e2 } = await supabase
+    const { data: slotsData } = await supabase
       .from('availability_selected_slots').select('*').in('submission_id', subIds)
-    if (e2) throw new Error(e2.message)
+    const slots = (slotsData ?? []) as SelectedSlotRow[]
 
-    const { data: blocked, error: e3 } = await supabase
+    const { data: blockedData } = await supabase
       .from('availability_blocked_days').select('*').in('submission_id', subIds)
-    if (e3) throw new Error(e3.message)
+    const blocked = (blockedData ?? []) as BlockedDayRow[]
 
     return (subs as SubmissionRow[]).map(s => ({
       id: s.id, weekStart: normalizeWeekStart(s.week_start), employeeId: s.employee_id,
       isVacation: s.is_vacation, notes: s.notes ?? '',
       submittedAt: s.submitted_at,
-      selectedSlotIds: (slots as SelectedSlotRow[])
+      selectedSlotIds: slots
         .filter(sl => sl.submission_id === s.id)
         .map(sl => sl.slot_id)
         .filter((id): id is string => Boolean(id)),
-      blockedDays: (blocked as BlockedDayRow[])
+      blockedDays: blocked
         .filter(b => b.submission_id === s.id).map(b => b.day_of_week),
     }))
   },
