@@ -86,8 +86,11 @@ function InternshipsModal({ slots, weekStart, onClose }: {
 
   function handleSave() {
     const toSave = rows.filter(r => r.slotId && r.internName.trim())
-    // Update or clear notes on already-assigned slots
+    const toSaveIds = new Set(toSave.map(r => r.slotId))
+
+    // Only touch assignments that previously had a note (to clear it) or now have one
     for (const a of weekAssignments) {
+      if (!a.internshipNote && !toSaveIds.has(a.slotId)) continue
       const match = toSave.find(r => r.slotId === a.slotId)
       upsertAssignment({ ...a, internshipNote: match ? match.internName.trim() : null })
     }
@@ -175,31 +178,13 @@ function SlotRow({ slot, weekStart }: SlotRowProps) {
     [submissions, weekStart, slot.id, employees],
   )
 
-  // Track workers manually added via modal even after they're deselected
-  const [manualExtras, setManualExtras] = useState<Set<string>>(() => {
-    const initial = new Set<string>()
-    if (assignment?.employeeId && !submitters.some(e => e.id === assignment.employeeId)) {
-      initial.add(assignment.employeeId)
-    }
-    return initial
-  })
-
-  // When a new non-submitter gets assigned, add them to the persistent extra set
-  useEffect(() => {
-    if (assignment?.employeeId && !submitters.some(e => e.id === assignment.employeeId)) {
-      setManualExtras(prev => {
-        if (prev.has(assignment.employeeId!)) return prev
-        return new Set([...prev, assignment.employeeId!])
-      })
-    }
-  }, [assignment?.employeeId])
-
+  // Pills = submitters + currently-assigned worker (if not already a submitter)
   const allPills = useMemo(() => {
-    const extras = [...manualExtras]
-      .map(id => employees.find(e => e.id === id))
-      .filter((e): e is typeof employees[0] => !!e && !submitters.some(s => s.id === e.id))
-    return [...submitters, ...extras]
-  }, [submitters, manualExtras, employees])
+    const extra = assignment?.employeeId && !submitters.some(e => e.id === assignment.employeeId)
+      ? employees.find(e => e.id === assignment.employeeId && e.isActive)
+      : undefined
+    return extra ? [...submitters, extra] : submitters
+  }, [submitters, assignment?.employeeId, employees])
 
   const slotState = assignment?.employeeId ? 'assigned'
     : submitters.length > 0               ? 'available'
@@ -623,8 +608,8 @@ export function ArrangementPage() {
         </div>
       </section>
 
-      {/* Day cards */}
-      <div className={styles.days}>
+      {/* Day cards — pointer-events disabled while fetching to prevent stale-cache clicks */}
+      <div className={styles.days} style={isLoadingThisWeek ? { pointerEvents: 'none', opacity: 0.5 } : undefined}>
         {[0, 1, 2, 3, 4, 5, 6].map(dow => (
           <DayCard
             key={dow}
