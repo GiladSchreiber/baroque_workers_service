@@ -1,0 +1,229 @@
+@use '../../styles/variables' as v;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-3;
+  min-width: 18rem;
+}
+
+.monthRow {
+  display: flex;
+}
+
+.monthSelect {
+  width: 100%;
+  background: v.$color-surface-raised;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-sm;
+  color: v.$color-text;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+  padding: v.$space-2 v.$space-3;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  text-align: right;
+
+  &:focus {
+    outline: none;
+    border-color: v.$color-primary;
+  }
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+}
+
+.listItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-2;
+  padding: v.$space-2 v.$space-3;
+  background: v.$color-surface-raised;
+  border-radius: v.$radius-sm;
+  border: 1px solid v.$color-border;
+}
+
+.itemInfo {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  flex: 1;
+  min-width: 0;
+}
+
+.itemDates {
+  font-size: v.$font-size-sm;
+  color: v.$color-text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rateBadge {
+  flex-shrink: 0;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+
+.rate150 {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+}
+
+.rate200 {
+  background: rgba(234, 88, 12, 0.12);
+  color: #ea580c;
+}
+
+.itemActions {
+  display: flex;
+  align-items: center;
+  gap: v.$space-1;
+  flex-shrink: 0;
+}
+
+.editBtn {
+  background: none;
+  border: none;
+  color: v.$color-text-muted;
+  cursor: pointer;
+  padding: v.$space-1;
+  font-size: v.$font-size-sm;
+  line-height: 1;
+  border-radius: v.$radius-sm;
+  transition: color v.$transition-fast;
+
+  &:hover {
+    color: v.$color-primary;
+  }
+}
+
+.deleteBtn {
+  background: none;
+  border: none;
+  color: v.$color-text-muted;
+  cursor: pointer;
+  padding: v.$space-1;
+  font-size: v.$font-size-xs;
+  line-height: 1;
+  border-radius: v.$radius-sm;
+  transition: color v.$transition-fast;
+
+  &:hover {
+    color: v.$color-danger;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.empty {
+  text-align: center;
+  color: v.$color-text-muted;
+  font-size: v.$font-size-sm;
+  margin: v.$space-2 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-3;
+  border-top: 1px solid v.$color-border;
+  padding-top: v.$space-3;
+}
+
+.formTitle {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-text;
+  margin: 0;
+}
+
+.dateTimeRow {
+  display: flex;
+  gap: v.$space-3;
+
+  > * { flex: 1; }
+}
+
+.rateRow {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+}
+
+.rateLabel {
+  font-size: v.$font-size-sm;
+  color: v.$color-text-muted;
+  white-space: nowrap;
+}
+
+.rateOptions {
+  display: flex;
+  gap: v.$space-2;
+}
+
+.rateOption {
+  display: flex;
+  align-items: center;
+  gap: v.$space-1;
+  font-size: v.$font-size-sm;
+  color: v.$color-text-muted;
+  cursor: pointer;
+  padding: v.$space-1 v.$space-2;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-sm;
+  transition: color v.$transition-fast, border-color v.$transition-fast;
+
+  input[type='radio'] {
+    display: none;
+  }
+}
+
+.rateOptionSelected {
+  color: v.$color-primary;
+  border-color: v.$color-primary;
+  font-weight: v.$font-weight-semibold;
+}
+
+.error {
+  color: v.$color-danger;
+  font-size: v.$font-size-sm;
+  margin: 0;
+}
+
+.formActions {
+  display: flex;
+  gap: v.$space-3;
+  flex-direction: row-reverse;
+}
+
+.addBtn {
+  background: none;
+  border: 1px dashed v.$color-border;
+  border-radius: v.$radius-sm;
+  color: v.$color-text-muted;
+  font-size: v.$font-size-sm;
+  padding: v.$space-2 v.$space-3;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  transition: color v.$transition-fast, border-color v.$transition-fast;
+
+  &:hover {
+    color: v.$color-primary;
+    border-color: v.$color-primary;
+  }
+}

@@ -35,7 +35,7 @@ create table public.shifts (
   tips            numeric(10,2),
   amount          numeric(10,2),             -- flat payment for global / taxi shifts
   repeat_monthly  boolean default false,
-  day_type        text default 'auto',       -- 'auto' | 'shabbat' (150%) | 'holiday' (200%)
+  -- day_type column removed: ALTER TABLE shifts DROP COLUMN day_type;
   submitted_at    timestamptz not null default now(),
   updated_at      timestamptz
 );

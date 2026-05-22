@@ -1,4 +1,4 @@
-import type { ShiftType, BlockType, DayType } from '../types'
+import type { ShiftType, BlockType, HolidaySetting } from '../types'
 
 export const SHIFT_TYPE_LABELS: Record<ShiftType, string> = {
   regular: 'רגיל',
@@ -78,21 +78,56 @@ export function shiftHours(startTime: string, endTime: string): string {
 
 // Returns regular/shabbat/holiday/support breakdown for a shift.
 // Support type → regular-day hours go to support (₪50 flat); Shabbat/holiday hours go to shabbat/holiday bucket.
-// Friday 14:00–end-of-day and Saturday 00:00–20:00 are shabbat (when dayType is 'auto').
-// dayType 'shabbat' → all hours at shabbat rate (150% of minimum wage).
-// dayType 'holiday' → all hours at holiday rate (200% of minimum wage).
+// Friday 14:00–end-of-day and Saturday 00:00–20:00 are shabbat by default (overridden per month via shabbat_settings).
+// holidayPeriods → manager-defined ranges; 150% goes to shabbat bucket, 200% goes to holiday bucket.
 export const MINIMUM_WAGE = 35.4
 export const SHABBAT_RATE = MINIMUM_WAGE * 1.5  // 53.1
 export const HOLIDAY_RATE = MINIMUM_WAGE * 2.0  // 70.8
+
+// Classify a contiguous time range [startMs, endMs] into regular and shabbat minutes
+// based on the day-of-week Shabbat window. Iterates calendar day by calendar day.
+function classifyNonHolidayMins(
+  startMs: number,
+  endMs: number,
+  fridayStartMins: number,
+  saturdayEndMins: number,
+): { regular: number; shabbat: number } {
+  let regular = 0
+  let shabbat = 0
+  let cursor = startMs
+  while (cursor < endMs) {
+    const dt = new Date(cursor)
+    const dayStart = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime()
+    const dayEnd = dayStart + 24 * 60 * 60 * 1000
+    const segEnd = Math.min(endMs, dayEnd)
+    const segStartMin = (cursor - dayStart) / 60000
+    const segEndMin   = (segEnd  - dayStart) / 60000
+    const segMins = segEndMin - segStartMin
+    const dow = dt.getDay()
+    if (dow === 5) {
+      const regMins  = Math.max(0, Math.min(segEndMin, fridayStartMins) - segStartMin)
+      regular += regMins
+      shabbat += Math.max(0, segMins - regMins)
+    } else if (dow === 6) {
+      const shabMins = Math.max(0, Math.min(segEndMin, saturdayEndMins) - segStartMin)
+      shabbat += shabMins
+      regular += Math.max(0, segMins - shabMins)
+    } else {
+      regular += segMins
+    }
+    cursor = dayEnd
+  }
+  return { regular, shabbat }
+}
 
 export function splitShiftHours(
   date: string,
   startTime: string,
   endTime: string,
   type: ShiftType,
-  dayType?: DayType,
   fridayStartMins = 14 * 60,
   saturdayEndMins = 20 * 60,
+  holidayPeriods: HolidaySetting[] = [],
 ): { regular: number; shabbat: number; holiday: number; support: number } {
   const [sh, sm] = startTime.split(':').map(Number)
   const [eh, em] = endTime.split(':').map(Number)
@@ -100,35 +135,70 @@ export function splitShiftHours(
   let endMins   = eh * 60 + em
   if (endMins <= startMins) endMins += 24 * 60
   const totalMins = endMins - startMins
-  const totalHours = totalMins / 60
 
   if (type === 'global' || type === 'taxi' || type === 'cashier') return { regular: 0, shabbat: 0, holiday: 0, support: 0 }
 
-  // Explicit day-type overrides (apply to both support and regular shift types)
-  if (dayType === 'holiday') return { regular: 0, shabbat: 0, holiday: totalHours, support: 0 }
-  if (dayType === 'shabbat') return { regular: 0, shabbat: totalHours, holiday: 0, support: 0 }
+  // Convert shift to absolute ms; endMs accounts for midnight-crossing shifts
+  const shiftStartMs = new Date(`${date}T${startTime}:00`).getTime()
+  const shiftEndMs   = shiftStartMs + totalMins * 60000
 
-  // 'auto' or undefined — detect from actual weekday
-  const dow = new Date(date + 'T12:00:00').getDay() // 5=Fri, 6=Sat
-
-  if (dow === 5) {
-    const cut = fridayStartMins
-    const regMins  = Math.max(0, Math.min(endMins, cut) - startMins)
-    const shabMins = Math.max(0, endMins - Math.max(startMins, cut))
-    if (type === 'support') return { regular: 0, shabbat: shabMins / 60, holiday: 0, support: regMins / 60 }
-    return { regular: regMins / 60, shabbat: shabMins / 60, holiday: 0, support: 0 }
+  // Find and merge overlapping holiday intervals within the shift window
+  const raw: { start: number; end: number; rate: HolidaySetting['rate'] }[] = []
+  for (const hp of holidayPeriods) {
+    const hpStart = new Date(`${hp.startDate}T${hp.startTime}:00`).getTime()
+    const hpEnd   = new Date(`${hp.endDate}T${hp.endTime}:00`).getTime()
+    const oStart  = Math.max(shiftStartMs, hpStart)
+    const oEnd    = Math.min(shiftEndMs,   hpEnd)
+    if (oEnd > oStart) raw.push({ start: oStart, end: oEnd, rate: hp.rate })
+  }
+  raw.sort((a, b) => a.start - b.start)
+  const intervals: typeof raw = []
+  for (const iv of raw) {
+    const last = intervals[intervals.length - 1]
+    if (!last || iv.start >= last.end) {
+      intervals.push({ ...iv })
+    } else {
+      last.end = Math.max(last.end, iv.end)
+      if (iv.rate === '200') last.rate = '200' // higher rate wins on overlap
+    }
   }
 
-  if (dow === 6) {
-    const cut = saturdayEndMins
-    const shabMins = Math.max(0, Math.min(endMins, cut) - startMins)
-    const regMins  = Math.max(0, endMins - Math.max(startMins, cut))
-    if (type === 'support') return { regular: 0, shabbat: shabMins / 60, holiday: 0, support: regMins / 60 }
-    return { regular: regMins / 60, shabbat: shabMins / 60, holiday: 0, support: 0 }
+  // Tally holiday minutes by rate
+  let holiday200Mins = 0
+  let holiday150Mins = 0
+  for (const iv of intervals) {
+    const mins = (iv.end - iv.start) / 60000
+    if (iv.rate === '200') holiday200Mins += mins
+    else holiday150Mins += mins
   }
 
-  if (type === 'support') return { regular: 0, shabbat: 0, holiday: 0, support: totalHours }
-  return { regular: totalHours, shabbat: 0, holiday: 0, support: 0 }
+  // Non-holiday gaps → classify by weekday/Shabbat rules
+  const gaps: { start: number; end: number }[] = []
+  let cursor = shiftStartMs
+  for (const iv of intervals) {
+    if (iv.start > cursor) gaps.push({ start: cursor, end: iv.start })
+    cursor = iv.end
+  }
+  if (cursor < shiftEndMs) gaps.push({ start: cursor, end: shiftEndMs })
+
+  let regularMins = 0
+  let shabbatMins = 0
+  for (const gap of gaps) {
+    const r = classifyNonHolidayMins(gap.start, gap.end, fridayStartMins, saturdayEndMins)
+    regularMins += r.regular
+    shabbatMins += r.shabbat
+  }
+
+  // 150% holiday hours → shabbat bucket (same rate, display together)
+  // 200% holiday hours → holiday bucket (higher rate)
+  const regularHours = regularMins / 60
+  const shabbatHours = shabbatMins / 60 + holiday150Mins / 60
+  const holidayHours = holiday200Mins / 60
+
+  if (type === 'support') {
+    return { regular: 0, shabbat: shabbatHours, holiday: holidayHours, support: regularHours }
+  }
+  return { regular: regularHours, shabbat: shabbatHours, holiday: holidayHours, support: 0 }
 }
 
 // ---------------------------------------------------------------------------

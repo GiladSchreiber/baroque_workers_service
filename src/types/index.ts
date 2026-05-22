@@ -1,8 +1,18 @@
 export type Role = 'employee' | 'duty' | 'manager' | 'scheduler'
 export type ShiftType = 'regular' | 'morning' | 'afternoon' | 'evening' | 'kitchen' | 'support' | 'manager' | 'overlap' | 'general' | 'global' | 'taxi' | 'cashier'
 export type BlockType = 'morning' | 'afternoon' | 'evening'
-/** Override the automatic weekday/Shabbat detection for a shift day. */
-export type DayType = 'auto' | 'shabbat' | 'holiday'
+export type HolidayRate = '150' | '200'
+
+export interface HolidaySetting {
+  id: string
+  startDate: string  // YYYY-MM-DD
+  startTime: string  // HH:mm
+  endDate: string    // YYYY-MM-DD
+  endTime: string    // HH:mm
+  rate: HolidayRate
+}
+
+export type CreateHolidaySettingInput = Omit<HolidaySetting, 'id'>
 
 export interface Employee {
   id: string
@@ -36,8 +46,6 @@ export interface Shift {
   // Global (flat payment) — used when type === 'global'
   amount?: number
   repeatMonthly?: boolean
-  /** Overrides automatic weekday detection for pay-rate purposes. */
-  dayType?: DayType
   submittedAt: string
   updatedAt?: string
 }
@@ -63,4 +71,5 @@ export interface ShabbatSetting {
 
 export type CreateEmployeeInput = Omit<Employee, 'id' | 'createdAt'>
 export type CreateShiftInput = Omit<Shift, 'id' | 'submittedAt' | 'updatedAt'>
+
 export type CreateClosureInput = Omit<ShiftClosure, 'id' | 'submittedAt'>

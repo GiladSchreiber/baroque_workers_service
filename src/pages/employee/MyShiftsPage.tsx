@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { useShiftStore } from '../../store/shiftStore'
 import { useShabbatSettingsStore } from '../../store/shabbatSettingsStore'
+import { useHolidaySettingsStore } from '../../store/holidaySettingsStore'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
@@ -25,13 +26,15 @@ export function MyShiftsPage() {
   const currentUser = useAuthStore(s => s.currentUser)
   const { shifts, isLoading, fetchAll } = useShiftStore()
   const { fetchAll: fetchShabbatSettings, getTimesForDate } = useShabbatSettingsStore()
+  const { periods: holidayPeriods, fetchAll: fetchHolidaySettings } = useHolidaySettingsStore()
   const [filterMonth, setFilterMonth] = useState(currentMonthStr())
   const [editShift, setEditShift] = useState<Shift | null>(null)
 
   useEffect(() => {
     fetchAll()
     fetchShabbatSettings()
-  }, [fetchAll, fetchShabbatSettings])
+    fetchHolidaySettings()
+  }, [fetchAll, fetchShabbatSettings, fetchHolidaySettings])
 
   const hourlyWage = currentUser?.hourlyWage ?? 0
   const myId = currentUser?.id ?? ''
@@ -77,7 +80,7 @@ export function MyShiftsPage() {
         salary += s.amount ?? 0
       } else {
         const { fridayStartMins, saturdayEndMins } = getTimesForDate(s.date)
-        const h = splitShiftHours(s.date, s.startTime, s.endTime, s.type, s.dayType, fridayStartMins, saturdayEndMins)
+        const h = splitShiftHours(s.date, s.startTime, s.endTime, s.type, fridayStartMins, saturdayEndMins, holidayPeriods)
         const myTip = tipMap.get(s.date)?.get(myId) ?? 0
         salary += calcSalary(h.regular, h.shabbat, h.support, myTip, hourlyWage, h.holiday)
         shiftCount++
@@ -128,7 +131,7 @@ export function MyShiftsPage() {
                 {filtered.map(shift => {
                   const isFlat = shift.type === 'global' || shift.type === 'taxi' || shift.type === 'cashier'
                   const { fridayStartMins, saturdayEndMins } = getTimesForDate(shift.date)
-                  const h = isFlat ? { regular: 0, shabbat: 0, holiday: 0, support: 0 } : splitShiftHours(shift.date, shift.startTime, shift.endTime, shift.type, shift.dayType, fridayStartMins, saturdayEndMins)
+                  const h = isFlat ? { regular: 0, shabbat: 0, holiday: 0, support: 0 } : splitShiftHours(shift.date, shift.startTime, shift.endTime, shift.type, fridayStartMins, saturdayEndMins, holidayPeriods)
                   const myTip = isFlat ? 0 : (tipMap.get(shift.date)?.get(myId) ?? 0)
                   const salary = isFlat
                     ? (shift.amount ?? 0)
@@ -142,7 +145,7 @@ export function MyShiftsPage() {
                       <td className={styles.dateCell}>{formatDateShort(shift.date)}</td>
                       <td><Badge type={shift.type} label={SHIFT_TYPE_LABELS[shift.type]} /></td>
                       <td className={styles.numCell}>{isFlat ? '—' : fmtH(h.regular + h.support)}</td>
-                      <td className={styles.numCell}>{isFlat ? '—' : fmtH(h.shabbat)}</td>
+                      <td className={styles.numCell}>{isFlat ? '—' : fmtH(h.shabbat + h.holiday)}</td>
                       <td className={styles.numCell}>₪{fmtMoney(salary)}</td>
                     </tr>
                   )
