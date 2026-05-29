@@ -32,6 +32,48 @@
   gap: v.$space-3;
 }
 
+.rolesField {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+}
+
+.rolesLabel {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-text-muted;
+}
+
+.rolesGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-2;
+}
+
+.roleCheckbox {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  padding: v.$space-2 v.$space-3;
+  border: 1.5px solid v.$color-border;
+  border-radius: v.$radius-md;
+  cursor: pointer;
+  font-size: v.$font-size-sm;
+  transition: border-color 0.15s, background-color 0.15s;
+
+  input[type='checkbox'] {
+    width: 16px;
+    height: 16px;
+    accent-color: v.$color-primary;
+    cursor: pointer;
+  }
+
+  &:has(input:checked) {
+    border-color: v.$color-primary;
+    background-color: rgba(var(--color-primary-rgb, 99 102 241), 0.07);
+  }
+}
+
 .error {
   font-size: v.$font-size-sm;
   color: v.$color-danger;

@@ -67,7 +67,7 @@ export function EditShiftPage() {
     <div className={styles.page}>
       <PageHeader title="עריכת דיווח" showBack />
       <div className={styles.content}>
-        <ShiftForm showDutyShift={['duty', 'manager', 'scheduler'].includes(currentUser.role)}
+        <ShiftForm showDutyShift={currentUser.roles.some(r => ['duty', 'manager', 'scheduler'].includes(r))}
           employeeId={currentUser.id}
           initialValues={shift}
           onSubmit={handleSubmit}

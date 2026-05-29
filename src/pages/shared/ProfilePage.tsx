@@ -4,7 +4,9 @@ import { PageHeader } from '../../components/layout/PageHeader'
 import { Button } from '../../components/ui/Button'
 import styles from './ProfilePage.module.scss'
 
-const ROLE_LABELS: Record<string, string> = { employee: 'עובד', duty: 'אחמ"ש', scheduler: 'סידור', manager: 'מנהל' }
+const ROLE_LABELS: Record<string, string> = {
+  employee: 'עובד', duty: 'אחמ"ש', kitchen: 'מנהל מטבח', scheduler: 'סידור', manager: 'מנהל',
+}
 
 export function ProfilePage() {
   const navigate = useNavigate()
@@ -25,7 +27,7 @@ export function ProfilePage() {
         </div>
         <h2 className={styles.name}>{currentUser.name}</h2>
         <p className={styles.email}>{currentUser.email}</p>
-        <span className={styles.role}>{ROLE_LABELS[currentUser.role]}</span>
+        <span className={styles.role}>{currentUser.roles.map(r => ROLE_LABELS[r] ?? r).join(' · ')}</span>
 
         <div className={styles.actions}>
           <Button variant="destructive" fullWidth onClick={handleLogout}>

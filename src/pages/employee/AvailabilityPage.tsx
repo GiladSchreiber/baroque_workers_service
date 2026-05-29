@@ -86,8 +86,8 @@ function DaySection({ dow, slots, selected, blocked, onToggleSlot, onSelectAll, 
 }
 
 function SubNav() {
-  const role = useAuthStore(s => s.currentUser?.role)
-  if (role === 'scheduler') return <ManagerSchedulingSubNav active="submit" />
+  const roles = useAuthStore(s => s.currentUser?.roles)
+  if (roles?.includes('scheduler')) return <ManagerSchedulingSubNav active="submit" />
   return <SchedulingSubNav active="submit" />
 }
 
@@ -112,7 +112,7 @@ export function AvailabilityPage() {
     () => getEffectiveSlotsForWeek(nextWeekStart, templates, overrides),
     [nextWeekStart, templates, overrides],
   )
-  const hasDutyAccess = ['duty', 'manager', 'scheduler'].includes(currentUser.role)
+  const hasDutyAccess = currentUser.roles.some(r => ['duty', 'manager', 'scheduler'].includes(r))
   const slots = useMemo(
     () => hasDutyAccess ? allSlots : allSlots.filter(s => s.group !== 'duty'),
     [allSlots, hasDutyAccess],

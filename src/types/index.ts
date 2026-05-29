@@ -1,4 +1,4 @@
-export type Role = 'employee' | 'duty' | 'manager' | 'scheduler'
+export type Role = 'employee' | 'duty' | 'manager' | 'scheduler' | 'kitchen'
 export type ShiftType = 'regular' | 'morning' | 'afternoon' | 'evening' | 'kitchen' | 'support' | 'manager' | 'overlap' | 'general' | 'global' | 'taxi' | 'cashier'
 export type BlockType = 'morning' | 'afternoon' | 'evening'
 export type HolidayRate = '150' | '200'
@@ -19,7 +19,7 @@ export interface Employee {
   name: string
   email: string
   passwordHash: string
-  role: Role
+  roles: Role[]
   hourlyWage: number
   isActive: boolean
   createdAt: string
@@ -70,6 +70,19 @@ export interface ShabbatSetting {
 }
 
 export type CreateEmployeeInput = Omit<Employee, 'id' | 'createdAt'>
+// Convenience helpers
+export function hasRole(user: Pick<Employee, 'roles'>, role: Role): boolean {
+  return user.roles.includes(role)
+}
+export function hasAnyRole(user: Pick<Employee, 'roles'>, roles: Role[]): boolean {
+  return roles.some(r => user.roles.includes(r))
+}
+export function getPrimaryPath(roles: Role[]): string {
+  if (roles.includes('manager'))   return '/manager/dashboard'
+  if (roles.includes('scheduler')) return '/scheduler/scheduling'
+  if (roles.includes('kitchen'))   return '/kitchen/report'
+  return '/employee/report'
+}
 export type CreateShiftInput = Omit<Shift, 'id' | 'submittedAt' | 'updatedAt'>
 
 export type CreateClosureInput = Omit<ShiftClosure, 'id' | 'submittedAt'>

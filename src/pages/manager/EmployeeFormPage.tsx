@@ -4,14 +4,14 @@ import { useEmployeeStore } from '../../store/employeeStore'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
-import { Select } from '../../components/ui/Select'
 import type { Role } from '../../types'
 import { hashPassword } from '../../lib/utils'
 import styles from './EmployeeFormPage.module.scss'
 
-const ROLE_OPTIONS = [
+const ROLE_OPTIONS: { value: Role; label: string }[] = [
   { value: 'employee',  label: 'עובד' },
   { value: 'duty',      label: 'אחמ"ש' },
+  { value: 'kitchen',   label: 'מנהל מטבח' },
   { value: 'scheduler', label: 'סידור' },
   { value: 'manager',   label: 'מנהל' },
 ]
@@ -24,7 +24,7 @@ export function EmployeeFormPage() {
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [role, setRole] = useState<Role>('employee')
+  const [roles, setRoles] = useState<Role[]>(['employee'])
   const [hourlyWage, setHourlyWage] = useState('')
   const [idNumber, setIdNumber] = useState('')
   const [phone, setPhone] = useState('')
@@ -45,7 +45,7 @@ export function EmployeeFormPage() {
       if (emp) {
         setName(emp.name)
         setEmail(emp.email)
-        setRole(emp.role)
+        setRoles(emp.roles)
         setHourlyWage(String(emp.hourlyWage))
         setIdNumber(emp.idNumber ?? '')
         setPhone(emp.phone ?? '')
@@ -56,32 +56,40 @@ export function EmployeeFormPage() {
     }
   }, [isEdit, id, employees])
 
+  function toggleRole(role: Role) {
+    setRoles(prev =>
+      prev.includes(role)
+        ? prev.filter(r => r !== role)
+        : [...prev, role]
+    )
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    if (roles.length === 0) { setError('יש לבחור לפחות תפקיד אחד'); return }
     setIsLoading(true)
     try {
       const personalFields = { idNumber, phone, bankNumber, bankBranch, bankAccount }
+      const isManager = roles.includes('manager')
       if (isEdit && id) {
         const updates: Parameters<typeof updateEmployee>[1] = {
-          name, email, role,
+          name, email, roles,
           hourlyWage: Number(hourlyWage),
           ...personalFields,
         }
-        if (role === 'manager' && password) {
+        if (isManager && password) {
           updates.passwordHash = await hashPassword(password)
         }
         await updateEmployee(id, updates)
       } else {
         const duplicate = employees.find(e => e.email.toLowerCase() === email.toLowerCase())
         if (duplicate) throw new Error('האימייל כבר בשימוש')
-        const passwordHash = role === 'manager' && password
-          ? await hashPassword(password)
-          : ''
+        const passwordHash = isManager && password ? await hashPassword(password) : ''
         await addEmployee({
           name, email,
           passwordHash,
-          role,
+          roles,
           hourlyWage: Number(hourlyWage),
           isActive: true,
           ...personalFields,
@@ -122,14 +130,24 @@ export function EmployeeFormPage() {
             required
             autoComplete="email"
           />
-          <Select
-            label="תפקיד"
-            id="role"
-            options={ROLE_OPTIONS}
-            value={role}
-            onChange={e => setRole(e.target.value as Role)}
-          />
-          {role === 'manager' && (
+
+          <div className={styles.rolesField}>
+            <span className={styles.rolesLabel}>תפקידים</span>
+            <div className={styles.rolesGroup}>
+              {ROLE_OPTIONS.map(opt => (
+                <label key={opt.value} className={styles.roleCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={roles.includes(opt.value)}
+                    onChange={() => toggleRole(opt.value)}
+                  />
+                  {opt.label}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {roles.includes('manager') && (
             <Input
               label={isEdit ? 'סיסמה (השאר ריק לאי-שינוי)' : 'סיסמה'}
               id="password"

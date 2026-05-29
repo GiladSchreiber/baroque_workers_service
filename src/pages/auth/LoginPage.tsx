@@ -23,8 +23,9 @@ export function LoginPage() {
 
   useEffect(() => {
     if (!currentUser) return
-    if (currentUser.role === 'manager') navigate('/manager/dashboard', { replace: true })
-    else if (currentUser.role === 'scheduler') navigate('/scheduler/scheduling', { replace: true })
+    if (currentUser.roles.includes('manager')) navigate('/manager/dashboard', { replace: true })
+    else if (currentUser.roles.includes('scheduler')) navigate('/scheduler/scheduling', { replace: true })
+    else if (currentUser.roles.includes('kitchen')) navigate('/kitchen/report', { replace: true })
     else navigate('/employee/report', { replace: true })
   }, [currentUser])
 

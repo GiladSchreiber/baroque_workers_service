@@ -7,7 +7,9 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import styles from './EmployeeDetailPage.module.scss'
 
-const ROLE_LABELS: Record<string, string> = { employee: 'עובד', duty: 'אחמ"ש', scheduler: 'סידור', manager: 'מנהל' }
+const ROLE_LABELS: Record<string, string> = {
+  employee: 'עובד', duty: 'אחמ"ש', kitchen: 'מנהל מטבח', scheduler: 'סידור', manager: 'מנהל',
+}
 
 function Row({ label, value }: { label: string; value?: string | number }) {
   if (!value && value !== 0) return null
@@ -52,7 +54,7 @@ export function EmployeeDetailPage() {
         <div className={styles.section}>
           <p className={styles.sectionTitle}>פרטים כלליים</p>
           <Row label="שם מלא" value={emp.name} />
-          <Row label="תפקיד" value={ROLE_LABELS[emp.role]} />
+          <Row label="תפקיד" value={emp.roles.map(r => ROLE_LABELS[r] ?? r).join(' · ')} />
           <Row label="שכר לשעה" value={`₪${emp.hourlyWage}`} />
         </div>
 

@@ -103,6 +103,22 @@
   white-space: nowrap;
 }
 
+.roleBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.roleKitchen {
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  color: #f97316;
+  background-color: rgba(249, 115, 22, 0.12);
+  padding: v.$space-1 v.$space-2;
+  border-radius: v.$radius-sm;
+  white-space: nowrap;
+}
+
 .roleScheduler {
   font-size: v.$font-size-xs;
   font-weight: v.$font-weight-semibold;

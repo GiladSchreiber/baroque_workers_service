@@ -130,7 +130,7 @@ export function AllShiftsPage() {
   }, [fetchShifts, fetchEmployees, fetchShabbatSettings, fetchHolidaySettings])
 
   const activeEmployees = useMemo(
-    () => employees.filter(e => e.isActive && e.role !== 'manager'),
+    () => employees.filter(e => e.isActive && !e.roles.includes('manager')),
     [employees]
   )
 

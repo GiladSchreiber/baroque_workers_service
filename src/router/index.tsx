@@ -1,5 +1,6 @@
 import { createHashRouter, Navigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
+import { getPrimaryPath, type Role } from '../types'
 import { AppShell } from '../components/layout/AppShell'
 import { LoginPage } from '../pages/auth/LoginPage'
 import { RegisterPage } from '../pages/auth/RegisterPage'
@@ -18,15 +19,15 @@ import { ShiftTemplatesPage } from '../pages/manager/scheduling/ShiftTemplatesPa
 import { ArrangementPage } from '../pages/manager/scheduling/ArrangementPage'
 import { AvailabilityPage } from '../pages/employee/AvailabilityPage'
 import { ScheduleViewPage } from '../pages/employee/ScheduleViewPage'
+import { FillInventoryPage } from '../pages/inventory/FillInventoryPage'
+import { DefineInventoryPage } from '../pages/inventory/DefineInventoryPage'
+import { OrdersPage } from '../pages/inventory/OrdersPage'
 
-function RequireAuth({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
+function RequireAuth({ children, roles }: { children: React.ReactNode; roles?: Role[] }) {
   const currentUser = useAuthStore(s => s.currentUser)
   if (!currentUser) return <Navigate to="/login" replace />
-  if (roles && !roles.includes(currentUser.role)) {
-    const fallback = currentUser.role === 'manager' ? '/manager/dashboard'
-      : currentUser.role === 'scheduler' ? '/scheduler/scheduling'
-      : '/employee/report'
-    return <Navigate to={fallback} replace />
+  if (roles && !roles.some(r => currentUser.roles.includes(r))) {
+    return <Navigate to={getPrimaryPath(currentUser.roles)} replace />
   }
   return <>{children}</>
 }
@@ -34,9 +35,7 @@ function RequireAuth({ children, roles }: { children: React.ReactNode; roles?: s
 function RootRedirect() {
   const currentUser = useAuthStore(s => s.currentUser)
   if (!currentUser) return <Navigate to="/login" replace />
-  if (currentUser.role === 'manager') return <Navigate to="/manager/dashboard" replace />
-  if (currentUser.role === 'scheduler') return <Navigate to="/scheduler/scheduling" replace />
-  return <Navigate to="/employee/report" replace />  // employee + duty
+  return <Navigate to={getPrimaryPath(currentUser.roles)} replace />
 }
 
 // Shared scheduling children (used by both manager and scheduler)
@@ -62,6 +61,24 @@ export const router = createHashRouter([
       { path: 'shifts/:id/edit', element: <EditShiftPage /> },
       { path: 'scheduling', element: <AvailabilityPage /> },
       { path: 'scheduling/view', element: <ScheduleViewPage /> },
+      { path: 'inventory', element: <FillInventoryPage /> },
+    ],
+  },
+  {
+    path: '/kitchen',
+    element: <RequireAuth roles={['kitchen']}><AppShell /></RequireAuth>,
+    children: [
+      { index: true, element: <Navigate to="report" replace /> },
+      { path: 'report', element: <ReportShiftPage /> },
+      { path: 'closure', element: <SubmitClosurePage /> },
+      { path: 'shifts', element: <MyShiftsPage /> },
+      { path: 'shifts/:id/edit', element: <EditShiftPage /> },
+      { path: 'scheduling', element: <AvailabilityPage /> },
+      { path: 'scheduling/view', element: <ScheduleViewPage /> },
+      { path: 'inventory', element: <Navigate to="/kitchen/inventory/fill" replace /> },
+      { path: 'inventory/fill', element: <FillInventoryPage isKitchen /> },
+      { path: 'inventory/define', element: <DefineInventoryPage /> },
+      { path: 'inventory/orders', element: <OrdersPage /> },
     ],
   },
   {

@@ -1,11 +1,20 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
+import type { Role } from '../../types'
 import styles from './BottomNav.module.scss'
 
 const EMPLOYEE_LINKS = [
   { to: '/employee/shifts',     label: 'שעות',  icon: <ShiftsIcon /> },
   { to: '/employee/report',     label: 'דיווח', icon: <PlusIcon /> },
   { to: '/employee/scheduling', label: 'סידור', icon: <SchedulingIcon /> },
+  { to: '/employee/inventory',  label: 'מלאי',  icon: <InventoryIcon /> },
+]
+
+const KITCHEN_LINKS = [
+  { to: '/kitchen/shifts',               label: 'שעות',  icon: <ShiftsIcon /> },
+  { to: '/kitchen/report',               label: 'דיווח', icon: <PlusIcon /> },
+  { to: '/kitchen/scheduling',           label: 'סידור', icon: <SchedulingIcon /> },
+  { to: '/kitchen/inventory',            label: 'מלאי',  icon: <InventoryIcon /> },
 ]
 
 const SCHEDULER_LINKS = [
@@ -22,11 +31,19 @@ const MANAGER_LINKS = [
   { to: '/manager/scheduling/arrangement', label: 'סידור', icon: <SchedulingIcon /> },
 ]
 
+function getLinks(roles: Role[] | undefined) {
+  if (!roles) return EMPLOYEE_LINKS
+  if (roles.includes('manager'))   return MANAGER_LINKS
+  if (roles.includes('scheduler')) return SCHEDULER_LINKS
+  if (roles.includes('kitchen'))   return KITCHEN_LINKS
+  return EMPLOYEE_LINKS  // employee + duty
+}
+
 export function BottomNav() {
-  const role = useAuthStore(s => s.currentUser?.role)
+  const roles = useAuthStore(s => s.currentUser?.roles)
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const links = role === 'manager' ? MANAGER_LINKS : role === 'scheduler' ? SCHEDULER_LINKS : EMPLOYEE_LINKS  // employee + duty
+  const links = getLinks(roles)
 
   return (
     <nav className={styles.nav}>
@@ -104,6 +121,15 @@ function TeamIcon() {
       <circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.75"/>
       <path d="M2 18c0-2.761 2.686-5 6-5s6 2.239 6 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
       <path d="M15 6a3 3 0 010 6M18 18c0-2.761-2-5-4.5-5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function InventoryIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <rect x="3" y="3" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.75"/>
+      <path d="M7 7h8M7 11h8M7 15h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
   )
 }

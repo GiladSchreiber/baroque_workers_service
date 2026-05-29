@@ -26,9 +26,9 @@ export function SchedulingSubNav({
   onWeekChange?: (k: 'current' | 'next') => void
 }) {
   const navigate  = useNavigate()
-  const role      = useAuthStore(s => s.currentUser?.role)
-  const base      = role === 'scheduler' ? '/scheduler' : '/manager'
-  const isScheduler = role === 'scheduler'
+  const roles       = useAuthStore(s => s.currentUser?.roles)
+  const isScheduler = !!roles?.includes('scheduler')
+  const base        = isScheduler ? '/scheduler' : '/manager'
 
   return (
     <div className={styles.subNav}>
@@ -489,7 +489,7 @@ export function ArrangementPage() {
   const submissionStatus = useMemo(() => {
     return activeEmployees.flatMap(emp => {
       const sub = weekSubmissions.find(s => s.employeeId === emp.id)
-      if (!sub && emp.role !== 'employee' && emp.role !== 'duty') return []
+      if (!sub && !emp.roles.some(r => r === 'employee' || r === 'duty')) return []
       const effectiveStatus = sub
         ? (sub.isVacation ? 'vacation' : 'submitted')
         : 'missing'

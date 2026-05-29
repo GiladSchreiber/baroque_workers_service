@@ -10,6 +10,7 @@ import styles from './EmployeesPage.module.scss'
 const ROLE_LABELS: Record<Role, string> = {
   employee:  'עובד',
   duty:      'אחמ"ש',
+  kitchen:   'מנהל מטבח',
   scheduler: 'סידור',
   manager:   'מנהל',
 }
@@ -17,6 +18,7 @@ const ROLE_LABELS: Record<Role, string> = {
 const ROLE_STYLE: Record<Role, string> = {
   employee:  'roleEmployee',
   duty:      'roleDuty',
+  kitchen:   'roleKitchen',
   scheduler: 'roleScheduler',
   manager:   'roleManager',
 }
@@ -56,9 +58,13 @@ export function EmployeesPage() {
                 >
                   <td className={styles.nameCell}>{emp.name}</td>
                   <td>
-                    <span className={styles[ROLE_STYLE[emp.role]]}>
-                      {ROLE_LABELS[emp.role]}
-                    </span>
+                    <div className={styles.roleBadges}>
+                      {emp.roles.map(r => (
+                        <span key={r} className={styles[ROLE_STYLE[r]]}>
+                          {ROLE_LABELS[r]}
+                        </span>
+                      ))}
+                    </div>
                   </td>
                   <td className={styles.wageCell}>₪{emp.hourlyWage}</td>
                 </tr>

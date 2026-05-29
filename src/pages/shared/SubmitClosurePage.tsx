@@ -58,7 +58,7 @@ export function SubmitClosurePage() {
         notes: notes.trim() || undefined,
         submittedById: currentUser.id,
       })
-      navigate(currentUser.role === 'manager' ? '/manager/closures' : '/employee/report')
+      navigate(currentUser.roles.includes('manager') ? '/manager/closures' : '/employee/report')
     } finally {
       setIsSubmitting(false)
     }

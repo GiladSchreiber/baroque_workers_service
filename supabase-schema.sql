@@ -9,7 +9,7 @@ create table public.employees (
   name            text not null,
   email           text unique not null,
   password_hash   text,                        -- null for employees; plain-text password for managers
-  role            text not null default 'employee' check (role in ('employee', 'duty', 'manager', 'scheduler')),
+  role            text[] not null default array['employee'],
   hourly_wage     numeric(10,2) not null default 0,
   is_active       boolean not null default true,
   id_number       text,
@@ -142,11 +142,64 @@ create table public.schedule_assignments (
 );
 
 -- =====================================================
+-- Inventory tables
+-- =====================================================
+
+-- Inventory items (category doubles as supplier)
+create table public.inventory_items (
+  id          text primary key,                  -- client-generated stable ID (e.g. inv-veg-1)
+  name        text not null,
+  category    text not null,
+  sort_order  smallint not null default 0,
+  is_active   boolean not null default true,
+  created_at  timestamptz not null default now()
+);
+
+-- Category display order
+create table public.inventory_category_order (
+  category    text primary key,
+  sort_order  smallint not null default 0
+);
+
+-- Inventory reports (one per employee per date)
+create table public.inventory_reports (
+  id                uuid primary key default gen_random_uuid(),
+  date              date not null,
+  submitted_by_id   uuid not null references public.employees(id) on delete cascade,
+  submitted_by_name text not null,
+  submitted_at      timestamptz not null default now(),
+  unique (date, submitted_by_id)
+);
+
+-- Report entries (per item per report)
+create table public.inventory_entries (
+  report_id  uuid not null references public.inventory_reports(id) on delete cascade,
+  item_id    text not null references public.inventory_items(id) on delete cascade,
+  status     text not null check (status in ('ok', 'partial', 'missing')),
+  notes      text not null default '',
+  primary key (report_id, item_id)
+);
+
+alter table public.inventory_items           disable row level security;
+alter table public.inventory_category_order  disable row level security;
+alter table public.inventory_reports         disable row level security;
+alter table public.inventory_entries         disable row level security;
+
+-- =====================================================
 -- Migrations (run these if updating an existing DB)
 -- =====================================================
 -- ALTER TABLE public.employees DROP COLUMN IF EXISTS is_duty_officer;
+
+-- ── Multi-role migration (run once on existing DB) ──────────────────────────
+-- Step 1: convert role text → text[]
+-- ALTER TABLE public.employees ALTER COLUMN role TYPE text[] USING ARRAY[role]::text[];
+-- ALTER TABLE public.employees ALTER COLUMN role SET DEFAULT ARRAY['employee']::text[];
+
+-- Step 2: drop old single-value check constraint and add array subset constraint
 -- ALTER TABLE public.employees DROP CONSTRAINT IF EXISTS employees_role_check;
--- ALTER TABLE public.employees ADD CONSTRAINT employees_role_check CHECK (role IN ('employee', 'duty', 'manager', 'scheduler'));
+-- ALTER TABLE public.employees DROP CONSTRAINT IF EXISTS employees_roles_check;
+-- ALTER TABLE public.employees ADD CONSTRAINT employees_roles_check
+--   CHECK (role <@ ARRAY['employee','duty','manager','scheduler','kitchen']::text[]);
 
 -- Disable RLS (internal app — no public access expected)
 alter table public.employees                  disable row level security;

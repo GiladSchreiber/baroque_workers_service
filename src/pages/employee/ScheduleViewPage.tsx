@@ -23,8 +23,8 @@ export function SchedulingSubNav({
   onWeekChange?: (k: 'current' | 'next') => void
 }) {
   const navigate = useNavigate()
-  const role     = useAuthStore(s => s.currentUser?.role)
-  const base     = role === 'scheduler' ? '/scheduler' : '/employee'
+  const roles    = useAuthStore(s => s.currentUser?.roles)
+  const base     = roles?.includes('scheduler') ? '/scheduler' : '/employee'
 
   return (
     <div className={styles.subNav}>
@@ -136,7 +136,7 @@ export function ScheduleViewPage() {
   return (
     <div className={styles.page}>
       <PageHeader title={weekTitle} />
-      {currentUser?.role === 'scheduler'
+      {currentUser?.roles.includes('scheduler')
         ? <ManagerSchedulingSubNav active={weekKey} onWeekChange={setWeekKey} />
         : <SchedulingSubNav active={weekKey} onWeekChange={setWeekKey} />
       }

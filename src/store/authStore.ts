@@ -31,7 +31,7 @@ export const useAuthStore = create<AuthState>()(
         const employee = await employeeRepo.getByEmail(email)
         if (!employee) throw new Error('משתמש לא נמצא')
         if (!employee.isActive) throw new Error('החשבון אינו פעיל')
-        if (employee.role === 'manager') {
+        if (employee.roles.includes('manager')) {
           if (!password) throw new Error('NEED_PASSWORD')
           const hashed = await hashPassword(password)
           if (hashed !== employee.passwordHash) throw new Error('סיסמה שגויה')
@@ -55,7 +55,7 @@ export const useAuthStore = create<AuthState>()(
           name,
           email,
           passwordHash: '',
-          role: 'employee',
+          roles: ['employee'],
           hourlyWage: 40,
           isActive: true,
           idNumber,
