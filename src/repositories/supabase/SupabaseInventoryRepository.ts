@@ -19,7 +19,7 @@ interface CategoryOrderRow {
 interface ReportRow {
   id: string
   date: string
-  submitted_by_id: string
+  submitted_by_id: string   // text (not uuid) — supports any employee ID format
   submitted_by_name: string
   submitted_at: string
 }
@@ -129,6 +129,25 @@ export class SupabaseInventoryRepository {
 
   // ── Reports ────────────────────────────────────────────────────────────────
 
+  async getLatestReport(): Promise<InventoryReport | null> {
+    const { data: reports, error: rErr } = await supabase
+      .from('inventory_reports')
+      .select('*')
+      .order('submitted_at', { ascending: false })
+      .limit(1)
+    if (rErr) throw rErr
+    if (!reports || reports.length === 0) return null
+
+    const report = reports[0] as ReportRow
+    const { data: entries, error: eErr } = await supabase
+      .from('inventory_entries')
+      .select('*')
+      .eq('report_id', report.id)
+    if (eErr) throw eErr
+
+    return toReport(report, (entries ?? []) as EntryRow[])
+  }
+
   async getReportsForDate(date: string): Promise<InventoryReport[]> {
     const { data: reports, error: rErr } = await supabase
       .from('inventory_reports')
@@ -169,10 +188,11 @@ export class SupabaseInventoryRepository {
 
   async saveReport(report: Omit<InventoryReport, 'id'> & { id?: string }): Promise<InventoryReport> {
     // Upsert the report row (unique on date + submitted_by_id)
+    // Never pass a locally-generated id — let Postgres assign the UUID.
+    // The unique constraint on (date, submitted_by_id) handles upsert correctly.
     const { data: rows, error: rErr } = await supabase
       .from('inventory_reports')
       .upsert({
-        ...(report.id ? { id: report.id } : {}),
         date: report.date,
         submitted_by_id: report.submittedById,
         submitted_by_name: report.submittedByName,

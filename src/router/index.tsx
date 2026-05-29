@@ -22,6 +22,7 @@ import { ScheduleViewPage } from '../pages/employee/ScheduleViewPage'
 import { FillInventoryPage } from '../pages/inventory/FillInventoryPage'
 import { DefineInventoryPage } from '../pages/inventory/DefineInventoryPage'
 import { OrdersPage } from '../pages/inventory/OrdersPage'
+import { PreparationsPage } from '../pages/inventory/PreparationsPage'
 
 function RequireAuth({ children, roles }: { children: React.ReactNode; roles?: Role[] }) {
   const currentUser = useAuthStore(s => s.currentUser)
@@ -61,7 +62,9 @@ export const router = createHashRouter([
       { path: 'shifts/:id/edit', element: <EditShiftPage /> },
       { path: 'scheduling', element: <AvailabilityPage /> },
       { path: 'scheduling/view', element: <ScheduleViewPage /> },
-      { path: 'inventory', element: <FillInventoryPage /> },
+      { path: 'inventory', element: <Navigate to="/employee/inventory/fill" replace /> },
+      { path: 'inventory/fill', element: <FillInventoryPage /> },
+      { path: 'inventory/preparations', element: <PreparationsPage /> },
     ],
   },
   {
@@ -77,6 +80,7 @@ export const router = createHashRouter([
       { path: 'scheduling/view', element: <ScheduleViewPage /> },
       { path: 'inventory', element: <Navigate to="/kitchen/inventory/fill" replace /> },
       { path: 'inventory/fill', element: <FillInventoryPage isKitchen /> },
+      { path: 'inventory/preparations', element: <PreparationsPage isKitchen /> },
       { path: 'inventory/define', element: <DefineInventoryPage /> },
       { path: 'inventory/orders', element: <OrdersPage /> },
     ],

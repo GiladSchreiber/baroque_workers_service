@@ -203,6 +203,16 @@
   padding: v.$space-4;
   background: v.$color-bg;
   border-top: 1px solid v.$color-border;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+}
+
+.saveError {
+  font-size: v.$font-size-sm;
+  color: v.$color-danger;
+  text-align: center;
+  margin: 0;
 }
 
 .submitBtn {

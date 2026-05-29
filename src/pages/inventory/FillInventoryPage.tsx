@@ -6,23 +6,36 @@ import { PageHeader } from '../../components/layout/PageHeader'
 import type { InventoryStatus } from '../../types/inventory'
 import styles from './FillInventoryPage.module.scss'
 
-// ── Sub-nav (shown only for kitchen role) ────────────────────────────────────
-export function InventorySubNav({ active }: { active: 'fill' | 'define' | 'orders' }) {
+// ── Sub-nav ───────────────────────────────────────────────────────────────────
+export function InventorySubNav({
+  active,
+  isKitchen = false,
+}: {
+  active: 'fill' | 'define' | 'orders' | 'preparations'
+  isKitchen?: boolean
+}) {
   const navigate = useNavigate()
+  const base = isKitchen ? '/kitchen' : '/employee'
   return (
     <div className={styles.subNav}>
       <button
         className={[styles.subTab, active === 'fill' ? styles.subTabActive : ''].join(' ')}
-        onClick={() => navigate('/kitchen/inventory/fill')}
+        onClick={() => navigate(`${base}/inventory/fill`)}
       >מלאי</button>
       <button
-        className={[styles.subTab, active === 'define' ? styles.subTabActive : ''].join(' ')}
-        onClick={() => navigate('/kitchen/inventory/define')}
-      >הגדרה</button>
-      <button
-        className={[styles.subTab, active === 'orders' ? styles.subTabActive : ''].join(' ')}
-        onClick={() => navigate('/kitchen/inventory/orders')}
-      >הזמנות</button>
+        className={[styles.subTab, active === 'preparations' ? styles.subTabActive : ''].join(' ')}
+        onClick={() => navigate(`${base}/inventory/preparations`)}
+      >הכנות</button>
+      {isKitchen && <>
+        <button
+          className={[styles.subTab, active === 'define' ? styles.subTabActive : ''].join(' ')}
+          onClick={() => navigate(`${base}/inventory/define`)}
+        >הגדרה</button>
+        <button
+          className={[styles.subTab, active === 'orders' ? styles.subTabActive : ''].join(' ')}
+          onClick={() => navigate(`${base}/inventory/orders`)}
+        >הזמנות</button>
+      </>}
     </div>
   )
 }
@@ -103,11 +116,12 @@ interface ItemState {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }) {
   const currentUser = useAuthStore(s => s.currentUser)
-  const items         = useInventoryStore(s => s.items)
-  const categoryOrder = useInventoryStore(s => s.categoryOrder)
-  const saveReport = useInventoryStore(s => s.saveReport)
+  const items                  = useInventoryStore(s => s.items)
+  const categoryOrder          = useInventoryStore(s => s.categoryOrder)
+  const saveReport             = useInventoryStore(s => s.saveReport)
   const getReportByDateAndWorker = useInventoryStore(s => s.getReportByDateAndWorker)
-  const fetchAll = useInventoryStore(s => s.fetchAll)
+  const fetchAll               = useInventoryStore(s => s.fetchAll)
+  const fetchReportsForDate    = useInventoryStore(s => s.fetchReportsForDate)
 
   useEffect(() => { fetchAll() }, [])
 
@@ -115,6 +129,8 @@ export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }
   const [itemStates, setItemStates] = useState<Record<string, ItemState>>({})
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [saveError, setSaveError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
 
   const activeItems = useMemo(
     () => items.filter(it => it.isActive).sort((a, b) => a.sortOrder - b.sortOrder),
@@ -134,6 +150,10 @@ export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }
   // App.tsx's refreshCurrentUser() — which creates a new object reference for
   // the same user — does NOT re-run this effect and wipe in-progress toggles.
   const currentUserId = currentUser?.id
+  useEffect(() => {
+    fetchReportsForDate(date)
+  }, [date])
+
   useEffect(() => {
     if (!currentUserId) return
     const existing = getReportByDateAndWorker(date, currentUserId)
@@ -166,8 +186,10 @@ export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }
     }))
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!currentUser || !currentUserId) return
+    setSaveError('')
+    setIsSaving(true)
     const entries = activeItems
       .filter(it => itemStates[it.id]?.status != null)
       .map(it => ({
@@ -175,14 +197,23 @@ export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }
         status: itemStates[it.id].status as InventoryStatus,
         notes: itemStates[it.id]?.notes ?? '',
       }))
-    saveReport({
-      date,
-      submittedById: currentUserId,
-      submittedByName: currentUser.name,
-      entries,
-    })
-    setIsSubmitted(true)
-    setIsEditing(false)
+    try {
+      await saveReport({
+        date,
+        submittedById: currentUserId,
+        submittedByName: currentUser.name,
+        entries,
+      })
+      setIsSubmitted(true)
+      setIsEditing(false)
+    } catch (err) {
+      const msg = err instanceof Error
+        ? err.message
+        : (err as any)?.message ?? (err as any)?.details ?? JSON.stringify(err)
+      setSaveError(`שגיאה בשמירה: ${msg}`)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const readonly = isSubmitted && !isEditing
@@ -190,7 +221,7 @@ export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }
   return (
     <div className={styles.page}>
       <PageHeader title="מלאי" />
-      {isKitchen && <InventorySubNav active="fill" />}
+      <InventorySubNav active="fill" isKitchen={isKitchen} />
 
       <DateSelector date={date} onChange={d => { setDate(d); setIsEditing(false) }} />
 
@@ -225,13 +256,14 @@ export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }
       </div>
 
       <div className={styles.footer}>
+        {saveError && <p className={styles.saveError}>{saveError}</p>}
         {readonly ? (
           <button className={styles.editBtn} onClick={() => setIsEditing(true)}>
             ערוך
           </button>
         ) : (
-          <button className={styles.submitBtn} onClick={handleSubmit}>
-            {isEditing ? 'עדכן' : 'שלח'}
+          <button className={styles.submitBtn} onClick={handleSubmit} disabled={isSaving}>
+            {isSaving ? '...' : isEditing ? 'עדכן' : 'שלח'}
           </button>
         )}
       </div>

@@ -142,7 +142,7 @@ export function OrdersPage() {
   return (
     <div className={styles.page}>
       <PageHeader title="מלאי" />
-      <InventorySubNav active="orders" />
+      <InventorySubNav active="orders" isKitchen />
 
       <DateSelector date={date} onChange={setDate} />
       <FilterBar active={activeFilters} onToggle={toggleFilter} />

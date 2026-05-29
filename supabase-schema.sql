@@ -165,7 +165,7 @@ create table public.inventory_category_order (
 create table public.inventory_reports (
   id                uuid primary key default gen_random_uuid(),
   date              date not null,
-  submitted_by_id   uuid not null references public.employees(id) on delete cascade,
+  submitted_by_id   text not null,
   submitted_by_name text not null,
   submitted_at      timestamptz not null default now(),
   unique (date, submitted_by_id)

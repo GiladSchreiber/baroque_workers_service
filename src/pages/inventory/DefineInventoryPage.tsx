@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { useInventoryStore } from '../../store/inventoryStore'
+import { useInventoryStore, PROTECTED_CATEGORY } from '../../store/inventoryStore'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import type { InventoryItem } from '../../types/inventory'
@@ -448,13 +448,15 @@ function EditCategoriesModal({
                 <DragIcon />
               </div>
               <span className={styles.catName}>{cat}</span>
-              <button
-                className={styles.catDeleteBtn}
-                onClick={() => handleDelete(cat)}
-                aria-label={`מחק קטגוריה ${cat}`}
-              >
-                <XIcon />
-              </button>
+              {cat !== PROTECTED_CATEGORY && (
+                <button
+                  className={styles.catDeleteBtn}
+                  onClick={() => handleDelete(cat)}
+                  aria-label={`מחק קטגוריה ${cat}`}
+                >
+                  <XIcon />
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -510,7 +512,7 @@ export function DefineInventoryPage() {
   return (
     <div className={styles.page}>
       <PageHeader title="מלאי" />
-      <InventorySubNav active="define" />
+      <InventorySubNav active="define" isKitchen />
 
       <div className={styles.content}>
         {categories.map(cat => (

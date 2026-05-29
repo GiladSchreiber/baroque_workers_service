@@ -30,6 +30,9 @@ export const DEFAULT_INVENTORY_ITEMS: InventoryItem[] = [
 
 export const DEFAULT_CATEGORY_ORDER = ['ירקות', 'כללי', 'גד']
 
+/** This category cannot be deleted from the UI */
+export const PROTECTED_CATEGORY = 'הכנות'
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function genId() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36)
@@ -75,6 +78,8 @@ interface InventoryState {
   setCategoryOrder: (order: string[]) => Promise<void>
 
   // Report actions
+  fetchLatestReport: () => Promise<void>
+  fetchReportsForDate: (date: string) => Promise<void>
   saveReport: (report: Omit<InventoryReport, 'id' | 'submittedAt'>) => Promise<void>
   getReportByDateAndWorker: (date: string, workerId: string) => InventoryReport | undefined
   getReportsForDate: (date: string) => InventoryReport[]
@@ -199,6 +204,43 @@ export const useInventoryStore = create<InventoryState>()(
 
       // ── Reports ─────────────────────────────────────────────────────────────
 
+      fetchReportsForDate: async (date) => {
+        if (!useSupabase) return
+        try {
+          const fetched = await inventoryRepo.getReportsForDate(date)
+          if (fetched.length === 0) return
+          set(s => {
+            let reports = [...s.reports]
+            for (const r of fetched) {
+              const idx = reports.findIndex(x => x.id === r.id)
+              if (idx >= 0) reports[idx] = r
+              else reports.push(r)
+            }
+            return { reports }
+          })
+        } catch (err) {
+          console.error('fetchReportsForDate:', err)
+        }
+      },
+
+      fetchLatestReport: async () => {
+        if (!useSupabase) return
+        try {
+          const report = await inventoryRepo.getLatestReport()
+          if (!report) return
+          set(s => {
+            const exists = s.reports.some(r => r.id === report.id)
+            return {
+              reports: exists
+                ? s.reports.map(r => r.id === report.id ? report : r)
+                : [...s.reports, report],
+            }
+          })
+        } catch (err) {
+          console.error('fetchLatestReport:', err)
+        }
+      },
+
       saveReport: async (reportData) => {
         const now = new Date().toISOString()
         const existing = get().reports.find(
@@ -220,12 +262,12 @@ export const useInventoryStore = create<InventoryState>()(
         if (useSupabase) {
           try {
             const saved = await inventoryRepo.saveReport({ ...localReport })
-            // Update with DB-assigned id / submittedAt
             set(s => ({
               reports: s.reports.map(r => r.id === localReport.id ? saved : r),
             }))
-          } catch (err) {
-            console.error('saveReport:', err)
+          } catch (err: any) {
+            // Re-throw as a proper Error so callers get a readable message
+            throw new Error(err?.message ?? err?.details ?? err?.hint ?? JSON.stringify(err))
           }
         }
       },
