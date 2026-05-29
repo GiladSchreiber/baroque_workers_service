@@ -72,7 +72,8 @@ function FilterBar({
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function OrdersPage() {
-  const items = useInventoryStore(s => s.items)
+  const items         = useInventoryStore(s => s.items)
+  const categoryOrder = useInventoryStore(s => s.categoryOrder)
   const getReportsForDate = useInventoryStore(s => s.getReportsForDate)
   const fetchAll = useInventoryStore(s => s.fetchAll)
 
@@ -89,10 +90,12 @@ export function OrdersPage() {
 
   const activeItems = useMemo(() => items.filter(i => i.isActive), [items])
 
-  const categories = useMemo(
-    () => Array.from(new Set(activeItems.map(i => i.category))),
-    [activeItems]
-  )
+  const categories = useMemo(() => {
+    const presentCats = new Set(activeItems.map(i => i.category))
+    const ordered = categoryOrder.filter(c => presentCats.has(c))
+    const extra   = [...presentCats].filter(c => !categoryOrder.includes(c)).sort((a, b) => a.localeCompare(b, 'he'))
+    return [...ordered, ...extra]
+  }, [activeItems, categoryOrder])
 
   function toggleFilter(s: InventoryStatus) {
     setActiveFilters(prev => {

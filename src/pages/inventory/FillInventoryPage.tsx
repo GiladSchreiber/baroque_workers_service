@@ -103,7 +103,8 @@ interface ItemState {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }) {
   const currentUser = useAuthStore(s => s.currentUser)
-  const items = useInventoryStore(s => s.items)
+  const items         = useInventoryStore(s => s.items)
+  const categoryOrder = useInventoryStore(s => s.categoryOrder)
   const saveReport = useInventoryStore(s => s.saveReport)
   const getReportByDateAndWorker = useInventoryStore(s => s.getReportByDateAndWorker)
   const fetchAll = useInventoryStore(s => s.fetchAll)
@@ -116,17 +117,17 @@ export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }
   const [isEditing, setIsEditing] = useState(false)
 
   const activeItems = useMemo(
-    () => items.filter(it => it.isActive).sort((a, b) => {
-      const catCmp = a.category.localeCompare(b.category, 'he')
-      return catCmp !== 0 ? catCmp : a.sortOrder - b.sortOrder
-    }),
+    () => items.filter(it => it.isActive).sort((a, b) => a.sortOrder - b.sortOrder),
     [items]
   )
 
-  const categories = useMemo(
-    () => Array.from(new Set(activeItems.map(it => it.category))),
-    [activeItems]
-  )
+  const categories = useMemo(() => {
+    const presentCats = new Set(activeItems.map(it => it.category))
+    // respect the saved category order; fall back to alphabetical for any unlisted
+    const ordered = categoryOrder.filter(c => presentCats.has(c))
+    const extra   = [...presentCats].filter(c => !categoryOrder.includes(c)).sort((a, b) => a.localeCompare(b, 'he'))
+    return [...ordered, ...extra]
+  }, [activeItems, categoryOrder])
 
   // Load existing report when date or user ID changes.
   // Intentionally depend on currentUser?.id (not the whole object) so that
