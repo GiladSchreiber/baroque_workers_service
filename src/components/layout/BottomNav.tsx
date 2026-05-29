@@ -18,9 +18,10 @@ const KITCHEN_LINKS = [
 ]
 
 const SCHEDULER_LINKS = [
-  { to: '/scheduler/shifts',               label: 'שעות',  icon: <ShiftsIcon /> },
-  { to: '/scheduler/report',               label: 'דיווח', icon: <PlusIcon /> },
+  { to: '/scheduler/shifts',                 label: 'שעות',  icon: <ShiftsIcon /> },
+  { to: '/scheduler/report',                 label: 'דיווח', icon: <PlusIcon /> },
   { to: '/scheduler/scheduling/arrangement', label: 'סידור', icon: <SchedulingIcon /> },
+  { to: '/scheduler/inventory',              label: 'מלאי',  icon: <InventoryIcon /> },
 ]
 
 const MANAGER_LINKS = [

@@ -556,8 +556,16 @@ export function ArrangementPage() {
           })}
         </div>
         {statusOpen && (() => {
-          const names = submissionStatus.filter(x => x.status === statusOpen).map(x => x.emp.name.split(' ')[0])
-          return <div className={styles.statusExpanded}>{names.join(', ')}</div>
+          const entries = submissionStatus.filter(x => x.status === statusOpen).map(x => {
+            const firstName = x.emp.name.split(' ')[0]
+            if (statusOpen === 'submitted') {
+              const sub = weekSubmissions.find(s => s.employeeId === x.emp.id)
+              const count = sub?.selectedSlotIds?.length ?? 0
+              return `${firstName} (${count})`
+            }
+            return firstName
+          })
+          return <div className={styles.statusExpanded}>{entries.join(', ')}</div>
         })()}
       </section>
 
