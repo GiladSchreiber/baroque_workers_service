@@ -67,6 +67,20 @@ export const useAuthStore = create<AuthState>()(
         set({ currentUser: employee })
       },
     }),
-    { name: 'auth' }
+    {
+      name: 'auth',
+      version: 2,
+      migrate: (persisted: any, version: number) => {
+        // v1 → v2: role (string) became roles (string[])
+        if (version < 2 && persisted?.currentUser) {
+          const u = persisted.currentUser
+          if (!u.roles) {
+            u.roles = u.role ? [u.role] : ['employee']
+          }
+          delete u.role
+        }
+        return persisted
+      },
+    }
   )
 )

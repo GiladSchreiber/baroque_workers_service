@@ -27,8 +27,8 @@ import { PreparationsPage } from '../pages/inventory/PreparationsPage'
 function RequireAuth({ children, roles }: { children: React.ReactNode; roles?: Role[] }) {
   const currentUser = useAuthStore(s => s.currentUser)
   if (!currentUser) return <Navigate to="/login" replace />
-  if (roles && !roles.some(r => currentUser.roles.includes(r))) {
-    return <Navigate to={getPrimaryPath(currentUser.roles)} replace />
+  if (roles && !roles.some(r => (currentUser.roles ?? []).includes(r))) {
+    return <Navigate to={getPrimaryPath(currentUser.roles ?? ['employee'])} replace />
   }
   return <>{children}</>
 }
@@ -36,7 +36,7 @@ function RequireAuth({ children, roles }: { children: React.ReactNode; roles?: R
 function RootRedirect() {
   const currentUser = useAuthStore(s => s.currentUser)
   if (!currentUser) return <Navigate to="/login" replace />
-  return <Navigate to={getPrimaryPath(currentUser.roles)} replace />
+  return <Navigate to={getPrimaryPath(currentUser.roles ?? ['employee'])} replace />
 }
 
 // Shared scheduling children (used by both manager and scheduler)

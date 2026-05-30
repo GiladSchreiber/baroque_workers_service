@@ -33,11 +33,11 @@ const MANAGER_LINKS = [
 ]
 
 function getLinks(roles: Role[] | undefined) {
-  if (!roles) return EMPLOYEE_LINKS
+  if (!roles?.length) return EMPLOYEE_LINKS
   if (roles.includes('manager'))   return MANAGER_LINKS
   if (roles.includes('scheduler')) return SCHEDULER_LINKS
   if (roles.includes('kitchen'))   return KITCHEN_LINKS
-  return EMPLOYEE_LINKS  // employee + duty
+  return EMPLOYEE_LINKS
 }
 
 export function BottomNav() {
