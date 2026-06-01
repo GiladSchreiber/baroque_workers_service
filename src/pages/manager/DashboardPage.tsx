@@ -199,7 +199,10 @@ export function DashboardPage() {
   }, [summaries])
 
   const chartData = chartView === 'daily' ? dailyData : yearlyData
-  const xInterval = chartView === 'monthly' ? 5 : 0
+  // Show ~6 evenly-spaced labels regardless of days-in-month or months-in-history
+  const xInterval = chartView === 'monthly'
+    ? Math.max(1, Math.ceil((yearlyData.length - 1) / 6))
+    : Math.max(1, Math.ceil((dailyData.length - 1) / 6))
 
   // Historical reference for selected month
   const historicalPoint = useMemo(() => {
