@@ -8,10 +8,52 @@
 
 .filterBar {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: v.$space-2;
   padding: v.$space-3 v.$space-4;
   border-bottom: 1px solid v.$color-border;
+
+  // All direct children are capped to their grid cell — no blowout
+  > * { min-width: 0; overflow: hidden; }
+}
+
+.employeeSelector {
+  display: flex;
+  align-items: center;
+  gap: v.$space-1;
+  min-width: 0;
+
+  .filterSelect {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.workerNavBtn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: v.$color-surface-raised;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-sm;
+  color: v.$color-text;
+  font-size: v.$font-size-base;
+  cursor: pointer;
+  line-height: 1;
+  transition: border-color v.$transition-fast;
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+
+  &:not(:disabled):active {
+    border-color: v.$color-primary;
+    color: v.$color-primary;
+  }
 }
 
 .shabbatBtn {

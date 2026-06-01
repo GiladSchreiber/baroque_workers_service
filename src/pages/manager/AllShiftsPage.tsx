@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useEffect, useMemo } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import * as XLSX from 'xlsx'
 import { useShiftStore } from '../../store/shiftStore'
 import { useEmployeeStore } from '../../store/employeeStore'
@@ -107,20 +107,30 @@ function fmtH(h: number): string {
 
 export function AllShiftsPage() {
   const navigate = useNavigate()
-  const { key: locationKey } = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { shifts, isLoading, fetchAll: fetchShifts } = useShiftStore()
   const { employees, fetchAll: fetchEmployees } = useEmployeeStore()
   const { fetchAll: fetchShabbatSettings, getTimesForDate } = useShabbatSettingsStore()
   const { periods: holidayPeriods, fetchAll: fetchHolidaySettings } = useHolidaySettingsStore()
 
-  const [filterMonth, setFilterMonth] = useState(currentMonthStr())
-  const [selectedId, setSelectedId] = useState('')
-  const [shabbatModalOpen, setShabbatModalOpen] = useState(false)
-  const [holidayModalOpen, setHolidayModalOpen] = useState(false)
+  // Persist filter state in the URL so back-navigation restores the exact view
+  const filterMonth = searchParams.get('month') ?? currentMonthStr()
+  const selectedId  = searchParams.get('employee') ?? ''
+  const shabbatModalOpen  = searchParams.get('shabbatModal') === '1'
+  const holidayModalOpen  = searchParams.get('holidayModal') === '1'
 
-  useEffect(() => {
-    setSelectedId('')
-  }, [locationKey])
+  function setFilterMonth(m: string) {
+    setSearchParams(p => { p.set('month', m); p.delete('employee'); return p }, { replace: true })
+  }
+  function setSelectedId(id: string) {
+    setSearchParams(p => { id ? p.set('employee', id) : p.delete('employee'); return p }, { replace: true })
+  }
+  function setShabbatModalOpen(v: boolean) {
+    setSearchParams(p => { v ? p.set('shabbatModal', '1') : p.delete('shabbatModal'); return p }, { replace: true })
+  }
+  function setHolidayModalOpen(v: boolean) {
+    setSearchParams(p => { v ? p.set('holidayModal', '1') : p.delete('holidayModal'); return p }, { replace: true })
+  }
 
   useEffect(() => {
     fetchShifts()
@@ -156,6 +166,14 @@ export function AllShiftsPage() {
   )
 
   const selectedEmployee = selectedId ? employeeMap[selectedId] : null
+
+  // Prev/next worker navigation
+  const selectedIdx = useMemo(
+    () => summaryData.findIndex(d => d.employee.id === selectedId),
+    [summaryData, selectedId]
+  )
+  const canGoPrev = selectedIdx > 0
+  const canGoNext = selectedIdx !== -1 && selectedIdx < summaryData.length - 1
 
   const detailShifts = useMemo(
     () => selectedId
@@ -235,16 +253,34 @@ export function AllShiftsPage() {
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
-        <select
-          className={styles.filterSelect}
-          value={selectedId}
-          onChange={e => setSelectedId(e.target.value)}
-        >
-          <option value="">כל העובדים</option>
-          {activeEmployees.map(e => (
-            <option key={e.id} value={e.id}>{e.name}</option>
-          ))}
-        </select>
+        <div className={styles.employeeSelector}>
+          <select
+            className={styles.filterSelect}
+            value={selectedId}
+            onChange={e => setSelectedId(e.target.value)}
+          >
+            <option value="">כל העובדים</option>
+            {activeEmployees.map(e => (
+              <option key={e.id} value={e.id}>{e.name}</option>
+            ))}
+          </select>
+          {selectedId && (
+            <>
+              <button
+                className={styles.workerNavBtn}
+                disabled={!canGoNext}
+                onClick={() => setSelectedId(summaryData[selectedIdx + 1].employee.id)}
+                aria-label="עובד הבא"
+              >‹</button>
+              <button
+                className={styles.workerNavBtn}
+                disabled={!canGoPrev}
+                onClick={() => setSelectedId(summaryData[selectedIdx - 1].employee.id)}
+                aria-label="עובד הקודם"
+              >›</button>
+            </>
+          )}
+        </div>
         <button className={styles.shabbatBtn} onClick={() => setShabbatModalOpen(true)}>
           שעות שבת
         </button>
