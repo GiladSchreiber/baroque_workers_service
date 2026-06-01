@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ComposedChart, Area, Line,
   XAxis, YAxis, CartesianGrid, Tooltip,
@@ -6,9 +6,11 @@ import {
 } from 'recharts'
 import { useShiftStore } from '../../store/shiftStore'
 import { useMonthlySummaries } from '../../hooks/useMonthlySummaries'
+import { summaryRepo } from '../../repositories'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import { currentMonthStr, fmtMoney, formatMonth } from '../../lib/utils'
+import type { Shift } from '../../types'
 import styles from './DashboardPage.module.scss'
 
 const THIS_MONTH = currentMonthStr()
@@ -53,22 +55,78 @@ function ChartTooltip({ active, payload, label }: any) {
   )
 }
 
+// Helper: replicate the "latest shift per day" revenue logic for any month
+function computeMonthTotals(shifts: Shift[], m: string) {
+  const toMins = (t: string) => { const [h, mm] = t.split(':').map(Number); return h * 60 + mm }
+  const effEnd = (s: Shift) => { const e = toMins(s.endTime); return e <= toMins(s.startTime) ? e + 24 * 60 : e }
+  const byDate: Record<string, Shift> = {}
+  for (const s of shifts) {
+    if (!s.date.startsWith(m) || s.revenue == null) continue
+    const ex = byDate[s.date]
+    if (!ex || effEnd(s) > effEnd(ex)) byDate[s.date] = s
+  }
+  const days = Object.values(byDate)
+  const sum = days.reduce((acc, s) => acc + (s.revenue ?? 0), 0)
+  const average = days.length > 0 ? sum / days.length : 0
+  return { sum, average }
+}
+
 export function DashboardPage() {
   const { shifts, isLoading, fetchAll } = useShiftStore()
-  const { summaries } = useMonthlySummaries()
+  const { summaries, refresh: refreshSummaries } = useMonthlySummaries()
   const [month, setMonth] = useState(THIS_MONTH)
   const [chartView, setChartView] = useState<ChartView>('daily')
+  const autoUpsertDone = useRef(false)
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
-  const monthOptions = useMemo(() => [
-    { value: THIS_MONTH, label: formatMonth(THIS_MONTH) },
-    ...summaries
-      .slice()
+  // Auto-upsert completed months that have shift data but no summary entry yet.
+  // Runs once after both shifts and summaries have loaded.
+  useEffect(() => {
+    if (autoUpsertDone.current || isLoading || shifts.length === 0) return
+
+    const existingMonths = new Set(summaries.map(s => s.month))
+    const pastMonthsWithShifts = new Set<string>()
+    for (const s of shifts) {
+      const m = s.date.slice(0, 7)
+      if (m < THIS_MONTH && !existingMonths.has(m) && s.revenue != null) {
+        pastMonthsWithShifts.add(m)
+      }
+    }
+
+    if (pastMonthsWithShifts.size === 0) return
+    autoUpsertDone.current = true
+
+    Promise.all(
+      Array.from(pastMonthsWithShifts).map(m => {
+        const { sum, average } = computeMonthTotals(shifts, m)
+        return summaryRepo.upsert(m, average, sum, false)
+      })
+    )
+      .then(refreshSummaries)
+      .catch(console.error)
+  }, [isLoading, shifts, summaries, refreshSummaries])
+
+  // Months with shift data (for dropdown fallback before summaries are upserted)
+  const shiftMonthSet = useMemo(() => {
+    const s = new Set<string>()
+    for (const shift of shifts) {
+      if (shift.revenue != null) s.add(shift.date.slice(0, 7))
+    }
+    return s
+  }, [shifts])
+
+  const monthOptions = useMemo(() => {
+    const all = new Set([
+      THIS_MONTH,
+      ...summaries.map(s => s.month),
+      ...Array.from(shiftMonthSet),
+    ])
+    return Array.from(all)
+      .sort()
       .reverse()
-      .filter(p => p.month !== THIS_MONTH)
-      .map(p => ({ value: p.month, label: formatMonth(p.month) })),
-  ], [summaries])
+      .map(m => ({ value: m, label: formatMonth(m) }))
+  }, [summaries, shiftMonthSet])
 
   // One entry per day — the last shift (by effective end time) that has revenue data.
   // Overnight shifts get +24h so "02:30" sorts after "23:00".
