@@ -13,99 +13,24 @@ import { ShabbatSettingsModal } from '../../components/modals/ShabbatSettingsMod
 import { HolidaySettingsModal } from '../../components/modals/HolidaySettingsModal'
 import {
   SHIFT_TYPE_LABELS, formatDateShort, currentMonthStr, monthOptions, formatMonth,
-  splitShiftHours, calcSalary, fmtMoney, computeTipDistribution,
+  splitShiftHours, calcSalary, fmtMoney,
 } from '../../lib/utils'
-import type { Employee, Shift, HolidaySetting } from '../../types'
+import type { Shift } from '../../types'
+import { aggregateShifts, buildTipMap, type EmpStats } from '../../lib/shiftAggregation'
 import styles from './AllShiftsPage.module.scss'
 
 const MONTH_OPTIONS = [{ value: '', label: 'כל הזמן' }, ...monthOptions(24)]
 
-const NESIA_RATE = 8 // ₪ per shift
-
-interface EmpStats {
-  employee: Employee
-  regular: number
-  shabbat: number
-  holiday: number
-  support: number
-  tips: number
-  global: number
-  taxi: number
-  shiftCount: number     // non-global, non-taxi shifts
-  hourlySalary: number   // from hours (including tips)
-  nesia: number          // shiftCount * NESIA_RATE
-  salary: number         // total
-}
-
-/**
- * Build a date→distributedTips map for a set of shifts.
- * Tips are pooled per shift-window and shared proportionally among
- * overlapping non-support/non-flat workers (see computeTipDistribution).
- */
-function buildTipMap(allShiftsInPeriod: Shift[]): Map<string, Map<string, number>> {
-  // group by date
-  const byDate = new Map<string, Shift[]>()
-  for (const s of allShiftsInPeriod) {
-    if (!byDate.has(s.date)) byDate.set(s.date, [])
-    byDate.get(s.date)!.push(s)
-  }
-  const result = new Map<string, Map<string, number>>()
-  for (const [date, dayShifts] of byDate) {
-    result.set(date, computeTipDistribution(dayShifts))
-  }
-  return result
-}
-
-function aggregateShifts(
-  shifts: Shift[],
-  employee: Employee,
-  tipMap: Map<string, Map<string, number>>,
-  getTimesForDate: (date: string) => { fridayStartMins: number; saturdayEndMins: number },
-  holidayPeriods: HolidaySetting[],
-): EmpStats {
-  let regular = 0, shabbat = 0, holiday = 0, support = 0, tips = 0, globalAmt = 0, taxiAmt = 0, shiftCount = 0
-  let nesiaOverride: number | null = null
-  for (const s of shifts) {
-    if (s.type === 'global') {
-      globalAmt += s.amount ?? 0
-    } else if (s.type === 'taxi') {
-      taxiAmt += s.amount ?? 0
-    } else if (s.type === 'nesia') {
-      nesiaOverride = s.amount ?? 0
-    } else if (s.type === 'cashier') {
-      // cashier shifts are data-only, no hours or salary contribution
-    } else {
-      const { fridayStartMins, saturdayEndMins } = getTimesForDate(s.date)
-      const h = splitShiftHours(s.date, s.startTime, s.endTime, s.type, fridayStartMins, saturdayEndMins, holidayPeriods)
-      regular += h.regular
-      shabbat += h.shabbat
-      holiday += h.holiday
-      support += h.support
-      shiftCount++
-    }
-  }
-  // Sum distributed tips across all dates this employee worked
-  const workedDates = [...new Set(shifts.filter(s => s.type !== 'global' && s.type !== 'taxi' && s.type !== 'cashier' && s.type !== 'nesia').map(s => s.date))]
-  for (const date of workedDates) {
-    tips += tipMap.get(date)?.get(employee.id) ?? 0
-  }
-  const hourlySalary = calcSalary(regular, shabbat, support, tips, employee.hourlyWage, holiday)
-  const nesia = nesiaOverride !== null ? nesiaOverride : shiftCount * NESIA_RATE
-  return {
-    employee,
-    regular, shabbat, holiday, support, tips,
-    global: globalAmt,
-    taxi: taxiAmt,
-    shiftCount,
-    hourlySalary,
-    nesia,
-    salary: hourlySalary + globalAmt + taxiAmt + nesia,
-  }
-}
-
 function fmtH(h: number): string {
   if (h === 0) return '—'
   return h % 1 === 0 ? String(h) : h.toFixed(1)
+}
+
+function formatDateWithDay(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
+  const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת']
+  return `${String(d).padStart(2, '0')}.${String(m).padStart(2, '0')}.${String(y).slice(2)}, יום ${dayNames[date.getDay()]}`
 }
 
 export function AllShiftsPage() {
@@ -119,6 +44,7 @@ export function AllShiftsPage() {
   // Persist filter state in the URL so back-navigation restores the exact view
   const filterMonth = searchParams.get('month') ?? currentMonthStr()
   const selectedId  = searchParams.get('employee') ?? ''
+  const viewMode    = (searchParams.get('view') ?? 'worker') as 'worker' | 'date'
   const shabbatModalOpen  = searchParams.get('shabbatModal') === '1'
   const holidayModalOpen  = searchParams.get('holidayModal') === '1'
 
@@ -127,6 +53,9 @@ export function AllShiftsPage() {
   }
   function setSelectedId(id: string) {
     setSearchParams(p => { id ? p.set('employee', id) : p.delete('employee'); return p }, { replace: true })
+  }
+  function setViewMode(v: 'worker' | 'date') {
+    setSearchParams(p => { p.set('view', v); p.delete('employee'); return p }, { replace: true })
   }
   function setShabbatModalOpen(v: boolean) {
     setSearchParams(p => { v ? p.set('shabbatModal', '1') : p.delete('shabbatModal'); return p }, { replace: true })
@@ -169,6 +98,24 @@ export function AllShiftsPage() {
   )
 
   const selectedEmployee = selectedId ? employeeMap[selectedId] : null
+
+  // By-date view: group shifts by calendar date (skip meta/flat/data-only types)
+  const byDateData = useMemo(() => {
+    if (viewMode !== 'date') return []
+    const skipTypes = new Set(['cashier', 'nesia', 'global'])
+    const grouped = new Map<string, Shift[]>()
+    for (const s of monthShifts) {
+      if (skipTypes.has(s.type)) continue
+      if (!grouped.has(s.date)) grouped.set(s.date, [])
+      grouped.get(s.date)!.push(s)
+    }
+    return [...grouped.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, dayShifts]) => [
+        date,
+        [...dayShifts].sort((a, b) => a.startTime.localeCompare(b.startTime)),
+      ] as [string, Shift[]])
+  }, [monthShifts, viewMode])
 
   // Inline nesia editing
   const [nesiaEditing, setNesiaEditing] = useState(false)
@@ -276,8 +223,18 @@ export function AllShiftsPage() {
       />
 
       <div className={styles.filterBar}>
+        <div className={styles.viewToggle}>
+          <button
+            className={`${styles.viewToggleBtn} ${viewMode === 'worker' ? styles.viewToggleActive : ''}`}
+            onClick={() => setViewMode('worker')}
+          >לפי עובד</button>
+          <button
+            className={`${styles.viewToggleBtn} ${viewMode === 'date' ? styles.viewToggleActive : ''}`}
+            onClick={() => setViewMode('date')}
+          >לפי תאריך</button>
+        </div>
         <select
-          className={styles.filterSelect}
+          className={`${styles.filterSelect} ${viewMode === 'date' ? styles.fullWidth : ''}`}
           value={filterMonth}
           onChange={e => setFilterMonth(e.target.value)}
         >
@@ -285,34 +242,36 @@ export function AllShiftsPage() {
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
-        <div className={styles.employeeSelector}>
-          <select
-            className={styles.filterSelect}
-            value={selectedId}
-            onChange={e => setSelectedId(e.target.value)}
-          >
-            <option value="">כל העובדים</option>
-            {activeEmployees.map(e => (
-              <option key={e.id} value={e.id}>{e.name}</option>
-            ))}
-          </select>
-          {selectedId && (
-            <>
-              <button
-                className={styles.workerNavBtn}
-                disabled={!canGoNext}
-                onClick={() => setSelectedId(summaryData[selectedIdx + 1].employee.id)}
-                aria-label="עובד הבא"
-              >‹</button>
-              <button
-                className={styles.workerNavBtn}
-                disabled={!canGoPrev}
-                onClick={() => setSelectedId(summaryData[selectedIdx - 1].employee.id)}
-                aria-label="עובד הקודם"
-              >›</button>
-            </>
-          )}
-        </div>
+        {viewMode === 'worker' ? (
+          <div className={styles.employeeSelector}>
+            <select
+              className={styles.filterSelect}
+              value={selectedId}
+              onChange={e => setSelectedId(e.target.value)}
+            >
+              <option value="">כל העובדים</option>
+              {activeEmployees.map(e => (
+                <option key={e.id} value={e.id}>{e.name}</option>
+              ))}
+            </select>
+            {selectedId && (
+              <>
+                <button
+                  className={styles.workerNavBtn}
+                  disabled={!canGoNext}
+                  onClick={() => setSelectedId(summaryData[selectedIdx + 1].employee.id)}
+                  aria-label="עובד הבא"
+                >‹</button>
+                <button
+                  className={styles.workerNavBtn}
+                  disabled={!canGoPrev}
+                  onClick={() => setSelectedId(summaryData[selectedIdx - 1].employee.id)}
+                  aria-label="עובד הקודם"
+                >›</button>
+              </>
+            )}
+          </div>
+        ) : null}
         <button className={styles.shabbatBtn} onClick={() => setShabbatModalOpen(true)}>
           שעות שבת
         </button>
@@ -334,6 +293,66 @@ export function AllShiftsPage() {
 
       {isLoading ? (
         <LoadingSpinner />
+      ) : viewMode === 'date' ? (
+        byDateData.length === 0 ? (
+          <EmptyState title="אין משמרות" description="לא דווחו משמרות בחודש זה." />
+        ) : (
+          <div className={styles.byDateContainer}>
+            {byDateData.map(([date, dayShifts]) => {
+              const rows = dayShifts.map(s => {
+                const isFlat = s.type === 'global' || s.type === 'taxi'
+                const emp = employeeMap[s.employeeId]
+                const { fridayStartMins, saturdayEndMins } = getTimesForDate(s.date)
+                const h = isFlat
+                  ? { regular: 0, shabbat: 0, holiday: 0, support: 0 }
+                  : splitShiftHours(s.date, s.startTime, s.endTime, s.type, fridayStartMins, saturdayEndMins, holidayPeriods)
+                const tip = isFlat ? 0 : (tipMap.get(s.date)?.get(s.employeeId) ?? 0)
+                const salary = isFlat
+                  ? (s.amount ?? 0)
+                  : calcSalary(h.regular, h.shabbat, h.support, tip, emp?.hourlyWage ?? 0, h.holiday)
+                return { s, h, salary, isFlat }
+              })
+              const dayTotal = rows.reduce((sum, r) => sum + r.salary, 0)
+              return (
+                <div key={date} className={styles.dateSection}>
+                  <div className={styles.dateSectionHeader}>{formatDateWithDay(date)}</div>
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th>סוג</th>
+                        <th>עובד</th>
+                        <th className={styles.numHeader}>שע׳ רגיל</th>
+                        <th className={styles.numHeader}>שע׳ שבת</th>
+                        <th className={styles.numHeader}>שכר</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map(({ s, h, salary, isFlat }) => (
+                        <tr
+                          key={s.id}
+                          className={styles.clickableRow}
+                          onClick={() => navigate(`/manager/shifts/${s.id}/edit`)}
+                        >
+                          <td><Badge type={s.type} label={SHIFT_TYPE_LABELS[s.type]} /></td>
+                          <td className={styles.nameCell}>{employeeMap[s.employeeId]?.name ?? '?'}</td>
+                          <td className={styles.numCell}>{isFlat ? '—' : fmtH(h.regular + h.support)}</td>
+                          <td className={styles.numCell}>{isFlat ? '—' : fmtH(h.shabbat + h.holiday)}</td>
+                          <td className={styles.numCell}>₪{fmtMoney(salary)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className={styles.totalRow}>
+                        <td colSpan={4} className={styles.totalLabel}>סה"כ יום</td>
+                        <td className={styles.numCell}>₪{fmtMoney(dayTotal)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )
+            })}
+          </div>
+        )
       ) : selectedEmployee ? (() => {
         const empStats = aggregateShifts(detailShifts, selectedEmployee, tipMap, getTimesForDate, holidayPeriods)
         return (

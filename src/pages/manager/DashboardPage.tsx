@@ -5,11 +5,15 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { useShiftStore } from '../../store/shiftStore'
+import { useEmployeeStore } from '../../store/employeeStore'
+import { useShabbatSettingsStore } from '../../store/shabbatSettingsStore'
+import { useHolidaySettingsStore } from '../../store/holidaySettingsStore'
 import { useMonthlySummaries } from '../../hooks/useMonthlySummaries'
 import { summaryRepo } from '../../repositories'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import { currentMonthStr, fmtMoney, formatMonth } from '../../lib/utils'
+import { aggregateShifts, buildTipMap } from '../../lib/shiftAggregation'
 import type { Shift } from '../../types'
 import styles from './DashboardPage.module.scss'
 
@@ -73,12 +77,20 @@ function computeMonthTotals(shifts: Shift[], m: string) {
 
 export function DashboardPage() {
   const { shifts, isLoading, fetchAll } = useShiftStore()
+  const { employees, fetchAll: fetchEmployees } = useEmployeeStore()
+  const { fetchAll: fetchShabbatSettings, getTimesForDate } = useShabbatSettingsStore()
+  const { periods: holidayPeriods, fetchAll: fetchHolidaySettings } = useHolidaySettingsStore()
   const { summaries, refresh: refreshSummaries } = useMonthlySummaries()
   const [month, setMonth] = useState(THIS_MONTH)
   const [chartView, setChartView] = useState<ChartView>('daily')
   const autoUpsertDone = useRef(false)
 
-  useEffect(() => { fetchAll() }, [fetchAll])
+  useEffect(() => {
+    fetchAll()
+    fetchEmployees()
+    fetchShabbatSettings()
+    fetchHolidaySettings()
+  }, [fetchAll, fetchEmployees, fetchShabbatSettings, fetchHolidaySettings])
 
   // Auto-upsert completed months that have shift data but no summary entry yet.
   // Runs once after both shifts and summaries have loaded.
@@ -152,26 +164,16 @@ export function DashboardPage() {
     [shifts, month],
   )
 
-  const lastYearMonth = useMemo(() => {
-    const [y, m] = month.split('-')
-    return `${Number(y) - 1}-${m}`
-  }, [month])
-
-  const lastYearTips = useMemo(
-    () => shifts.filter(s => s.date.startsWith(lastYearMonth)).reduce((sum, s) => sum + (s.tips ?? 0), 0),
-    [shifts, lastYearMonth],
-  )
-
-  const tipChange = pct(totalTips, lastYearTips)
-
-
-  // Same month last year from summaries
-  const sameMonthLastYearPoint = useMemo(() => {
-    const [y, m] = month.split('-')
-    return summaries.find(p => p.month === `${Number(y) - 1}-${m}`)
-  }, [month, summaries])
-  const sameMonthLastYearAvg = sameMonthLastYearPoint?.average ?? 0
-  const revenueVsLastYearSameMonth = pct(avgRevenue, sameMonthLastYearAvg)
+  // Total salary cost for the selected month (mirrors the שעות page grand total)
+  const totalSalary = useMemo(() => {
+    const monthShifts = shifts.filter(s => s.date.startsWith(month))
+    const activeEmps = employees.filter(e => e.isActive && !e.roles.includes('manager'))
+    const tipMap = buildTipMap(monthShifts)
+    return activeEmps.reduce((sum, emp) => {
+      const empShifts = monthShifts.filter(s => s.employeeId === emp.id)
+      return sum + aggregateShifts(empShifts, emp, tipMap, getTimesForDate, holidayPeriods).salary
+    }, 0)
+  }, [shifts, employees, month, getTimesForDate, holidayPeriods])
 
   // View 1 "יומי": daily revenue for the selected month (last shift per day)
   const dailyData = useMemo(() => {
@@ -212,8 +214,18 @@ export function DashboardPage() {
     return { found, prev }
   }, [month, summaries])
 
-  const historicalChange = historicalPoint.found && historicalPoint.prev
-    ? pct(historicalPoint.found.sum, historicalPoint.prev.sum)
+  const lastYearMonth = useMemo(() => {
+    const [y, m] = month.split('-')
+    return `${Number(y) - 1}-${m}`
+  }, [month])
+
+  // % change vs same month last year
+  const historicalChange = historicalPoint.prev
+    ? pct(totalRevenue, historicalPoint.prev.sum)
+    : null
+
+  const avgHistoricalChange = historicalPoint.prev
+    ? pct(avgRevenue, historicalPoint.prev.average)
     : null
 
   return (
@@ -238,9 +250,9 @@ export function DashboardPage() {
             <div className={styles.card}>
               <span className={styles.cardLabel}>סה"כ X</span>
               <span className={styles.cardValue}>₪{fmtMoney(totalRevenue)}</span>
-              {historicalPoint.found && (
+              {historicalPoint.prev && (
                 <span className={styles.cardSub}>
-                  היסטורי: ₪{fmtMoney(historicalPoint.found.sum)}
+                  {shortMonth(lastYearMonth)}: ₪{fmtMoney(historicalPoint.prev.sum)}
                   {historicalChange !== null && (
                     <span className={historicalChange >= 0 ? styles.up : styles.down}>
                       {' '}{historicalChange >= 0 ? '▲' : '▼'}{Math.abs(historicalChange).toFixed(1)}%
@@ -252,8 +264,15 @@ export function DashboardPage() {
             <div className={styles.card}>
               <span className={styles.cardLabel}>ממוצע X</span>
               <span className={styles.cardValue}>₪{fmtMoney(avgRevenue)}</span>
-              {historicalPoint.found && (
-                <span className={styles.cardSub}>היסטורי: ₪{fmtMoney(historicalPoint.found.average)}</span>
+              {historicalPoint.prev && (
+                <span className={styles.cardSub}>
+                  {shortMonth(lastYearMonth)}: ₪{fmtMoney(historicalPoint.prev.average)}
+                  {avgHistoricalChange !== null && (
+                    <span className={avgHistoricalChange >= 0 ? styles.up : styles.down}>
+                      {' '}{avgHistoricalChange >= 0 ? '▲' : '▼'}{Math.abs(avgHistoricalChange).toFixed(1)}%
+                    </span>
+                  )}
+                </span>
               )}
             </div>
             <div className={styles.card}>
@@ -267,26 +286,10 @@ export function DashboardPage() {
             <div className={styles.card}>
               <span className={styles.cardLabel}>סה"כ טיפ</span>
               <span className={styles.cardValue}>₪{fmtMoney(totalTips)}</span>
-              {lastYearTips > 0 && tipChange !== null && (
-                <span className={styles.cardSub}>
-                  {shortMonth(lastYearMonth)}: ₪{fmtMoney(lastYearTips)}
-                  <span className={tipChange >= 0 ? styles.up : styles.down}>
-                    {' '}{tipChange >= 0 ? '▲' : '▼'}{Math.abs(tipChange).toFixed(1)}%
-                  </span>
-                </span>
-              )}
             </div>
             <div className={styles.card}>
-              <span className={styles.cardLabel}>ממוצע X {shortMonth(lastYearMonth)}</span>
-              <span className={styles.cardValue}>₪{fmtMoney(sameMonthLastYearAvg)}</span>
-              {revenueVsLastYearSameMonth !== null && sameMonthLastYearAvg > 0 && (
-                <span className={styles.cardSub}>
-                  לעומת ממוצע חודש זה
-                  <span className={revenueVsLastYearSameMonth >= 0 ? styles.up : styles.down}>
-                    {' '}{revenueVsLastYearSameMonth >= 0 ? '▲' : '▼'}{Math.abs(revenueVsLastYearSameMonth).toFixed(1)}%
-                  </span>
-                </span>
-              )}
+              <span className={styles.cardLabel}>סה"כ שכר</span>
+              <span className={styles.cardValue}>₪{fmtMoney(totalSalary)}</span>
             </div>
           </div>
 
