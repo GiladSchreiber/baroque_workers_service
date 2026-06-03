@@ -198,6 +198,32 @@
   td {
     border-bottom: 1px solid v.$color-border;
   }
+
+  td:last-child {
+    min-width: 72px;
+    width: 72px;
+  }
+
+  &.clickableRow:hover td { background: v.$color-surface-raised; }
+}
+
+.nesiaInput {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  background: v.$color-surface-raised;
+  border: 1.5px solid v.$color-primary;
+  border-radius: v.$radius-sm;
+  color: v.$color-text;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  padding: 2px v.$space-2;
+  text-align: center;
+
+  &:focus { outline: none; }
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button { -webkit-appearance: none; }
 }
 
 .totalRow {
