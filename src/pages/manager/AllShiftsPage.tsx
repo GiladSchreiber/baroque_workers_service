@@ -179,18 +179,23 @@ export function AllShiftsPage() {
     setNesiaEditing(false)
     const parsed = parseFloat(nesiaVal)
     if (isNaN(parsed) || parsed === currentNesia || !selectedId) return
-    const nesiaShift = detailShifts.find(s => s.type === 'nesia')
-    if (nesiaShift) {
-      await updateShift(nesiaShift.id, { amount: parsed })
-    } else {
-      await addShift({
-        employeeId: selectedId,
-        date: (filterMonth || currentMonthStr()) + '-01',
-        type: 'nesia',
-        startTime: '00:00',
-        endTime: '00:00',
-        amount: parsed,
-      })
+    try {
+      const nesiaShift = detailShifts.find(s => s.type === 'nesia')
+      if (nesiaShift) {
+        await updateShift(nesiaShift.id, { amount: parsed })
+      } else {
+        await addShift({
+          employeeId: selectedId,
+          date: (filterMonth || currentMonthStr()) + '-01',
+          type: 'nesia',
+          startTime: '00:00',
+          endTime: '00:00',
+          amount: parsed,
+        })
+      }
+    } catch (err) {
+      console.error('שגיאה בשמירת נסיעות:', err)
+      alert(`שגיאה בשמירת נסיעות: ${err instanceof Error ? err.message : JSON.stringify(err)}`)
     }
   }
 
@@ -346,7 +351,7 @@ export function AllShiftsPage() {
               <tbody>
                 {detailShifts.length === 0 ? (
                   <tr><td colSpan={5} className={styles.emptyCell}>אין משמרות בחודש זה</td></tr>
-                ) : detailShifts.map(s => {
+                ) : detailShifts.filter(s => s.type !== 'nesia').map(s => {
                   const isFlat = s.type === 'global' || s.type === 'taxi' || s.type === 'cashier'
                   const { fridayStartMins, saturdayEndMins } = getTimesForDate(s.date)
                   const h = isFlat ? { regular: 0, shabbat: 0, holiday: 0, support: 0 } : splitShiftHours(s.date, s.startTime, s.endTime, s.type, fridayStartMins, saturdayEndMins, holidayPeriods)
