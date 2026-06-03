@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import * as XLSX from 'xlsx'
 import { useShiftStore } from '../../store/shiftStore'
@@ -64,14 +64,11 @@ function aggregateShifts(
   holidayPeriods: HolidaySetting[],
 ): EmpStats {
   let regular = 0, shabbat = 0, holiday = 0, support = 0, tips = 0, globalAmt = 0, taxiAmt = 0, shiftCount = 0
-  let nesiaOverride: number | null = null
   for (const s of shifts) {
     if (s.type === 'global') {
       globalAmt += s.amount ?? 0
     } else if (s.type === 'taxi') {
       taxiAmt += s.amount ?? 0
-    } else if (s.type === 'nesia') {
-      nesiaOverride = s.amount ?? 0
     } else if (s.type === 'cashier') {
       // cashier shifts are data-only, no hours or salary contribution
     } else {
@@ -85,12 +82,12 @@ function aggregateShifts(
     }
   }
   // Sum distributed tips across all dates this employee worked
-  const workedDates = [...new Set(shifts.filter(s => s.type !== 'global' && s.type !== 'taxi' && s.type !== 'cashier' && s.type !== 'nesia').map(s => s.date))]
+  const workedDates = [...new Set(shifts.filter(s => s.type !== 'global' && s.type !== 'taxi' && s.type !== 'cashier').map(s => s.date))]
   for (const date of workedDates) {
     tips += tipMap.get(date)?.get(employee.id) ?? 0
   }
   const hourlySalary = calcSalary(regular, shabbat, support, tips, employee.hourlyWage, holiday)
-  const nesia = nesiaOverride !== null ? nesiaOverride : shiftCount * NESIA_RATE
+  const nesia = shiftCount * NESIA_RATE
   return {
     employee,
     regular, shabbat, holiday, support, tips,
@@ -111,7 +108,7 @@ function fmtH(h: number): string {
 export function AllShiftsPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { shifts, isLoading, fetchAll: fetchShifts, addShift, updateShift } = useShiftStore()
+  const { shifts, isLoading, fetchAll: fetchShifts } = useShiftStore()
   const { employees, fetchAll: fetchEmployees } = useEmployeeStore()
   const { fetchAll: fetchShabbatSettings, getTimesForDate } = useShabbatSettingsStore()
   const { periods: holidayPeriods, fetchAll: fetchHolidaySettings } = useHolidaySettingsStore()
@@ -169,29 +166,6 @@ export function AllShiftsPage() {
   )
 
   const selectedEmployee = selectedId ? employeeMap[selectedId] : null
-
-  // Inline nesia editing
-  const [nesiaEditId, setNesiaEditId] = useState<string | null>(null) // employee being edited
-  const [nesiaEditVal, setNesiaEditVal] = useState('')
-
-  async function saveNesia(empId: string, currentNesia: number) {
-    const parsed = parseFloat(nesiaEditVal)
-    if (isNaN(parsed) || parsed === currentNesia) { setNesiaEditId(null); return }
-    const existing = monthShifts.find(s => s.employeeId === empId && s.type === 'nesia')
-    if (existing) {
-      await updateShift(existing.id, { amount: parsed })
-    } else {
-      await addShift({
-        employeeId: empId,
-        date: (filterMonth || currentMonthStr()) + '-01',
-        type: 'nesia',
-        startTime: '00:00',
-        endTime: '00:00',
-        amount: parsed,
-      })
-    }
-    setNesiaEditId(null)
-  }
 
   // Prev/next worker navigation
   const selectedIdx = useMemo(
@@ -368,38 +342,12 @@ export function AllShiftsPage() {
                   )
                 })}
                 {empStats.shiftCount > 0 && (
-                  <tr
-                    className={`${styles.nesiaRow} ${styles.clickableRow}`}
-                    onClick={() => {
-                      if (nesiaEditId === selectedId) return
-                      setNesiaEditVal(String(Math.round(empStats.nesia)))
-                      setNesiaEditId(selectedId)
-                    }}
-                    title="לחץ לעריכה"
-                  >
+                  <tr className={styles.nesiaRow}>
                     <td className={styles.dateCell}>—</td>
                     <td><Badge type="support" label='נסיעות' /></td>
                     <td className={styles.numCell}>—</td>
                     <td className={styles.numCell}>—</td>
-                    <td className={styles.numCell}>
-                      {nesiaEditId === selectedId ? (
-                        <input
-                          className={styles.nesiaInput}
-                          type="number"
-                          value={nesiaEditVal}
-                          autoFocus
-                          onClick={e => e.stopPropagation()}
-                          onChange={e => setNesiaEditVal(e.target.value)}
-                          onBlur={() => saveNesia(selectedId, empStats.nesia)}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') saveNesia(selectedId, empStats.nesia)
-                            if (e.key === 'Escape') setNesiaEditId(null)
-                          }}
-                        />
-                      ) : (
-                        <span>₪{fmtMoney(empStats.nesia)}</span>
-                      )}
-                    </td>
+                    <td className={styles.numCell}>₪{fmtMoney(empStats.nesia)}</td>
                   </tr>
                 )}
               </tbody>

@@ -1,5 +1,5 @@
 export type Role = 'employee' | 'duty' | 'manager' | 'scheduler' | 'kitchen'
-export type ShiftType = 'regular' | 'morning' | 'afternoon' | 'evening' | 'kitchen' | 'support' | 'manager' | 'overlap' | 'general' | 'global' | 'taxi' | 'cashier' | 'nesia'
+export type ShiftType = 'regular' | 'morning' | 'afternoon' | 'evening' | 'kitchen' | 'support' | 'manager' | 'overlap' | 'general' | 'global' | 'taxi' | 'cashier'
 export type BlockType = 'morning' | 'afternoon' | 'evening'
 export type HolidayRate = '150' | '200'
 
