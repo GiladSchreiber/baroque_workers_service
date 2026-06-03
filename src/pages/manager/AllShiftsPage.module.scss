@@ -200,6 +200,31 @@
   }
 }
 
+.clickableRow {
+  cursor: pointer;
+
+  &:hover td { background: v.$color-surface-raised; }
+}
+
+.nesiaInput {
+  width: 72px;
+  background: v.$color-surface;
+  border: 1.5px solid v.$color-primary;
+  border-radius: v.$radius-sm;
+  color: v.$color-text;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  padding: 2px v.$space-2;
+  text-align: center;
+
+  &:focus { outline: none; }
+
+  // hide spinner arrows
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button { -webkit-appearance: none; }
+}
+
 .totalRow {
   td {
     border-top: 2px solid v.$color-border;

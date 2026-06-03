@@ -13,6 +13,7 @@ export const SHIFT_TYPE_LABELS: Record<ShiftType, string> = {
   global: 'גלובלי',
   taxi: 'מוניות',
   cashier: 'נתוני קופה בלבד',
+  nesia: 'נסיעות (ידני)',
 }
 
 export const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
