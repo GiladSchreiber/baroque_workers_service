@@ -219,8 +219,16 @@ export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }
       setIsSubmitted(true)
       setIsEditing(false)
       if (returnTo) {
-        // Navigate back to the shift form, passing the date so it can build the combined message
-        navigate(`${returnTo}?inventoryDate=${encodeURIComponent(date)}`, { replace: true })
+        // Forward all shift-state params back so the form can restore itself,
+        // and add inventoryDate so the combined clipboard message can be built
+        const returnParams = new URLSearchParams()
+        returnParams.set('inventoryDate', date)
+        for (const [key, value] of searchParams.entries()) {
+          if (key !== 'returnTo' && key !== 'date') {
+            returnParams.set(key, value)
+          }
+        }
+        navigate(`${returnTo}?${returnParams.toString()}`, { replace: true })
       }
     } catch (err) {
       const msg = err instanceof Error
