@@ -20,7 +20,6 @@ export function buildInventoryClipboardMessage(
   items: InventoryItem[],
   categoryOrder: string[],
   date: string,
-  workerName: string,
 ): string {
   const entryMap = new Map(entries.map(e => [e.itemId, e]))
 
@@ -34,7 +33,7 @@ export function buildInventoryClipboardMessage(
     ...[...presentCats].filter(c => !categoryOrder.includes(c)).sort((a, b) => a.localeCompare(b, 'he')),
   ]
 
-  const lines: string[] = [`📦 מלאי – ${fmtDate(date)} (${workerName})`]
+  const lines: string[] = [`📦 מלאי – ${fmtDate(date)}`]
 
   for (const cat of orderedCats) {
     const catItems = items

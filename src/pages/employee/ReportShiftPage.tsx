@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useShiftStore } from '../../store/shiftStore'
@@ -8,35 +8,47 @@ import { PageHeader } from '../../components/layout/PageHeader'
 import { ShiftForm } from '../../components/forms/ShiftForm'
 import { buildShiftMessage, formatEmployeeNameForMessage } from '../../lib/utils'
 import { buildInventoryClipboardMessage } from '../../lib/inventoryUtils'
-import type { CreateShiftInput } from '../../types'
+import type { CreateShiftInput, ShiftType } from '../../types'
 import styles from './ReportShiftPage.module.scss'
 
 export function ReportShiftPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const inventoryDate = searchParams.get('inventoryDate') ?? ''  // set after returning from inventory fill
+  const inventoryDate  = searchParams.get('inventoryDate') ?? ''
+  // Form state restored from URL after returning from inventory
+  const shiftInitialValues = useMemo(() => {
+    const type      = searchParams.get('shiftType') as ShiftType | null
+    const date      = searchParams.get('shiftDate')
+    const startTime = searchParams.get('shiftStart')
+    const endTime   = searchParams.get('shiftEnd')
+    if (!type) return undefined
+    return {
+      ...(type      && { type }),
+      ...(date      && { date }),
+      ...(startTime && { startTime }),
+      ...(endTime   && { endTime }),
+    } as Partial<CreateShiftInput>
+  }, [])  // intentionally only on mount so the form doesn't reset on re-render
 
   const currentUser = useAuthStore(s => s.currentUser)!
   const addShift = useShiftStore(s => s.addShift)
   const { employees, fetchAll } = useEmployeeStore()
 
-  const inventoryItems       = useInventoryStore(s => s.items)
-  const categoryOrder        = useInventoryStore(s => s.categoryOrder)
-  const fetchReportsForDate  = useInventoryStore(s => s.fetchReportsForDate)
+  const inventoryItems           = useInventoryStore(s => s.items)
+  const categoryOrder            = useInventoryStore(s => s.categoryOrder)
+  const fetchReportsForDate      = useInventoryStore(s => s.fetchReportsForDate)
   const getReportByDateAndWorker = useInventoryStore(s => s.getReportByDateAndWorker)
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
-  // Pre-load the inventory report so we can build the combined clipboard message
   useEffect(() => {
     if (inventoryDate) fetchReportsForDate(inventoryDate)
   }, [inventoryDate])
 
   async function handleSubmit(data: CreateShiftInput) {
-    const allNames = employees.filter(e => e.isActive).map(e => e.name)
+    const allNames    = employees.filter(e => e.isActive).map(e => e.name)
     const displayName = formatEmployeeNameForMessage(currentUser.name, allNames)
 
-    // Build combined clipboard message within the user-gesture context (required by iOS Safari)
     let clipboardText = buildShiftMessage(data, displayName)
     if (inventoryDate) {
       const invReport = getReportByDateAndWorker(inventoryDate, currentUser.id)
@@ -46,7 +58,6 @@ export function ReportShiftPage() {
           inventoryItems,
           categoryOrder,
           inventoryDate,
-          currentUser.name,
         )
         clipboardText = `${clipboardText}\n\n${invMsg}`
       }
@@ -58,10 +69,16 @@ export function ReportShiftPage() {
     navigate('/employee/shifts')
   }
 
-  function handleNavigateToInventory(date: string) {
-    navigate(
-      `/employee/inventory/fill?returnTo=${encodeURIComponent('/employee/report')}&date=${encodeURIComponent(date)}`
-    )
+  function handleNavigateToInventory(snapshot: { date: string; type: ShiftType; startTime: string; endTime: string }) {
+    const params = new URLSearchParams({
+      returnTo:   '/employee/report',
+      date:        snapshot.date,
+      shiftType:   snapshot.type,
+      shiftDate:   snapshot.date,
+      shiftStart:  snapshot.startTime,
+      shiftEnd:    snapshot.endTime,
+    })
+    navigate(`/employee/inventory/fill?${params.toString()}`)
   }
 
   return (
@@ -73,6 +90,7 @@ export function ReportShiftPage() {
       <div className={styles.content}>
         <ShiftForm
           employeeId={currentUser.id}
+          initialValues={shiftInitialValues}
           onSubmit={handleSubmit}
           showDutyShift={currentUser.roles.some(r => ['duty', 'manager', 'scheduler'].includes(r))}
           onNavigateToInventory={

@@ -30,8 +30,8 @@ interface ShiftFormProps {
   /** When true, the אחמ"ש (support) shift type is shown */
   showDutyShift?: boolean
   isEdit?: boolean
-  /** When provided, a "מלא מלאי" button appears on kitchen shifts */
-  onNavigateToInventory?: (date: string) => void
+  /** When provided, a "רשימת מלאי" button appears on kitchen shifts (receives current form snapshot) */
+  onNavigateToInventory?: (snapshot: { date: string; type: ShiftType; startTime: string; endTime: string }) => void
 }
 
 interface FormErrors {
@@ -127,16 +127,6 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
         options={typeOptions}
         error={errors.type}
       />
-
-      {type === 'kitchen' && onNavigateToInventory && (
-        <button
-          type="button"
-          className={styles.inventoryLinkBtn}
-          onClick={() => onNavigateToInventory(date)}
-        >
-          📦 מלא מלאי
-        </button>
-      )}
 
       {isGlobal && (
         <>
@@ -290,6 +280,15 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
       )}
 
       {submitError && <p className={styles.submitError}>{submitError}</p>}
+      {type === 'kitchen' && onNavigateToInventory && (
+        <button
+          type="button"
+          className={styles.inventoryLinkBtn}
+          onClick={() => onNavigateToInventory({ date, type, startTime, endTime })}
+        >
+          רשימת מלאי
+        </button>
+      )}
       <Button type="submit" fullWidth isLoading={isLoading}>
         {submitLabel}
       </Button>

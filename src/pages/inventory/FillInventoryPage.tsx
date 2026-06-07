@@ -205,7 +205,7 @@ export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }
       }))
 
     // Build & copy clipboard message within the user-gesture context
-    const msg = buildInventoryClipboardMessage(entries, activeItems, categoryOrder, date, currentUser.name)
+    const msg = buildInventoryClipboardMessage(entries, activeItems, categoryOrder, date)
     const clipboardWrite = navigator.clipboard.writeText(msg).catch(() => {})
 
     try {
