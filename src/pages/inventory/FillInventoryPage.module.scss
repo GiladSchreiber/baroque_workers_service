@@ -99,13 +99,35 @@
 }
 
 .categoryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
   padding: v.$space-3 v.$space-4;
   background: v.$color-surface-raised;
+  border: none;
   border-bottom: 1px solid v.$color-border;
+  font-family: v.$font-family;
   font-size: v.$font-size-sm;
   font-weight: v.$font-weight-semibold;
   color: v.$color-primary;
   direction: rtl;
+  cursor: pointer;
+  text-align: right;
+
+  &:active { opacity: 0.75; }
+}
+
+.chevron {
+  font-size: 1.1rem;
+  color: v.$color-text-muted;
+  transition: transform 0.2s ease;
+  transform: rotate(90deg); // pointing down = expanded
+  display: inline-block;
+}
+
+.chevronCollapsed {
+  transform: rotate(0deg); // pointing right = collapsed
 }
 
 // ── Item row ──────────────────────────────────────────────────────────────────

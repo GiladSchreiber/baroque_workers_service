@@ -178,6 +178,8 @@ export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }
     }
   }, [date, currentUserId])
 
+  const readonly = isSubmitted && !isEditing && !returnTo
+
   function setStatus(itemId: string, status: InventoryStatus) {
     setItemStates(prev => ({
       ...prev,
@@ -240,7 +242,15 @@ export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }
     }
   }
 
-  const readonly = isSubmitted && !isEditing && !returnTo
+  const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set())
+
+  function toggleCat(cat: string) {
+    setCollapsedCats(prev => {
+      const next = new Set(prev)
+      next.has(cat) ? next.delete(cat) : next.add(cat)
+      return next
+    })
+  }
 
   return (
     <div className={styles.page}>
@@ -252,10 +262,19 @@ export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }
       <div className={styles.content}>
         {categories.map(cat => {
           const catItems = activeItems.filter(it => it.category === cat)
+          const collapsed = collapsedCats.has(cat)
           return (
             <div key={cat} className={styles.categorySection}>
-              <div className={styles.categoryHeader}>{cat}</div>
-              {catItems.map(item => (
+              <button
+                type="button"
+                className={styles.categoryHeader}
+                onClick={() => toggleCat(cat)}
+                aria-expanded={!collapsed}
+              >
+                <span>{cat}</span>
+                <span className={[styles.chevron, collapsed ? styles.chevronCollapsed : ''].join(' ')}>›</span>
+              </button>
+              {!collapsed && catItems.map(item => (
                 <div key={item.id} className={[styles.itemRow, readonly ? styles.itemRowReadonly : ''].join(' ')}>
                   <StatusToggle
                     value={itemStates[item.id]?.status ?? null}
