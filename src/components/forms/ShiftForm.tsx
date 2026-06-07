@@ -32,6 +32,8 @@ interface ShiftFormProps {
   isEdit?: boolean
   /** When provided, a "רשימת מלאי" button appears on kitchen shifts (receives current form snapshot) */
   onNavigateToInventory?: (snapshot: { date: string; type: ShiftType; startTime: string; endTime: string }) => void
+  /** Reflects whether the inventory report has been filled for this shift's date */
+  inventoryDone?: boolean
 }
 
 interface FormErrors {
@@ -42,7 +44,7 @@ interface FormErrors {
   amount?: string
 }
 
-export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = 'שלח דיווח', managerMode = false, showDutyShift = false, isEdit = false, onNavigateToInventory }: ShiftFormProps) {
+export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = 'שלח דיווח', managerMode = false, showDutyShift = false, isEdit = false, onNavigateToInventory, inventoryDone = false }: ShiftFormProps) {
   const shiftTypeOptions = showDutyShift
     ? [...BASE_SHIFT_TYPE_OPTIONS.slice(0, 4), DUTY_SHIFT_TYPE_OPTION, ...BASE_SHIFT_TYPE_OPTIONS.slice(4)]
     : BASE_SHIFT_TYPE_OPTIONS
@@ -283,10 +285,10 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
       {type === 'kitchen' && onNavigateToInventory && (
         <button
           type="button"
-          className={styles.inventoryLinkBtn}
+          className={inventoryDone ? styles.inventoryLinkBtnDone : styles.inventoryLinkBtnPending}
           onClick={() => onNavigateToInventory({ date, type, startTime, endTime })}
         >
-          רשימת מלאי
+          {inventoryDone ? '✓ רשימת מלאי הוגשה' : 'רשימת מלאי'}
         </button>
       )}
       <Button type="submit" fullWidth isLoading={isLoading}>

@@ -84,9 +84,6 @@ export function ReportShiftPage() {
   return (
     <div className={styles.page}>
       <PageHeader title="דיווח שעות" />
-      {inventoryDate && (
-        <div className={styles.inventoryBadge}>✅ מלאי הוגש ל-{inventoryDate.split('-').reverse().join('.')}</div>
-      )}
       <div className={styles.content}>
         <ShiftForm
           employeeId={currentUser.id}
@@ -98,6 +95,7 @@ export function ReportShiftPage() {
               ? handleNavigateToInventory
               : undefined
           }
+          inventoryDone={!!inventoryDate}
         />
       </div>
     </div>
