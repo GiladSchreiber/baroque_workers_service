@@ -242,10 +242,10 @@ export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }
     }
   }
 
-  const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set())
+  const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set())
 
   function toggleCat(cat: string) {
-    setCollapsedCats(prev => {
+    setExpandedCats(prev => {
       const next = new Set(prev)
       next.has(cat) ? next.delete(cat) : next.add(cat)
       return next
@@ -262,7 +262,7 @@ export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }
       <div className={styles.content}>
         {categories.map(cat => {
           const catItems = activeItems.filter(it => it.category === cat)
-          const collapsed = collapsedCats.has(cat)
+          const collapsed = !expandedCats.has(cat)
           return (
             <div key={cat} className={styles.categorySection}>
               <button
