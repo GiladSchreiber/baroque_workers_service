@@ -232,7 +232,7 @@ export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }
     }
   }
 
-  const readonly = isSubmitted && !isEditing
+  const readonly = isSubmitted && !isEditing && !returnTo
 
   return (
     <div className={styles.page}>
