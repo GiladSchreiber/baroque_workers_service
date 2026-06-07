@@ -109,3 +109,24 @@
   color: v.$color-danger;
   text-align: center;
 }
+
+.inventoryLinkBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: v.$space-2;
+  width: 100%;
+  padding: v.$space-3 v.$space-4;
+  background: v.$color-surface-raised;
+  border: 1.5px dashed v.$color-primary;
+  border-radius: v.$radius-md;
+  color: v.$color-primary;
+  font-size: v.$font-size-base;
+  font-weight: v.$font-weight-semibold;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:active {
+    background: v.$color-primary-light;
+  }
+}

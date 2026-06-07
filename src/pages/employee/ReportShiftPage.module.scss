@@ -13,3 +13,15 @@
 .closureLink {
   margin-top: v.$space-3;
 }
+
+.inventoryBadge {
+  margin: v.$space-3 v.$space-4 0;
+  padding: v.$space-2 v.$space-3;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid v.$color-success;
+  border-radius: v.$radius-md;
+  color: v.$color-success;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  text-align: center;
+}

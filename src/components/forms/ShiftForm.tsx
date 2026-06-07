@@ -30,6 +30,8 @@ interface ShiftFormProps {
   /** When true, the אחמ"ש (support) shift type is shown */
   showDutyShift?: boolean
   isEdit?: boolean
+  /** When provided, a "מלא מלאי" button appears on kitchen shifts */
+  onNavigateToInventory?: (date: string) => void
 }
 
 interface FormErrors {
@@ -40,7 +42,7 @@ interface FormErrors {
   amount?: string
 }
 
-export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = 'שלח דיווח', managerMode = false, showDutyShift = false, isEdit = false }: ShiftFormProps) {
+export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = 'שלח דיווח', managerMode = false, showDutyShift = false, isEdit = false, onNavigateToInventory }: ShiftFormProps) {
   const shiftTypeOptions = showDutyShift
     ? [...BASE_SHIFT_TYPE_OPTIONS.slice(0, 4), DUTY_SHIFT_TYPE_OPTION, ...BASE_SHIFT_TYPE_OPTIONS.slice(4)]
     : BASE_SHIFT_TYPE_OPTIONS
@@ -125,6 +127,16 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
         options={typeOptions}
         error={errors.type}
       />
+
+      {type === 'kitchen' && onNavigateToInventory && (
+        <button
+          type="button"
+          className={styles.inventoryLinkBtn}
+          onClick={() => onNavigateToInventory(date)}
+        >
+          📦 מלא מלאי
+        </button>
+      )}
 
       {isGlobal && (
         <>

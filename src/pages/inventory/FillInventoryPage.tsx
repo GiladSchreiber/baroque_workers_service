@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useInventoryStore, todayStr } from '../../store/inventoryStore'
 import { PageHeader } from '../../components/layout/PageHeader'
+import { buildInventoryClipboardMessage } from '../../lib/inventoryUtils'
 import type { InventoryStatus } from '../../types/inventory'
 import styles from './FillInventoryPage.module.scss'
 
@@ -115,6 +116,11 @@ interface ItemState {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }) {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const returnTo   = searchParams.get('returnTo') ?? ''      // e.g. '/employee/report'
+  const initDate   = searchParams.get('date') ?? todayStr()  // pre-fill date from shift form
+
   const currentUser = useAuthStore(s => s.currentUser)
   const items                  = useInventoryStore(s => s.items)
   const categoryOrder          = useInventoryStore(s => s.categoryOrder)
@@ -125,7 +131,7 @@ export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }
 
   useEffect(() => { fetchAll() }, [])
 
-  const [date, setDate] = useState(todayStr())
+  const [date, setDate] = useState(initDate)
   const [itemStates, setItemStates] = useState<Record<string, ItemState>>({})
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -197,6 +203,11 @@ export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }
         status: itemStates[it.id].status as InventoryStatus,
         notes: itemStates[it.id]?.notes ?? '',
       }))
+
+    // Build & copy clipboard message within the user-gesture context
+    const msg = buildInventoryClipboardMessage(entries, activeItems, categoryOrder, date, currentUser.name)
+    const clipboardWrite = navigator.clipboard.writeText(msg).catch(() => {})
+
     try {
       await saveReport({
         date,
@@ -204,8 +215,13 @@ export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }
         submittedByName: currentUser.name,
         entries,
       })
+      await clipboardWrite
       setIsSubmitted(true)
       setIsEditing(false)
+      if (returnTo) {
+        // Navigate back to the shift form, passing the date so it can build the combined message
+        navigate(`${returnTo}?inventoryDate=${encodeURIComponent(date)}`, { replace: true })
+      }
     } catch (err) {
       const msg = err instanceof Error
         ? err.message
@@ -263,7 +279,7 @@ export function FillInventoryPage({ isKitchen = false }: { isKitchen?: boolean }
           </button>
         ) : (
           <button className={styles.submitBtn} onClick={handleSubmit} disabled={isSaving}>
-            {isSaving ? '...' : isEditing ? 'עדכן' : 'שלח'}
+            {isSaving ? '...' : returnTo ? 'שמור וחזור לדיווח' : isEditing ? 'עדכן' : 'שלח'}
           </button>
         )}
       </div>
