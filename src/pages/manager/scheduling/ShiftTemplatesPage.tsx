@@ -49,6 +49,52 @@ function AddSlotForm({ dayOfWeek, onClose }: { dayOfWeek: number; onClose: () =>
   )
 }
 
+// ── Inline edit-slot form ─────────────────────────────────────────────────
+function EditSlotForm({ slot, onClose }: { slot: SlotTemplate; onClose: () => void }) {
+  const updateTemplate = useSchedulingStore(s => s.updateTemplate)
+  const deleteTemplate = useSchedulingStore(s => s.deleteTemplate)
+  const [label,     setLabel]     = useState(slot.label)
+  const [group,     setGroup]     = useState<ShiftGroup>(slot.group)
+  const [startTime, setStartTime] = useState(slot.startTime)
+  const [endTime,   setEndTime]   = useState(slot.endTime)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  function handleSave() {
+    if (!label.trim()) return
+    updateTemplate(slot.id, { label: label.trim(), group, startTime, endTime })
+    onClose()
+  }
+
+  return (
+    <>
+      <div className={styles.addForm}>
+        <input className={styles.addInput} placeholder="שם המשמרת" value={label} onChange={e => setLabel(e.target.value)} autoFocus />
+        <div className={styles.addRow}>
+          <select className={styles.addSelect} value={group} onChange={e => setGroup(e.target.value as ShiftGroup)}>
+            {GROUP_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          <input className={styles.addTime} type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
+          <span className={styles.timeSep}>–</span>
+          <input className={styles.addTime} type="time" value={endTime}   onChange={e => setEndTime(e.target.value)} />
+        </div>
+        <div className={styles.addActions}>
+          <button className={styles.saveBtn} onClick={handleSave}>שמור</button>
+          <button className={styles.cancelBtn} onClick={onClose}>ביטול</button>
+          <button className={styles.deleteForeverBtn} onClick={() => setConfirmDelete(true)}>מחק</button>
+        </div>
+      </div>
+      <ConfirmDialog
+        isOpen={confirmDelete}
+        title="למחוק לתמיד?"
+        message={`"${slot.label}" תוסר לצמיתות מהרשימה.`}
+        confirmLabel="מחק"
+        onConfirm={() => { deleteTemplate(slot.id); setConfirmDelete(false); onClose() }}
+        onCancel={() => setConfirmDelete(false)}
+      />
+    </>
+  )
+}
+
 // ── Single slot row ───────────────────────────────────────────────────────
 interface SlotRowProps {
   slot: SlotTemplate
@@ -61,8 +107,7 @@ interface SlotRowProps {
 
 function SlotRow({ slot, isDragging, isOver, onDragStart, onDragEnter, onDragEnd }: SlotRowProps) {
   const toggleTemplate = useSchedulingStore(s => s.toggleTemplate)
-  const deleteTemplate = useSchedulingStore(s => s.deleteTemplate)
-  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [editing, setEditing] = useState(false)
 
   const rowClass = [
     styles.slotRow,
@@ -80,7 +125,7 @@ function SlotRow({ slot, isDragging, isOver, onDragStart, onDragEnter, onDragEnd
         onDragEnter={e => { e.preventDefault(); onDragEnter() }}
         onDragOver={e => e.preventDefault()}
         onDragEnd={onDragEnd}
-        onClick={() => toggleTemplate(slot.id)}
+        onClick={() => setEditing(true)}
       >
         <div className={styles.dragHandle} onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}>
           <DragIcon />
@@ -93,26 +138,18 @@ function SlotRow({ slot, isDragging, isOver, onDragStart, onDragEnter, onDragEnd
           <span className={`${styles.groupBadge} ${styles[`group-${slot.group}`]}`}>
             {SHIFT_GROUP_LABELS[slot.group]}
           </span>
-          {!slot.isActive && (
-            <button
-              className={styles.deleteBtn}
-              onClick={e => { e.stopPropagation(); setConfirmOpen(true) }}
-              aria-label="מחק לתמיד"
-            >
-              <XIcon />
-            </button>
-          )}
+          <button
+            className={styles.deleteBtn}
+            onClick={e => { e.stopPropagation(); toggleTemplate(slot.id) }}
+            aria-label={slot.isActive ? 'הסר זמנית' : 'שחזר'}
+            title={slot.isActive ? 'הסר זמנית' : 'שחזר'}
+          >
+            <XIcon />
+          </button>
         </div>
       </div>
 
-      <ConfirmDialog
-        isOpen={confirmOpen}
-        title="למחוק לתמיד?"
-        message={`"${slot.label}" תוסר לצמיתות מהרשימה.`}
-        confirmLabel="מחק"
-        onConfirm={() => { deleteTemplate(slot.id); setConfirmOpen(false) }}
-        onCancel={() => setConfirmOpen(false)}
-      />
+      {editing && <EditSlotForm slot={slot} onClose={() => setEditing(false)} />}
     </>
   )
 }

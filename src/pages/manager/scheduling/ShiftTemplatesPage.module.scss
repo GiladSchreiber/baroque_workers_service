@@ -286,6 +286,19 @@
   flex-direction: row-reverse;
 }
 
+.deleteForeverBtn {
+  background: none;
+  color: v.$color-danger;
+  border: 1px solid v.$color-danger;
+  border-radius: v.$radius-sm;
+  padding: v.$space-2 v.$space-3;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+  margin-inline-end: auto; // pushes it to the far left in RTL
+  &:active { opacity: 0.7; }
+}
+
 .saveBtn {
   background: v.$color-primary;
   color: v.$color-text-on-primary;
