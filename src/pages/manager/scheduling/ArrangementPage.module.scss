@@ -684,3 +684,66 @@
   &:active { background: v.$color-primary-dark; }
 }
 
+// ── Worker summary ────────────────────────────────────────────────────────────
+.workerSummaryList {
+  padding: v.$space-2 v.$space-4 v.$space-4;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-3;
+  direction: rtl;
+}
+
+.workerSummaryCard {
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-md;
+  overflow: hidden;
+}
+
+.workerSummaryName {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: v.$space-2 v.$space-3;
+  background: v.$color-surface-raised;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-primary;
+  border-bottom: 1px solid v.$color-border;
+}
+
+.workerSummaryCount {
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-normal;
+  color: v.$color-text-muted;
+}
+
+.workerSummaryRow {
+  display: grid;
+  grid-template-columns: 2.5rem 2.5rem 1fr auto;
+  align-items: center;
+  gap: v.$space-2;
+  padding: v.$space-2 v.$space-3;
+  font-size: v.$font-size-xs;
+  border-bottom: 1px solid v.$color-border;
+
+  &:last-child { border-bottom: none; }
+}
+
+.workerSummaryDay {
+  font-weight: v.$font-weight-medium;
+  color: v.$color-text;
+}
+
+.workerSummaryDate {
+  color: v.$color-text-muted;
+}
+
+.workerSummaryLabel {
+  color: v.$color-text;
+}
+
+.workerSummaryTime {
+  color: v.$color-text-muted;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

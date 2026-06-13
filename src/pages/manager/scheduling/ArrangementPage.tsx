@@ -404,6 +404,7 @@ export function ArrangementPage() {
   const isPublished = weekRecord?.isPublished ?? false
 
   const [notesOpen, setNotesOpen]           = useState(false)
+  const [summaryOpen, setSummaryOpen]       = useState(false)
   const [statusOpen, setStatusOpen]         = useState<'submitted'|'vacation'|'missing'|null>(null)
   const [publishing, setPublishing]         = useState(false)
   const [copied, setCopied]                 = useState(false)
@@ -478,6 +479,22 @@ export function ArrangementPage() {
 
     return warns
   }, [weekAssignments, slots, employees, activeEmployees])
+
+  // ── Per-worker summary ────────────────────────────────────────────────────
+  const [wy, wm, wd] = weekStart.split('-').map(Number)
+  const workerSummary = useMemo(() => {
+    return activeEmployees
+      .map(emp => {
+        const shifts = weekAssignments
+          .filter(a => a.employeeId === emp.id)
+          .map(a => slots.find(s => s.id === a.slotId))
+          .filter((s): s is typeof slots[0] => Boolean(s))
+          .sort((a, b) => a.dayOfWeek - b.dayOfWeek)
+        return { emp, shifts }
+      })
+      .filter(({ shifts }) => shifts.length > 0)
+      .sort((a, b) => a.emp.name.localeCompare(b.emp.name, 'he'))
+  }, [activeEmployees, weekAssignments, slots])
 
   // ── Notes ─────────────────────────────────────────────────────────────────
   const notesItems = useMemo(
@@ -587,6 +604,40 @@ export function ArrangementPage() {
                   </div>
                 )
               })}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Worker summary */}
+      {workerSummary.length > 0 && (
+        <section className={styles.notesSection}>
+          <button className={styles.notesToggle} onClick={() => setSummaryOpen(o => !o)}>
+            <span>סיכום לפי עובד ({workerSummary.length})</span>
+            <span className={styles.chevron}>{summaryOpen ? '▲' : '▼'}</span>
+          </button>
+          {summaryOpen && (
+            <div className={styles.workerSummaryList}>
+              {workerSummary.map(({ emp, shifts }) => (
+                <div key={emp.id} className={styles.workerSummaryCard}>
+                  <div className={styles.workerSummaryName}>
+                    {emp.name.split(' ')[0]}
+                    <span className={styles.workerSummaryCount}>{shifts.length} משמרות</span>
+                  </div>
+                  {shifts.map(slot => {
+                    const dd = new Date(wy, wm - 1, wd + slot.dayOfWeek)
+                    const dateStr = `${String(dd.getDate()).padStart(2, '0')}.${String(dd.getMonth() + 1).padStart(2, '0')}`
+                    return (
+                      <div key={slot.id} className={styles.workerSummaryRow}>
+                        <span className={styles.workerSummaryDay}>{DAY_NAMES[slot.dayOfWeek]}</span>
+                        <span className={styles.workerSummaryDate}>{dateStr}</span>
+                        <span className={styles.workerSummaryLabel}>{slot.label}</span>
+                        <span className={styles.workerSummaryTime}>{slot.startTime}–{slot.endTime}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              ))}
             </div>
           )}
         </section>
