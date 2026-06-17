@@ -199,10 +199,10 @@
   font-style: italic;
 }
 
-.deleteBtn {
+.iconBtn {
   background: none;
   border: none;
-  color: v.$color-primary;
+  color: v.$color-text-muted;
   padding: v.$space-1;
   cursor: pointer;
   display: flex;
@@ -211,7 +211,7 @@
   transition: color v.$transition-fast;
   flex-shrink: 0;
 
-  &:hover { color: v.$color-danger; }
+  &:active { color: v.$color-primary; }
 }
 
 // ── Add form ──────────────────────────────────────────────────────────────

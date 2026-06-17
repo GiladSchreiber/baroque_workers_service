@@ -36,15 +36,16 @@ export function buildInventoryClipboardMessage(
   const lines: string[] = [`📦 מלאי – ${fmtDate(date)}`]
 
   for (const cat of orderedCats) {
+    // Only include missing (✗) and partial (~) items — skip ok (✓)
     const catItems = items
-      .filter(it => it.category === cat && filledItemIds.has(it.id))
+      .filter(it => it.category === cat && filledItemIds.has(it.id) && entryMap.get(it.id)!.status !== 'ok')
       .sort((a, b) => {
         const sa = STATUS_ORDER[entryMap.get(a.id)!.status]
         const sb = STATUS_ORDER[entryMap.get(b.id)!.status]
         return sa !== sb ? sa - sb : a.sortOrder - b.sortOrder
       })
 
-    if (catItems.length === 0) continue
+    if (catItems.length === 0) continue  // skip category if nothing to report
     lines.push('')
     lines.push(`*${cat}:*`)
     for (const item of catItems) {

@@ -139,7 +139,15 @@ function SlotRow({ slot, isDragging, isOver, onDragStart, onDragEnter, onDragEnd
             {SHIFT_GROUP_LABELS[slot.group]}
           </span>
           <button
-            className={styles.deleteBtn}
+            className={styles.iconBtn}
+            onClick={e => { e.stopPropagation(); setEditing(true) }}
+            aria-label="ערוך"
+            title="ערוך"
+          >
+            <EditIcon />
+          </button>
+          <button
+            className={styles.iconBtn}
             onClick={e => { e.stopPropagation(); toggleTemplate(slot.id) }}
             aria-label={slot.isActive ? 'הסר זמנית' : 'שחזר'}
             title={slot.isActive ? 'הסר זמנית' : 'שחזר'}
@@ -270,6 +278,14 @@ function PlusIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
       <path d="M9 3v12M3 9h12" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function EditIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
     </svg>
   )
 }
