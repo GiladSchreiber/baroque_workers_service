@@ -45,6 +45,7 @@ export function EditShiftModal({ shift, onClose }: Props) {
           initialValues={shift}
           onSubmit={handleSubmit}
           submitLabel={isLoading ? 'שומר...' : 'שמור שינויים'}
+          showDutyShift={currentUser.roles.some(r => ['duty', 'manager', 'scheduler'].includes(r))}
           isEdit
         />
       ) : (

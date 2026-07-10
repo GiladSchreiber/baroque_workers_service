@@ -91,6 +91,7 @@ export function ManagerShiftFormPage() {
           onSubmit={handleSubmit}
           submitLabel={isEdit ? 'שמור שינויים' : 'הוסף רשומה'}
           managerMode
+          showDutyShift={!!employee?.roles.some(r => ['duty', 'manager', 'scheduler'].includes(r))}
           isEdit={isEdit}
         />
         {isEdit && (
