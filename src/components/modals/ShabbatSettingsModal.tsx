@@ -38,9 +38,14 @@ export function ShabbatSettingsModal({ isOpen, initialMonth, onClose }: Props) {
   }, [isOpen, initialMonth])
 
   useEffect(() => {
-    const existing = settings.find(s => s.month === month)
-    setFridayStart(existing?.fridayStart ?? '14:00')
-    setSaturdayEnd(existing?.saturdayEnd ?? '20:00')
+    // Prefer the exact month; otherwise carry forward the most recent prior
+    // month's hours (what is actually applied to fees) instead of the wide
+    // 14:00–20:00 default. Months are 'YYYY-MM' so string compare works.
+    const effective = settings
+      .filter(s => s.month <= month)
+      .sort((a, b) => b.month.localeCompare(a.month))[0]
+    setFridayStart(effective?.fridayStart ?? '14:00')
+    setSaturdayEnd(effective?.saturdayEnd ?? '20:00')
   }, [month, settings])
 
   async function handleSubmit(e: React.FormEvent) {
