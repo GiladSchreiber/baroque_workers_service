@@ -477,6 +477,31 @@ export function ArrangementPage() {
       }
     }
 
+    // Late closing shift followed by an early opening the next day.
+    // Saturday (6) wraps to Sunday (0) of the same displayed week.
+    const LATE_LABELS = ['תגבור ערב', 'משמרת ערב']
+    const EARLY_LABELS = ['מטבח בוקר', 'פתיחה', 'תגבור בוקר']
+    for (const emp of activeEmployees) {
+      const empSlots = weekAssignments
+        .filter(a => a.employeeId === emp.id)
+        .map(a => slots.find(s => s.id === a.slotId))
+        .filter((s): s is typeof slots[0] => !!s)
+      const lateDays = new Set(
+        empSlots.filter(s => LATE_LABELS.includes(s.label.trim())).map(s => s.dayOfWeek),
+      )
+      const earlyDays = new Set(
+        empSlots.filter(s => EARLY_LABELS.includes(s.label.trim())).map(s => s.dayOfWeek),
+      )
+      for (const d of lateDays) {
+        const next = (d + 1) % 7
+        if (earlyDays.has(next)) {
+          warns.push(
+            `${emp.name.split(' ')[0]} סוגר ביום ${DAY_NAMES[d]} ופותח מוקדם למחרת (${DAY_NAMES[next]})`,
+          )
+        }
+      }
+    }
+
     return warns
   }, [weekAssignments, slots, employees, activeEmployees])
 
