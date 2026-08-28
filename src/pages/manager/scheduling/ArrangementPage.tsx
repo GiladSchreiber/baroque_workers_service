@@ -479,19 +479,20 @@ export function ArrangementPage() {
 
     // Late closing shift followed by an early opening the next day.
     // Saturday (6) wraps to Sunday (0) of the same displayed week.
-    const LATE_LABELS = ['תגבור ערב', 'משמרת ערב']
-    const EARLY_LABELS = ['מטבח בוקר', 'פתיחה', 'תגבור בוקר']
+    // Match by keyword: labels are free-text/editable, so exact equality is
+    // too fragile (stray spaces, renamed or custom slots). Late = תגבור/משמרת
+    // ערב; early = any opening (בוקר / מטבח בוקר / תגבור בוקר / פתיחה).
+    const isLateClose = (label: string) =>
+      label.includes('ערב') && (label.includes('תגבור') || label.includes('משמרת'))
+    const isEarlyOpen = (label: string) =>
+      label.includes('בוקר') || label.includes('פתיחה')
     for (const emp of activeEmployees) {
       const empSlots = weekAssignments
         .filter(a => a.employeeId === emp.id)
         .map(a => slots.find(s => s.id === a.slotId))
         .filter((s): s is typeof slots[0] => !!s)
-      const lateDays = new Set(
-        empSlots.filter(s => LATE_LABELS.includes(s.label.trim())).map(s => s.dayOfWeek),
-      )
-      const earlyDays = new Set(
-        empSlots.filter(s => EARLY_LABELS.includes(s.label.trim())).map(s => s.dayOfWeek),
-      )
+      const lateDays = new Set(empSlots.filter(s => isLateClose(s.label)).map(s => s.dayOfWeek))
+      const earlyDays = new Set(empSlots.filter(s => isEarlyOpen(s.label)).map(s => s.dayOfWeek))
       for (const d of lateDays) {
         const next = (d + 1) % 7
         if (earlyDays.has(next)) {
