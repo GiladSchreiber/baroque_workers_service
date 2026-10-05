@@ -129,7 +129,7 @@ export function splitShiftHours(
   fridayStartMins = 14 * 60,
   saturdayEndMins = 20 * 60,
   holidayPeriods: HolidaySetting[] = [],
-): { regular: number; shabbat: number; holiday: number; support: number } {
+): { regular: number; shabbat: number; holiday: number; support: number; weekend: number; holidayAll: number } {
   const [sh, sm] = startTime.split(':').map(Number)
   const [eh, em] = endTime.split(':').map(Number)
   let startMins = sh * 60 + sm
@@ -137,7 +137,7 @@ export function splitShiftHours(
   if (endMins <= startMins) endMins += 24 * 60
   const totalMins = endMins - startMins
 
-  if (type === 'global' || type === 'taxi' || type === 'cashier') return { regular: 0, shabbat: 0, holiday: 0, support: 0 }
+  if (type === 'global' || type === 'taxi' || type === 'cashier') return { regular: 0, shabbat: 0, holiday: 0, support: 0, weekend: 0, holidayAll: 0 }
 
   // Convert shift to absolute ms; endMs accounts for midnight-crossing shifts
   const shiftStartMs = new Date(`${date}T${startTime}:00`).getTime()
@@ -190,16 +190,24 @@ export function splitShiftHours(
     shabbatMins += r.shabbat
   }
 
-  // 150% holiday hours → shabbat bucket (same rate, display together)
-  // 200% holiday hours → holiday bucket (higher rate)
+  // PAY buckets (unchanged):
+  //   shabbat = weekend + 150% holiday (both paid at SHABBAT_RATE / 1.5×)
+  //   holiday = 200% holiday (paid at HOLIDAY_RATE / 2×)
+  // REPORTING-only buckets for the accountant table (do NOT affect pay):
+  //   weekend    = pure Fri/Sat Shabbat hours (excludes any holiday)
+  //   holidayAll = all holiday hours (150% + 200%), incl. holidays on Saturday
   const regularHours = regularMins / 60
-  const shabbatHours = shabbatMins / 60 + holiday150Mins / 60
-  const holidayHours = holiday200Mins / 60
+  const weekendHours = shabbatMins / 60
+  const holiday150Hours = holiday150Mins / 60
+  const holiday200Hours = holiday200Mins / 60
+  const shabbatHours = weekendHours + holiday150Hours
+  const holidayHours = holiday200Hours
+  const holidayAllHours = holiday150Hours + holiday200Hours
 
   if (type === 'support') {
-    return { regular: 0, shabbat: shabbatHours, holiday: holidayHours, support: regularHours }
+    return { regular: 0, shabbat: shabbatHours, holiday: holidayHours, support: regularHours, weekend: weekendHours, holidayAll: holidayAllHours }
   }
-  return { regular: regularHours, shabbat: shabbatHours, holiday: holidayHours, support: 0 }
+  return { regular: regularHours, shabbat: shabbatHours, holiday: holidayHours, support: 0, weekend: weekendHours, holidayAll: holidayAllHours }
 }
 
 // ---------------------------------------------------------------------------

@@ -9,6 +9,10 @@ export interface EmpStats {
   shabbat: number
   holiday: number
   support: number
+  /** Reporting-only: pure Fri/Sat weekend hours (excludes holiday). */
+  weekend: number
+  /** Reporting-only: all holiday hours (150% + 200%), incl. holidays on Saturday. */
+  holidayAll: number
   tips: number
   global: number
   taxi: number
@@ -39,6 +43,7 @@ export function aggregateShifts(
   holidayPeriods: HolidaySetting[],
 ): EmpStats {
   let regular = 0, shabbat = 0, holiday = 0, support = 0, tips = 0, globalAmt = 0, taxiAmt = 0, shiftCount = 0
+  let weekend = 0, holidayAll = 0
   let nesiaOverride: number | null = null
 
   for (const s of shifts) {
@@ -57,6 +62,8 @@ export function aggregateShifts(
       shabbat  += h.shabbat
       holiday  += h.holiday
       support  += h.support
+      weekend  += h.weekend
+      holidayAll += h.holidayAll
       shiftCount++
     }
   }
@@ -76,6 +83,7 @@ export function aggregateShifts(
   return {
     employee,
     regular, shabbat, holiday, support, tips,
+    weekend, holidayAll,
     global: globalAmt,
     taxi: taxiAmt,
     shiftCount,

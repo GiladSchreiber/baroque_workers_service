@@ -170,7 +170,7 @@ export function AllShiftsPage() {
       'נסיעות',
       'גלובאלי',
       'סה"כ שכר שעתי',
-      'שעות שבת', 'שעות משמרת',
+      'שעות חג', 'שעות שבת', 'שעות רגילות',
       'משמרות',
       'ת.ז.', 'שם',
     ]
@@ -180,7 +180,8 @@ export function AllShiftsPage() {
       Math.round(d.nesia),
       Math.round(d.global),
       Math.round(d.hourlySalary),
-      Math.round(d.shabbat * 10) / 10,
+      Math.round(d.holidayAll * 10) / 10,
+      Math.round(d.weekend * 10) / 10,
       Math.round((d.regular + d.support) * 10) / 10,
       d.shiftCount,
       d.employee.idNumber ?? '',
@@ -304,7 +305,7 @@ export function AllShiftsPage() {
                 const emp = employeeMap[s.employeeId]
                 const { fridayStartMins, saturdayEndMins } = getTimesForDate(s.date)
                 const h = isFlat
-                  ? { regular: 0, shabbat: 0, holiday: 0, support: 0 }
+                  ? { regular: 0, shabbat: 0, holiday: 0, support: 0, weekend: 0, holidayAll: 0 }
                   : splitShiftHours(s.date, s.startTime, s.endTime, s.type, fridayStartMins, saturdayEndMins, holidayPeriods)
                 const tip = isFlat ? 0 : (tipMap.get(s.date)?.get(s.employeeId) ?? 0)
                 const salary = isFlat
@@ -373,7 +374,7 @@ export function AllShiftsPage() {
                 ) : detailShifts.filter(s => s.type !== 'nesia').map(s => {
                   const isFlat = s.type === 'global' || s.type === 'taxi' || s.type === 'cashier'
                   const { fridayStartMins, saturdayEndMins } = getTimesForDate(s.date)
-                  const h = isFlat ? { regular: 0, shabbat: 0, holiday: 0, support: 0 } : splitShiftHours(s.date, s.startTime, s.endTime, s.type, fridayStartMins, saturdayEndMins, holidayPeriods)
+                  const h = isFlat ? { regular: 0, shabbat: 0, holiday: 0, support: 0, weekend: 0, holidayAll: 0 } : splitShiftHours(s.date, s.startTime, s.endTime, s.type, fridayStartMins, saturdayEndMins, holidayPeriods)
                   const distributedTipForDate = isFlat ? 0 : (tipMap.get(s.date)?.get(selectedEmployee.id) ?? 0)
                   const shiftSalary = isFlat
                     ? (s.amount ?? 0)

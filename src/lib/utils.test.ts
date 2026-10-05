@@ -111,6 +111,35 @@ describe('splitShiftHours', () => {
     expect(sat.shabbat).toBeCloseTo(8)   // 12:00–20:00
     expect(sat.regular).toBeCloseTo(1)   // 20:00–21:00
   })
+
+  // Reporting-only split for the accountant table: weekend vs. holiday.
+  // Pay buckets (regular/shabbat/holiday) must stay unchanged.
+  it('weekend/holidayAll — plain Saturday has weekend hours, no holiday', () => {
+    const h = splitShiftHours('2026-05-02', '11:00', '18:00', 'regular') // Saturday
+    expect(h.weekend).toBeCloseTo(7)
+    expect(h.holidayAll).toBe(0)
+    expect(h.shabbat).toBeCloseTo(7) // pay bucket unchanged
+  })
+
+  it('holiday on Saturday — hours go to holiday, not weekend', () => {
+    // Saturday fully covered by a 200% holiday period.
+    const holiday = [{ id: 'h1', startDate: '2026-05-02', startTime: '00:00', endDate: '2026-05-02', endTime: '23:59', rate: '200' as const }]
+    const h = splitShiftHours('2026-05-02', '11:00', '18:00', 'regular', 14 * 60, 20 * 60, holiday)
+    expect(h.weekend).toBe(0)            // nothing counted as weekend
+    expect(h.holidayAll).toBeCloseTo(7)  // all under holiday
+    expect(h.shabbat).toBe(0)            // pay: not shabbat
+    expect(h.holiday).toBeCloseTo(7)     // pay: 200% bucket
+  })
+
+  it('150% holiday — counts as holiday in report but shabbat for pay', () => {
+    // Weekday (Monday) with a 150% holiday covering the whole shift.
+    const holiday = [{ id: 'h2', startDate: '2026-05-04', startTime: '00:00', endDate: '2026-05-04', endTime: '23:59', rate: '150' as const }]
+    const h = splitShiftHours('2026-05-04', '09:00', '14:00', 'regular', 14 * 60, 20 * 60, holiday)
+    expect(h.weekend).toBe(0)
+    expect(h.holidayAll).toBeCloseTo(5)  // report: holiday column
+    expect(h.shabbat).toBeCloseTo(5)     // pay: shabbat (1.5×) bucket, unchanged
+    expect(h.holiday).toBe(0)            // pay: not the 2× bucket
+  })
 })
 
 // ---------------------------------------------------------------------------
