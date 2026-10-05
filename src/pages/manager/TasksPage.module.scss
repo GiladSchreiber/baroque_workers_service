@@ -23,13 +23,18 @@
 
 .toolbar {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: v.$space-2;
-  padding: v.$space-3 0;
+  padding: v.$space-3 v.$space-4;
 
-  // compact selects
-  > div { flex: 1 1 7rem; min-width: 7rem; }
+  > div { flex: 1; }
+}
+
+.sortIcon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  color: v.$color-text-muted;
 }
 
 .sortDirBtn {
@@ -51,13 +56,37 @@
   display: flex;
   flex-direction: column;
   gap: v.$space-5;
-  padding-bottom: v.$space-8;
+  padding: 0 v.$space-4 v.$space-8;
 }
 
 .section {
   display: flex;
   flex-direction: column;
   gap: v.$space-2;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  background: none;
+  border: none;
+  padding: v.$space-1 0;
+  cursor: pointer;
+  color: inherit;
+  text-align: start;
+}
+
+.chevron {
+  color: v.$color-text-muted;
+  font-size: v.$font-size-sm;
+  line-height: 1;
+  transition: transform v.$transition-fast;
+  display: inline-block;
+}
+
+.chevronOpen {
+  transform: rotate(90deg);
 }
 
 .sectionTitle {
@@ -118,6 +147,10 @@
   text-align: start;
   cursor: pointer;
   color: inherit;
+  // Keep long-press clean on mobile (no text selection / callout menu).
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .itemTitle {
@@ -137,7 +170,6 @@
 
 .metaText { white-space: nowrap; }
 .metaSep { opacity: 0.5; }
-.photoFlag { margin-inline-start: v.$space-1; }
 
 .urgencyDot {
   width: 0.5rem;
@@ -148,4 +180,19 @@
 
 .u_high { background: v.$color-danger; }
 .u_medium { background: v.$color-warning; }
-.u_low { background: v.$color-text-muted; }
+.u_low { background: v.$color-success; }
+
+// Category label — same design as a worker shift-type badge
+.categoryBadge {
+  flex-shrink: 0;
+  display: inline-block;
+  padding: v.$space-1 v.$space-2;
+  border-radius: v.$radius-full;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  background-color: rgba(200, 191, 160, 0.18);
+  color: v.$color-primary;
+}

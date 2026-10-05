@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
-import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { useTasksStore } from '../../store/tasksStore'
 import { TASK_URGENCY_LABELS, type TaskItem } from '../../types/tasks'
 import styles from './TaskDetailModal.module.scss'
@@ -19,9 +18,8 @@ function formatDateTimeHe(iso: string): string {
 }
 
 export function TaskDetailModal({ isOpen, task, onClose }: Props) {
-  const { toggleDone, remove } = useTasksStore()
+  const { toggleDone } = useTasksStore()
   const [isWorking, setIsWorking] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState(false)
   const [zoomPhoto, setZoomPhoto] = useState(false)
 
   if (!task) return null
@@ -30,14 +28,6 @@ export function TaskDetailModal({ isOpen, task, onClose }: Props) {
     if (!task) return
     setIsWorking(true)
     try { await toggleDone(task.id) } finally { setIsWorking(false) }
-    onClose()
-  }
-
-  async function handleDelete() {
-    if (!task) return
-    setIsWorking(true)
-    try { await remove(task.id) } finally { setIsWorking(false) }
-    setConfirmDelete(false)
     onClose()
   }
 
@@ -93,9 +83,6 @@ export function TaskDetailModal({ isOpen, task, onClose }: Props) {
           <Button onClick={handleToggle} isLoading={isWorking}>
             {isDone ? 'החזר לפתוחות' : 'סמן כבוצע'}
           </Button>
-          <Button variant="destructive" onClick={() => setConfirmDelete(true)} disabled={isWorking}>
-            מחק
-          </Button>
         </div>
       </div>
 
@@ -104,17 +91,6 @@ export function TaskDetailModal({ isOpen, task, onClose }: Props) {
           <img src={task.photo} alt={task.title} />
         </div>
       )}
-
-      <ConfirmDialog
-        isOpen={confirmDelete}
-        title="למחוק את המשימה?"
-        message="הפעולה אינה הפיכה."
-        confirmLabel="מחק"
-        cancelLabel="ביטול"
-        variant="destructive"
-        onConfirm={handleDelete}
-        onCancel={() => setConfirmDelete(false)}
-      />
     </Modal>
   )
 }
