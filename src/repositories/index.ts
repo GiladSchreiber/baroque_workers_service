@@ -8,6 +8,8 @@ import { SupabaseShiftRepository } from './supabase/SupabaseShiftRepository'
 import { SupabaseMonthlySummaryRepository } from './supabase/SupabaseMonthlySummaryRepository'
 import { SupabaseShabbatSettingsRepository } from './supabase/SupabaseShabbatSettingsRepository'
 import { SupabaseHolidaySettingsRepository } from './supabase/SupabaseHolidaySettingsRepository'
+import { SupabaseTasksRepository } from './supabase/SupabaseTasksRepository'
+import { MockTasksRepository } from './mock/MockTasksRepository'
 
 const useSupabase = Boolean(
   import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -32,3 +34,7 @@ export const shabbatSettingsRepo = new SupabaseShabbatSettingsRepository()
 export const holidaySettingsRepo = useSupabase
   ? new SupabaseHolidaySettingsRepository()
   : new MockHolidaySettingsRepository()
+
+export const tasksRepo = useSupabase
+  ? new SupabaseTasksRepository()
+  : new MockTasksRepository()

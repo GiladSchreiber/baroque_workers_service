@@ -30,6 +30,7 @@ const MANAGER_LINKS = [
   { to: '/manager/shifts', label: 'שעות', icon: <ShiftsIcon /> },
   { to: '/manager/income', label: 'הכנסות', icon: <ClosureIcon /> },
   { to: '/manager/scheduling/arrangement', label: 'סידור', icon: <SchedulingIcon /> },
+  { to: '/manager/tasks', label: 'משימות', icon: <TasksIcon /> },
 ]
 
 function getLinks(roles: Role[] | undefined) {
@@ -131,6 +132,16 @@ function InventoryIcon() {
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
       <rect x="3" y="3" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.75"/>
       <path d="M7 7h8M7 11h8M7 15h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function TasksIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <path d="M4 6l2 2 3-3" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M4 15l2 2 3-3" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M12 7h7M12 16h7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
     </svg>
   )
 }

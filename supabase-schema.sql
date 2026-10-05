@@ -186,6 +186,34 @@ alter table public.inventory_reports         disable row level security;
 alter table public.inventory_entries         disable row level security;
 
 -- =====================================================
+-- Tasks (manager "משימות" todo list)
+-- =====================================================
+
+-- Custom task categories added by managers (defaults live in the app code)
+create table public.task_categories (
+  id          uuid primary key default gen_random_uuid(),
+  name        text unique not null,
+  created_at  timestamptz not null default now()
+);
+
+create table public.tasks (
+  id              uuid primary key default gen_random_uuid(),
+  title           text not null,
+  urgency         text not null default 'medium' check (urgency in ('low', 'medium', 'high')),
+  category        text not null,
+  description     text,
+  photo           text,                          -- compressed base64 data URL
+  created_by_id   uuid references public.employees(id) on delete set null,
+  created_by_name text,
+  status          text not null default 'open' check (status in ('open', 'done')),
+  created_at      timestamptz not null default now(),
+  done_at         timestamptz
+);
+
+alter table public.task_categories disable row level security;
+alter table public.tasks           disable row level security;
+
+-- =====================================================
 -- Migrations (run these if updating an existing DB)
 -- =====================================================
 -- ALTER TABLE public.employees DROP COLUMN IF EXISTS is_duty_officer;
