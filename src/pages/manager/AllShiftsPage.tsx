@@ -16,6 +16,7 @@ import {
   splitShiftHours, calcSalary, fmtMoney,
 } from '../../lib/utils'
 import type { Shift } from '../../types'
+import { isWorker } from '../../types'
 import { aggregateShifts, buildTipMap, type EmpStats } from '../../lib/shiftAggregation'
 import styles from './AllShiftsPage.module.scss'
 
@@ -72,7 +73,7 @@ export function AllShiftsPage() {
   }, [fetchShifts, fetchEmployees, fetchShabbatSettings, fetchHolidaySettings])
 
   const activeEmployees = useMemo(
-    () => employees.filter(e => e.isActive && !e.roles.includes('manager')),
+    () => employees.filter(e => e.isActive && isWorker(e.roles)),
     [employees]
   )
 

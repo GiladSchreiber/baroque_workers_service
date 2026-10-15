@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useShiftStore } from '../../store/shiftStore'
 import { useEmployeeStore } from '../../store/employeeStore'
@@ -13,6 +13,10 @@ import styles from './ReportShiftPage.module.scss'
 
 export function ReportShiftPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  // The shell this page is mounted under (manager | employee | kitchen | scheduler),
+  // so navigation stays within the current area instead of jumping to /employee.
+  const base = location.pathname.split('/')[1] || 'employee'
   const [searchParams] = useSearchParams()
   const inventoryDate  = searchParams.get('inventoryDate') ?? ''
   // Form state restored from URL after returning from inventory
@@ -66,19 +70,19 @@ export function ReportShiftPage() {
     const clipboardWrite = navigator.clipboard.writeText(clipboardText).catch(() => {})
     await addShift(data)
     await clipboardWrite
-    navigate('/employee/shifts')
+    navigate(`/${base}/shifts`)
   }
 
   function handleNavigateToInventory(snapshot: { date: string; type: ShiftType; startTime: string; endTime: string }) {
     const params = new URLSearchParams({
-      returnTo:   '/employee/report',
+      returnTo:   `/${base}/report`,
       date:        snapshot.date,
       shiftType:   snapshot.type,
       shiftDate:   snapshot.date,
       shiftStart:  snapshot.startTime,
       shiftEnd:    snapshot.endTime,
     })
-    navigate(`/employee/inventory/fill?${params.toString()}`)
+    navigate(`/${base}/inventory/fill?${params.toString()}`)
   }
 
   return (
@@ -91,7 +95,7 @@ export function ReportShiftPage() {
           onSubmit={handleSubmit}
           showDutyShift={currentUser.roles.some(r => ['duty', 'manager', 'scheduler'].includes(r))}
           onNavigateToInventory={
-            currentUser.roles.some(r => ['kitchen', 'employee'].includes(r))
+            base !== 'manager' && currentUser.roles.some(r => ['kitchen', 'employee'].includes(r))
               ? handleNavigateToInventory
               : undefined
           }

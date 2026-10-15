@@ -83,6 +83,15 @@ export function getPrimaryPath(roles: Role[]): string {
   if (roles.includes('kitchen'))   return '/kitchen/report'
   return '/employee/report'
 }
+/**
+ * A "worker" is anyone except a manager-only account. A manager who ALSO holds
+ * the base 'employee' role is treated as a regular worker — they can submit
+ * shifts and appear in work arrangement, salaries, etc. Non-managers (employee,
+ * duty, scheduler, kitchen) are unaffected and continue to count as workers.
+ */
+export function isWorker(roles: Role[]): boolean {
+  return !roles.includes('manager') || roles.includes('employee')
+}
 export type CreateShiftInput = Omit<Shift, 'id' | 'submittedAt' | 'updatedAt'>
 
 export type CreateClosureInput = Omit<ShiftClosure, 'id' | 'submittedAt'>

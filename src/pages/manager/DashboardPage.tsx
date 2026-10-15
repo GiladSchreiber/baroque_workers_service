@@ -15,6 +15,7 @@ import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import { currentMonthStr, fmtMoney, formatMonth } from '../../lib/utils'
 import { aggregateShifts, buildTipMap } from '../../lib/shiftAggregation'
 import type { Shift } from '../../types'
+import { isWorker } from '../../types'
 import styles from './DashboardPage.module.scss'
 
 const THIS_MONTH = currentMonthStr()
@@ -167,7 +168,7 @@ export function DashboardPage() {
   // Total salary cost for the selected month (mirrors the שעות page grand total)
   const totalSalary = useMemo(() => {
     const monthShifts = shifts.filter(s => s.date.startsWith(month))
-    const activeEmps = employees.filter(e => e.isActive && !e.roles.includes('manager'))
+    const activeEmps = employees.filter(e => e.isActive && isWorker(e.roles))
     const tipMap = buildTipMap(monthShifts)
     return activeEmps.reduce((sum, emp) => {
       const empShifts = monthShifts.filter(s => s.employeeId === emp.id)

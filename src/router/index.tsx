@@ -116,6 +116,7 @@ export const router = createHashRouter([
       { path: 'shifts/:id/edit', element: <ManagerShiftFormPage /> },
       { path: 'income', element: <IncomePage /> },
       { path: 'tasks', element: <TasksPage /> },
+      { path: 'report', element: <ReportShiftPage /> },
       { path: 'scheduling', element: <Navigate to="/manager/scheduling/arrangement" replace /> },
       ...schedulingChildren,
     ],

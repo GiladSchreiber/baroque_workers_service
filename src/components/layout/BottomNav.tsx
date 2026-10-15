@@ -33,9 +33,16 @@ const MANAGER_LINKS = [
   { to: '/manager/tasks', label: 'משימות', icon: <TasksIcon /> },
 ]
 
+const MANAGER_REPORT_LINK = { to: '/manager/report', label: 'דיווח', icon: <PlusIcon /> }
+
 function getLinks(roles: Role[] | undefined) {
   if (!roles?.length) return EMPLOYEE_LINKS
-  if (roles.includes('manager'))   return MANAGER_LINKS
+  if (roles.includes('manager')) {
+    // A manager who is also a regular worker can report their own shifts.
+    return roles.includes('employee')
+      ? [...MANAGER_LINKS, MANAGER_REPORT_LINK]
+      : MANAGER_LINKS
+  }
   if (roles.includes('scheduler')) return SCHEDULER_LINKS
   if (roles.includes('kitchen'))   return KITCHEN_LINKS
   return EMPLOYEE_LINKS
