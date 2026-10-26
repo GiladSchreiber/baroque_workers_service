@@ -5,7 +5,7 @@ import { PageHeader } from '../../components/layout/PageHeader'
 import { DAY_NAMES, SHIFT_GROUP_LABELS } from '../../types/scheduling'
 import type { AvailabilitySubmission, WeekSlot } from '../../types/scheduling'
 import {
-  getNextWeekStart, getWeekTitle, getEffectiveSlotsForWeek, isAvailabilityOpen,
+  getNextWeekStart, getWeekTitle, getEffectiveSlotsForWeek,
   normalizeWeekStart,
 } from '../../lib/schedulingUtils'
 import { SchedulingSubNav } from './ScheduleViewPage'
@@ -129,8 +129,6 @@ export function AvailabilityPage() {
   const [blockedDays, setBlockedDays] = useState<Set<number>>(new Set(existing?.blockedDays ?? []))
   const [notes,       setNotes]       = useState(existing?.notes ?? '')
 
-  const isOpen = isAvailabilityOpen(nextWeekStart)
-
   function toggleSlot(slotId: string) {
     setSelected(prev => {
       const next = new Set(prev)
@@ -211,24 +209,7 @@ export function AvailabilityPage() {
             : <p className={styles.submittedDetail}>{count} משמרות נבחרו</p>
           }
           {sub?.notes && <p className={styles.submittedNotes}>"{sub.notes}"</p>}
-          {isOpen && (
-            <button className={styles.editBtn} onClick={() => setEditing(true)}>עדכון משמרות</button>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  // ── Not yet open ────────────────────────────────────────────────────────
-  if (!isOpen) {
-    return (
-      <div className={styles.page}>
-        <PageHeader title="הגשת סידור" />
-        <SubNav />
-        <div className={styles.closedCard}>
-          <p className={styles.closedTitle}>הגשות עוד לא פתוחות</p>
-          <p className={styles.closedSub}>ניתן להגיש משמרות החל מיום ראשון</p>
-          <p className={styles.weekLabel}>{weekTitle}</p>
+          <button className={styles.editBtn} onClick={() => setEditing(true)}>עדכון משמרות</button>
         </div>
       </div>
     )
