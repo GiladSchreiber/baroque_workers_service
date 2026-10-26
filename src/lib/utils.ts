@@ -99,7 +99,12 @@ function classifyNonHolidayMins(
   while (cursor < endMs) {
     const dt = new Date(cursor)
     const dayStart = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime()
-    const dayEnd = dayStart + 24 * 60 * 60 * 1000
+    // Start of the NEXT calendar day. Derive it from the date (not dayStart+24h):
+    // on a DST fall-back day the real day is 25h long, so dayStart+24h would land
+    // BEFORE midnight and the cursor would never advance → infinite loop.
+    const dayEnd = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate() + 1).getTime()
+    // Defensive: guarantee forward progress regardless of timezone quirks.
+    if (dayEnd <= cursor) break
     const segEnd = Math.min(endMs, dayEnd)
     const segStartMin = (cursor - dayStart) / 60000
     const segEndMin   = (segEnd  - dayStart) / 60000
