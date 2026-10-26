@@ -38,13 +38,14 @@ export function getWeekTitle(weekStart: string): string {
   return `סידור ${day}.${m}.${y.slice(2)}`
 }
 
-/** Worker availability form opens from Tuesday */
+/** Worker availability form opens a full week early — from the Sunday that
+ *  starts the week BEFORE the target week (i.e. 7 days before `weekStart`). */
 export function isAvailabilityOpen(weekStart: string): boolean {
   const now = new Date()
   const sunday = new Date(weekStart + 'T00:00:00')
-  // previous Tuesday = sunday - 5 days
+  // previous Sunday = sunday - 7 days
   const openFrom = new Date(sunday)
-  openFrom.setDate(openFrom.getDate() - 5)
+  openFrom.setDate(openFrom.getDate() - 7)
   openFrom.setHours(0, 0, 0, 0)
   return now >= openFrom
 }

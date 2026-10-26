@@ -227,7 +227,7 @@ export function AvailabilityPage() {
         <SubNav />
         <div className={styles.closedCard}>
           <p className={styles.closedTitle}>הגשות עוד לא פתוחות</p>
-          <p className={styles.closedSub}>ניתן להגיש משמרות החל מיום שלישי</p>
+          <p className={styles.closedSub}>ניתן להגיש משמרות החל מיום ראשון</p>
           <p className={styles.weekLabel}>{weekTitle}</p>
         </div>
       </div>
