@@ -5,6 +5,7 @@ import { useShiftStore } from '../../store/shiftStore'
 import { useEmployeeStore } from '../../store/employeeStore'
 import { useShabbatSettingsStore } from '../../store/shabbatSettingsStore'
 import { useHolidaySettingsStore } from '../../store/holidaySettingsStore'
+import { useMonthStore } from '../../store/monthStore'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { Badge } from '../../components/ui/Badge'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -42,15 +43,17 @@ export function AllShiftsPage() {
   const { fetchAll: fetchShabbatSettings, getTimesForDate } = useShabbatSettingsStore()
   const { periods: holidayPeriods, fetchAll: fetchHolidaySettings } = useHolidaySettingsStore()
 
-  // Persist filter state in the URL so back-navigation restores the exact view
-  const filterMonth = searchParams.get('month') ?? currentMonthStr()
+  // Month is global (shared across tabs); other view state stays in the URL
+  const filterMonth = useMonthStore(s => s.activeMonth)
+  const setActiveMonth = useMonthStore(s => s.setActiveMonth)
   const selectedId  = searchParams.get('employee') ?? ''
   const viewMode    = (searchParams.get('view') ?? 'worker') as 'worker' | 'date'
   const shabbatModalOpen  = searchParams.get('shabbatModal') === '1'
   const holidayModalOpen  = searchParams.get('holidayModal') === '1'
 
   function setFilterMonth(m: string) {
-    setSearchParams(p => { p.set('month', m); p.delete('employee'); return p }, { replace: true })
+    setActiveMonth(m)
+    setSearchParams(p => { p.delete('month'); p.delete('employee'); return p }, { replace: true })
   }
   function setSelectedId(id: string) {
     setSearchParams(p => { id ? p.set('employee', id) : p.delete('employee'); return p }, { replace: true })

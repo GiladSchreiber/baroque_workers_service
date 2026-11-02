@@ -8,6 +8,7 @@ import { useShiftStore } from '../../store/shiftStore'
 import { useEmployeeStore } from '../../store/employeeStore'
 import { useShabbatSettingsStore } from '../../store/shabbatSettingsStore'
 import { useHolidaySettingsStore } from '../../store/holidaySettingsStore'
+import { useMonthStore } from '../../store/monthStore'
 import { useMonthlySummaries } from '../../hooks/useMonthlySummaries'
 import { summaryRepo } from '../../repositories'
 import { PageHeader } from '../../components/layout/PageHeader'
@@ -82,7 +83,10 @@ export function DashboardPage() {
   const { fetchAll: fetchShabbatSettings, getTimesForDate } = useShabbatSettingsStore()
   const { periods: holidayPeriods, fetchAll: fetchHolidaySettings } = useHolidaySettingsStore()
   const { summaries, refresh: refreshSummaries } = useMonthlySummaries()
-  const [month, setMonth] = useState(THIS_MONTH)
+  const activeMonth = useMonthStore(s => s.activeMonth)
+  const setMonth = useMonthStore(s => s.setActiveMonth)
+  // Dashboard needs a concrete month; fall back to the current one for "all time"
+  const month = activeMonth || THIS_MONTH
   const [chartView, setChartView] = useState<ChartView>('daily')
   const autoUpsertDone = useRef(false)
 

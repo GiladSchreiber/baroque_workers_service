@@ -9,9 +9,10 @@ import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import { EditShiftModal } from '../../components/modals/EditShiftModal'
 import {
   formatDateShort, formatMonth,
-  splitShiftHours, calcSalary, currentMonthStr, fmtMoney, SHIFT_TYPE_LABELS,
+  splitShiftHours, calcSalary, fmtMoney, SHIFT_TYPE_LABELS,
 } from '../../lib/utils'
 import { buildTipMap } from '../../lib/shiftAggregation'
+import { useMonthStore } from '../../store/monthStore'
 import { Badge } from '../../components/ui/Badge'
 import type { Shift } from '../../types'
 import styles from './MyShiftsPage.module.scss'
@@ -27,7 +28,8 @@ export function MyShiftsPage() {
   const { shifts, isLoading, fetchAll } = useShiftStore()
   const { fetchAll: fetchShabbatSettings, getTimesForDate } = useShabbatSettingsStore()
   const { periods: holidayPeriods, fetchAll: fetchHolidaySettings } = useHolidaySettingsStore()
-  const [filterMonth, setFilterMonth] = useState(currentMonthStr())
+  const filterMonth = useMonthStore(s => s.activeMonth)
+  const setFilterMonth = useMonthStore(s => s.setActiveMonth)
   const [editShift, setEditShift] = useState<Shift | null>(null)
 
   useEffect(() => {

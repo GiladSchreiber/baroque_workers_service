@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useShiftStore } from '../../store/shiftStore'
 import { useEmployeeStore } from '../../store/employeeStore'
+import { useMonthStore } from '../../store/monthStore'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
-import { formatDateShort, currentMonthStr, monthOptions, fmtMoney } from '../../lib/utils'
+import { formatDateShort, monthOptions, fmtMoney } from '../../lib/utils'
 import styles from './IncomePage.module.scss'
 
 const MONTH_OPTIONS = [{ value: '', label: 'כל הזמן' }, ...monthOptions(24)]
@@ -18,7 +19,8 @@ function effectiveEndMins(s: { startTime: string; endTime: string }) {
 export function IncomePage() {
   const { shifts, isLoading, fetchAll: fetchShifts } = useShiftStore()
   const { employees, fetchAll: fetchEmployees } = useEmployeeStore()
-  const [filterMonth, setFilterMonth] = useState(currentMonthStr())
+  const filterMonth = useMonthStore(s => s.activeMonth)
+  const setFilterMonth = useMonthStore(s => s.setActiveMonth)
 
   useEffect(() => {
     fetchShifts()
