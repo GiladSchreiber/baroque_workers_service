@@ -77,6 +77,7 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
   // Worker this shift is attributed to (defaults to the submitter). Lets an
   // אחמ"ש file the פרטי קופה for the main worker so tips pool on the real hours.
   const [reportForId, setReportForId] = useState(employeeId)
+  const [showReportForHelp, setShowReportForHelp] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
   const [isLoading, setIsLoading] = useState(false)
   const [submitError, setSubmitError] = useState('')
@@ -132,18 +133,31 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
       {reportForOptions && reportForOptions.length > 0 && (
-        <>
+        <div className={styles.reportForField}>
+          <div className={styles.labelRow}>
+            <span className={styles.labelText}>דיווח עבור</span>
+            <button
+              type="button"
+              className={styles.helpBtn}
+              aria-label="מידע"
+              aria-expanded={showReportForHelp}
+              onClick={() => setShowReportForHelp(v => !v)}
+            >
+              ?
+            </button>
+          </div>
+          {showReportForHelp && (
+            <p className={styles.fieldHint}>
+              בעל המשמרת. שנה רק אם אתה ממלא פרטי קופה/טיפ עבור עובד אחר
+            </p>
+          )}
           <Select
-            label="דיווח עבור"
             id="reportFor"
             value={reportForId}
             onChange={e => setReportForId(e.target.value)}
             options={reportForOptions}
           />
-          <p className={styles.fieldHint}>
-            בעל המשמרת. שנה רק אם אתה ממלא פרטי קופה/טיפ עבור עובד אחר — השעות והטיפ יירשמו על שמו.
-          </p>
-        </>
+        </div>
       )}
       <Input
         label="תאריך"

@@ -110,10 +110,52 @@
   text-align: center;
 }
 
+.reportForField {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+}
+
+.labelText {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: v.$color-text;
+}
+
+.helpBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  padding: 0;
+  border: 1.5px solid v.$color-border;
+  border-radius: 50%;
+  background: transparent;
+  color: v.$color-text-muted;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color v.$transition-fast, color v.$transition-fast;
+
+  &:hover,
+  &[aria-expanded='true'] {
+    border-color: v.$color-primary;
+    color: v.$color-primary;
+  }
+}
+
 .fieldHint {
   font-size: v.$font-size-xs;
   color: v.$color-text-muted;
-  margin: calc(-1 * #{v.$space-2}) 0 0;
+  margin: 0;
   line-height: 1.5;
 }
 
