@@ -10,8 +10,8 @@ import { EditShiftModal } from '../../components/modals/EditShiftModal'
 import {
   formatDateShort, formatMonth,
   splitShiftHours, calcSalary, currentMonthStr, fmtMoney, SHIFT_TYPE_LABELS,
-  computeTipDistribution,
 } from '../../lib/utils'
+import { buildTipMap } from '../../lib/shiftAggregation'
 import { Badge } from '../../components/ui/Badge'
 import type { Shift } from '../../types'
 import styles from './MyShiftsPage.module.scss'
@@ -61,16 +61,8 @@ export function MyShiftsPage() {
     [myShifts, filterMonth],
   )
 
-  // Build per-date tip distribution using ALL workers' shifts on each date I worked
-  const tipMap = useMemo(() => {
-    const myDates = new Set(filtered.map(s => s.date))
-    const byDate = new Map<string, ReturnType<typeof computeTipDistribution>>()
-    for (const date of myDates) {
-      const dayShifts = shifts.filter(s => s.date === date)
-      byDate.set(date, computeTipDistribution(dayShifts))
-    }
-    return byDate
-  }, [shifts, filtered])
+  // Per-date tip distribution across ALL workers' shifts (spans midnight)
+  const tipMap = useMemo(() => buildTipMap(shifts), [shifts])
 
   const { totalSalary } = useMemo(() => {
     let salary = 0

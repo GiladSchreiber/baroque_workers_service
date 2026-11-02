@@ -1,5 +1,8 @@
 import type { Shift, Employee, HolidaySetting } from '../types'
-import { splitShiftHours, calcSalary, computeTipDistribution } from './utils'
+import { splitShiftHours, calcSalary } from './utils'
+
+// Shift types that cannot receive a share of a tip pool (flat-pay / data-only).
+const TIP_INELIGIBLE = new Set<Shift['type']>(['support', 'global', 'taxi', 'cashier', 'nesia'])
 
 export const NESIA_RATE = 8 // ₪ per shift
 
@@ -22,15 +25,55 @@ export interface EmpStats {
   salary: number
 }
 
+/**
+ * Build a per-date tip map: date → (employeeId → tips received that date).
+ *
+ * Tips reported on a shift form a pool that is shared proportionally by overlap
+ * time among every tip-eligible shift running during that pool's window.
+ * Overlap is computed on ABSOLUTE timestamps (date + time, with midnight
+ * crossing), so a shift that runs past midnight pools correctly with the rest
+ * of the same physical night even when colleagues filed under a different
+ * calendar date. Each receiver's share is attributed to the date of their own
+ * shift, so downstream per-date lookups stay correct.
+ *
+ * Pass the widest set of shifts available (ideally all of them) so pools at
+ * date/month boundaries are not truncated.
+ */
 export function buildTipMap(allShifts: Shift[]): Map<string, Map<string, number>> {
-  const byDate = new Map<string, Shift[]>()
-  for (const s of allShifts) {
-    if (!byDate.has(s.date)) byDate.set(s.date, [])
-    byDate.get(s.date)!.push(s)
-  }
   const result = new Map<string, Map<string, number>>()
-  for (const [date, dayShifts] of byDate) {
-    result.set(date, computeTipDistribution(dayShifts))
+  const add = (date: string, empId: string, amt: number) => {
+    let m = result.get(date)
+    if (!m) { m = new Map(); result.set(date, m) }
+    m.set(empId, (m.get(empId) ?? 0) + amt)
+  }
+
+  const eligible = allShifts
+    .filter(s => !TIP_INELIGIBLE.has(s.type))
+    .map(s => {
+      const [sh, sm] = s.startTime.split(':').map(Number)
+      const [eh, em] = s.endTime.split(':').map(Number)
+      let startMin = sh * 60 + sm
+      let endMin = eh * 60 + em
+      if (endMin <= startMin) endMin += 24 * 60 // crosses midnight
+      const startMs = new Date(`${s.date}T${s.startTime}:00`).getTime()
+      const endMs = startMs + (endMin - startMin) * 60000
+      return { date: s.date, empId: s.employeeId, tips: s.tips ?? 0, startMs, endMs }
+    })
+
+  for (const pool of eligible) {
+    if (pool.tips <= 0) continue
+    const parts: { date: string; empId: string; mins: number }[] = []
+    let totalMins = 0
+    for (const e of eligible) {
+      const overlap = Math.min(e.endMs, pool.endMs) - Math.max(e.startMs, pool.startMs)
+      if (overlap > 0) {
+        const mins = overlap / 60000
+        parts.push({ date: e.date, empId: e.empId, mins })
+        totalMins += mins
+      }
+    }
+    if (totalMins === 0) continue
+    for (const p of parts) add(p.date, p.empId, pool.tips * (p.mins / totalMins))
   }
   return result
 }

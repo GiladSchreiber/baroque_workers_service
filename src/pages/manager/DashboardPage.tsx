@@ -169,7 +169,8 @@ export function DashboardPage() {
   const totalSalary = useMemo(() => {
     const monthShifts = shifts.filter(s => s.date.startsWith(month))
     const activeEmps = employees.filter(e => e.isActive && isWorker(e.roles))
-    const tipMap = buildTipMap(monthShifts)
+    // Built from ALL shifts so cross-midnight / month-boundary tip pools are intact
+    const tipMap = buildTipMap(shifts)
     return activeEmps.reduce((sum, emp) => {
       const empShifts = monthShifts.filter(s => s.employeeId === emp.id)
       return sum + aggregateShifts(empShifts, emp, tipMap, getTimesForDate, holidayPeriods).salary

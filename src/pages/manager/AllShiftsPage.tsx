@@ -87,8 +87,9 @@ export function AllShiftsPage() {
     [shifts, filterMonth]
   )
 
-  // Tip map is built from ALL shifts in the period so cross-worker overlaps are correct
-  const tipMap = useMemo(() => buildTipMap(monthShifts), [monthShifts])
+  // Built from ALL shifts so cross-worker overlaps — including shifts that cross
+  // midnight into an adjacent date/month — are pooled correctly.
+  const tipMap = useMemo(() => buildTipMap(shifts), [shifts])
 
   const summaryData = useMemo((): EmpStats[] =>
     activeEmployees.map(emp => {
