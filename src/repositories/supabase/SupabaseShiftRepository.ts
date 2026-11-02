@@ -61,9 +61,22 @@ function toRow(data: Partial<Shift>): Partial<ShiftRow> {
 
 export class SupabaseShiftRepository implements ShiftRepository {
   async getAll(): Promise<Shift[]> {
-    const { data, error } = await supabase.from('shifts').select('*').order('date', { ascending: false })
-    if (error) throw new Error(error.message)
-    return (data as ShiftRow[]).map(toShift)
+    // PostgREST caps a single request at 1000 rows. Paginate so that older
+    // months (which sort last under date-desc) are never silently dropped.
+    const PAGE = 1000
+    const all: ShiftRow[] = []
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await supabase
+        .from('shifts')
+        .select('*')
+        .order('date', { ascending: false })
+        .range(from, from + PAGE - 1)
+      if (error) throw new Error(error.message)
+      const rows = data as ShiftRow[]
+      all.push(...rows)
+      if (rows.length < PAGE) break
+    }
+    return all.map(toShift)
   }
 
   async getByEmployee(employeeId: string): Promise<Shift[]> {

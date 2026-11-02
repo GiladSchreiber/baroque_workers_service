@@ -22,6 +22,19 @@ import styles from './DashboardPage.module.scss'
 const THIS_MONTH = currentMonthStr()
 const MONTH_ABBR = ['ינו', 'פבר', 'מרץ', 'אפר', 'מאי', 'יוני', 'יולי', 'אוג', 'ספט', 'אוק', 'נוב', 'דצמ']
 
+// How many recently-closed months to keep re-deriving from live shift data.
+// The current month is always computed live; closed months this far back are
+// still recomputed (to catch early-next-month fixes), and anything older is
+// treated as frozen — we trust its stored monthly_summaries row and never
+// recompute it, so dashboard load stays cheap no matter how much history piles up.
+const RECOMPUTE_MONTHS = 2
+
+function monthsAgo(ym: string, n: number): string {
+  const [y, m] = ym.split('-').map(Number)
+  const d = new Date(y, m - 1 - n, 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
 type ChartView = 'daily' | 'monthly'
 
 function linRegression(values: number[]): number[] {
@@ -97,29 +110,39 @@ export function DashboardPage() {
     fetchHolidaySettings()
   }, [fetchAll, fetchEmployees, fetchShabbatSettings, fetchHolidaySettings])
 
-  // Auto-upsert completed months that have shift data but no summary entry yet.
-  // Runs once after both shifts and summaries have loaded.
+  // Keep monthly_summaries in sync with live shift data — but only for a small
+  // trailing window. Closed months older than RECOMPUTE_MONTHS are frozen:
+  // their stored row is authoritative and never recomputed, so this stays cheap
+  // as history grows. Runs once per load, after shifts + summaries have loaded.
   useEffect(() => {
     if (autoUpsertDone.current || isLoading || shifts.length === 0) return
 
-    const existingMonths = new Set(summaries.map(s => s.month))
-    const pastMonthsWithShifts = new Set<string>()
+    const windowStart = monthsAgo(THIS_MONTH, RECOMPUTE_MONTHS)
+    // Manually-entered historical rows are authoritative — never auto-touch them.
+    const histMonths = new Set(summaries.filter(s => s.isHistorical).map(s => s.month))
+    const storedMap = new Map(summaries.map(s => [s.month, s]))
+
+    // Past months (excluding the live current month) that carry revenue data.
+    const candidates = new Set<string>()
     for (const s of shifts) {
       const m = s.date.slice(0, 7)
-      if (m < THIS_MONTH && !existingMonths.has(m) && s.revenue != null) {
-        pastMonthsWithShifts.add(m)
-      }
+      if (m < THIS_MONTH && s.revenue != null && !histMonths.has(m)) candidates.add(m)
     }
 
-    if (pastMonthsWithShifts.size === 0) return
+    const toUpsert: { m: string; sum: number; average: number }[] = []
+    for (const m of candidates) {
+      const existing = storedMap.get(m)
+      const inWindow = m >= windowStart
+      // Older-than-window months that are already stored are frozen — skip them.
+      if (existing && !inWindow) continue
+      const { sum, average } = computeMonthTotals(shifts, m)
+      if (!existing || Math.abs(existing.sum - sum) > 0.5) toUpsert.push({ m, sum, average })
+    }
+
+    if (toUpsert.length === 0) return
     autoUpsertDone.current = true
 
-    Promise.all(
-      Array.from(pastMonthsWithShifts).map(m => {
-        const { sum, average } = computeMonthTotals(shifts, m)
-        return summaryRepo.upsert(m, average, sum, false)
-      })
-    )
+    Promise.all(toUpsert.map(({ m, sum, average }) => summaryRepo.upsert(m, average, sum, false)))
       .then(refreshSummaries)
       .catch(console.error)
   }, [isLoading, shifts, summaries, refreshSummaries])
