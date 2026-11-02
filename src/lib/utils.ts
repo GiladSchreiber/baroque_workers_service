@@ -6,6 +6,8 @@ export const SHIFT_TYPE_LABELS: Record<ShiftType, string> = {
   afternoon: 'צהריים',
   evening: 'ערב',
   kitchen: 'מטבח',
+  kitchenMorning: 'מטבח בוקר',
+  kitchenEvening: 'מטבח ערב',
   support: 'אחמ"ש',
   manager: 'פיק',
   overlap: 'חפיפה',

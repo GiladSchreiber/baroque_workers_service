@@ -10,7 +10,8 @@ const BASE_SHIFT_TYPE_OPTIONS = [
   { value: 'morning', label: 'בוקר' },
   { value: 'afternoon', label: 'צהריים' },
   { value: 'evening', label: 'ערב' },
-  { value: 'kitchen', label: 'מטבח' },
+  { value: 'kitchenMorning', label: 'מטבח בוקר' },
+  { value: 'kitchenEvening', label: 'מטבח ערב' },
   { value: 'manager', label: 'פיק' },
   { value: 'overlap', label: 'חפיפה' },
   { value: 'general', label: 'כללי' },
@@ -45,9 +46,14 @@ interface FormErrors {
 }
 
 export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = 'שלח דיווח', managerMode = false, showDutyShift = false, isEdit = false, onNavigateToInventory, inventoryDone = false }: ShiftFormProps) {
-  const shiftTypeOptions = showDutyShift
-    ? [...BASE_SHIFT_TYPE_OPTIONS.slice(0, 4), DUTY_SHIFT_TYPE_OPTION, ...BASE_SHIFT_TYPE_OPTIONS.slice(4)]
+  const baseOptions = showDutyShift
+    ? [...BASE_SHIFT_TYPE_OPTIONS.slice(0, 5), DUTY_SHIFT_TYPE_OPTION, ...BASE_SHIFT_TYPE_OPTIONS.slice(5)]
     : BASE_SHIFT_TYPE_OPTIONS
+  // Legacy: pre-split kitchen shifts still carry type 'kitchen' — keep the
+  // option available when editing such a shift so the Select isn't blank.
+  const shiftTypeOptions = initialValues?.type === 'kitchen'
+    ? [...baseOptions, { value: 'kitchen', label: 'מטבח (ישן)' }]
+    : baseOptions
   const [date, setDate] = useState(initialValues?.date ?? todayString())
   const [type, setType] = useState<ShiftType>(initialValues?.type ?? (managerMode ? 'global' : 'morning'))
   const [startTime, setStartTime] = useState(initialValues?.startTime ?? '')
@@ -285,7 +291,7 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
       )}
 
       {submitError && <p className={styles.submitError}>{submitError}</p>}
-      {type === 'kitchen' && onNavigateToInventory && (
+      {(type === 'kitchen' || type === 'kitchenMorning' || type === 'kitchenEvening') && onNavigateToInventory && (
         <button
           type="button"
           className={inventoryDone ? styles.inventoryLinkBtnDone : styles.inventoryLinkBtnPending}
