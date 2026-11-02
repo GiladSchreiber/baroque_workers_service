@@ -35,6 +35,13 @@ interface ShiftFormProps {
   onNavigateToInventory?: (snapshot: { date: string; type: ShiftType; startTime: string; endTime: string }) => void
   /** Reflects whether the inventory report has been filled for this shift's date */
   inventoryDone?: boolean
+  /**
+   * When provided, a "דיווח עבור" selector lets the submitter attribute this
+   * shift (hours + cash/tips) to another worker — e.g. an אחמ"ש filing the
+   * פרטי קופה on behalf of the block's main worker. This keeps the tip-pool
+   * window tied to the worker who actually held the shift, not the submitter.
+   */
+  reportForOptions?: { value: string; label: string }[]
 }
 
 interface FormErrors {
@@ -45,7 +52,7 @@ interface FormErrors {
   amount?: string
 }
 
-export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = 'שלח דיווח', managerMode = false, showDutyShift = false, isEdit = false, onNavigateToInventory, inventoryDone = false }: ShiftFormProps) {
+export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = 'שלח דיווח', managerMode = false, showDutyShift = false, isEdit = false, onNavigateToInventory, inventoryDone = false, reportForOptions }: ShiftFormProps) {
   const baseOptions = showDutyShift
     ? [...BASE_SHIFT_TYPE_OPTIONS.slice(0, 5), DUTY_SHIFT_TYPE_OPTION, ...BASE_SHIFT_TYPE_OPTIONS.slice(5)]
     : BASE_SHIFT_TYPE_OPTIONS
@@ -67,6 +74,9 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
     Boolean(initialValues?.revenue || initialValues?.cash || initialValues?.credit || initialValues?.tips)
   )
   const [repeatMonthly, setRepeatMonthly] = useState(initialValues?.repeatMonthly ?? false)
+  // Worker this shift is attributed to (defaults to the submitter). Lets an
+  // אחמ"ש file the פרטי קופה for the main worker so tips pool on the real hours.
+  const [reportForId, setReportForId] = useState(employeeId)
   const [errors, setErrors] = useState<FormErrors>({})
   const [isLoading, setIsLoading] = useState(false)
   const [submitError, setSubmitError] = useState('')
@@ -98,7 +108,7 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
     setIsLoading(true)
     try {
       await onSubmit({
-        employeeId, date, type,
+        employeeId: reportForOptions ? reportForId : employeeId, date, type,
         startTime: (isGlobal || isCashier) ? '00:00' : startTime,
         endTime:   (isGlobal || isCashier) ? '00:00' : endTime,
         amount:  isGlobal && amount !== '' ? Number(amount) : undefined,
@@ -121,6 +131,20 @@ export function ShiftForm({ employeeId, initialValues, onSubmit, submitLabel = '
 
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
+      {reportForOptions && reportForOptions.length > 0 && (
+        <>
+          <Select
+            label="דיווח עבור"
+            id="reportFor"
+            value={reportForId}
+            onChange={e => setReportForId(e.target.value)}
+            options={reportForOptions}
+          />
+          <p className={styles.fieldHint}>
+            בעל המשמרת. שנה רק אם אתה ממלא פרטי קופה/טיפ עבור עובד אחר — השעות והטיפ יירשמו על שמו.
+          </p>
+        </>
+      )}
       <Input
         label="תאריך"
         id="date"

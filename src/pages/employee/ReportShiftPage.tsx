@@ -9,6 +9,7 @@ import { ShiftForm } from '../../components/forms/ShiftForm'
 import { buildShiftMessage, formatEmployeeNameForMessage } from '../../lib/utils'
 import { buildInventoryClipboardMessage } from '../../lib/inventoryUtils'
 import type { CreateShiftInput, ShiftType } from '../../types'
+import { isWorker } from '../../types'
 import styles from './ReportShiftPage.module.scss'
 
 export function ReportShiftPage() {
@@ -45,13 +46,28 @@ export function ReportShiftPage() {
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
+  // Helpers (אחמ"ש / manager / scheduler) may file a shift's cash/tips on behalf
+  // of its real worker, so the tip pool stays tied to that worker's hours.
+  const canReportForOthers = currentUser.roles.some(r => ['duty', 'manager', 'scheduler'].includes(r))
+  const reportForOptions = useMemo(() => {
+    if (!canReportForOthers) return undefined
+    const opts = employees
+      .filter(e => e.isActive && isWorker(e.roles))
+      .map(e => ({ value: e.id, label: e.name }))
+    if (!opts.some(o => o.value === currentUser.id)) {
+      opts.unshift({ value: currentUser.id, label: `${currentUser.name} (אני)` })
+    }
+    return opts
+  }, [employees, currentUser, canReportForOthers])
+
   useEffect(() => {
     if (inventoryDate) fetchReportsForDate(inventoryDate)
   }, [inventoryDate])
 
   async function handleSubmit(data: CreateShiftInput) {
     const allNames    = employees.filter(e => e.isActive).map(e => e.name)
-    const displayName = formatEmployeeNameForMessage(currentUser.name, allNames)
+    const owner       = employees.find(e => e.id === data.employeeId) ?? currentUser
+    const displayName = formatEmployeeNameForMessage(owner.name, allNames)
 
     let clipboardText = buildShiftMessage(data, displayName)
     if (inventoryDate) {
@@ -100,6 +116,7 @@ export function ReportShiftPage() {
               : undefined
           }
           inventoryDone={!!inventoryDate}
+          reportForOptions={reportForOptions}
         />
       </div>
     </div>

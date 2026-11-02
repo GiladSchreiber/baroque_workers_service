@@ -110,6 +110,13 @@
   text-align: center;
 }
 
+.fieldHint {
+  font-size: v.$font-size-xs;
+  color: v.$color-text-muted;
+  margin: calc(-1 * #{v.$space-2}) 0 0;
+  line-height: 1.5;
+}
+
 .inventoryLinkBtnPending {
   display: flex;
   align-items: center;
