@@ -289,8 +289,41 @@ export function computeTipDistribution(shiftsOnDate: Shift[]): Map<string, numbe
   return result
 }
 
-// salary = regular*wage + shabbat*SHABBAT_RATE + holiday*HOLIDAY_RATE
-//        + MAX(0, tips - 15*(regular+shabbat+holiday)) + support*50
+/**
+ * Resolve the hourly wage that applies to a shift on a given date.
+ * If a wage change was recorded (wageFrom + prevWage) and the shift predates
+ * the change, the previous wage applies; otherwise the current wage does.
+ */
+export function resolveWage(
+  emp: { hourlyWage: number; wageFrom?: string; prevWage?: number },
+  date: string,
+): number {
+  if (emp.wageFrom && emp.prevWage != null && date < emp.wageFrom) return emp.prevWage
+  return emp.hourlyWage
+}
+
+// salary = regularPay + shabbat*SHABBAT_RATE + holiday*HOLIDAY_RATE
+//        + MAX(0, tips - 15*(regularHours+shabbat+holiday)) + support*50
+// regularPay is kept separate from regularHours so callers that span a wage
+// change can sum Σ(hours × wage-for-that-date) themselves.
+export function salaryFromParts(p: {
+  regularPay: number
+  regularHours: number
+  shabbat: number
+  holiday: number
+  support: number
+  tips: number
+}): number {
+  const paidHours = p.regularHours + p.shabbat + p.holiday
+  return (
+    p.regularPay +
+    p.shabbat * SHABBAT_RATE +
+    p.holiday * HOLIDAY_RATE +
+    Math.max(0, p.tips - 15 * paidHours) +
+    p.support * 50
+  )
+}
+
 export function calcSalary(
   regular: number,
   shabbat: number,
@@ -299,14 +332,11 @@ export function calcSalary(
   hourlyWage: number,
   holiday = 0,
 ): number {
-  const paidHours = regular + shabbat + holiday
-  return (
-    regular * hourlyWage +
-    shabbat * SHABBAT_RATE +
-    holiday * HOLIDAY_RATE +
-    Math.max(0, tips - 15 * paidHours) +
-    support * 50
-  )
+  return salaryFromParts({
+    regularPay: regular * hourlyWage,
+    regularHours: regular,
+    shabbat, holiday, support, tips,
+  })
 }
 
 export function fmtMoney(n: number): string {

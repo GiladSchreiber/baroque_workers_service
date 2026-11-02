@@ -5,7 +5,7 @@ import { PageHeader } from '../../components/layout/PageHeader'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import type { Role } from '../../types'
-import { hashPassword } from '../../lib/utils'
+import { hashPassword, currentMonthStr } from '../../lib/utils'
 import styles from './EmployeeFormPage.module.scss'
 
 const ROLE_OPTIONS: { value: Role; label: string }[] = [
@@ -26,6 +26,9 @@ export function EmployeeFormPage() {
   const [email, setEmail] = useState('')
   const [roles, setRoles] = useState<Role[]>(['employee'])
   const [hourlyWage, setHourlyWage] = useState('')
+  const [wageFrom, setWageFrom] = useState('')
+  const [prevWage, setPrevWage] = useState('')
+  const [loadedWage, setLoadedWage] = useState('') // wage as stored, to detect a raise
   const [idNumber, setIdNumber] = useState('')
   const [phone, setPhone] = useState('')
   const [bankNumber, setBankNumber] = useState('')
@@ -47,6 +50,9 @@ export function EmployeeFormPage() {
         setEmail(emp.email)
         setRoles(emp.roles)
         setHourlyWage(String(emp.hourlyWage))
+        setLoadedWage(String(emp.hourlyWage))
+        setWageFrom(emp.wageFrom ?? '')
+        setPrevWage(emp.prevWage != null ? String(emp.prevWage) : '')
         setIdNumber(emp.idNumber ?? '')
         setPhone(emp.phone ?? '')
         setBankNumber(emp.bankNumber ?? '')
@@ -55,6 +61,16 @@ export function EmployeeFormPage() {
       }
     }
   }, [isEdit, id, employees])
+
+  function handleWageChange(value: string) {
+    setHourlyWage(value)
+    // Bumping an existing worker's wage: pre-fill the change boundary so the
+    // earlier part of the period keeps the old wage. Manager can still edit both.
+    if (isEdit && loadedWage && value !== loadedWage && prevWage === '') {
+      setPrevWage(loadedWage)
+      if (!wageFrom) setWageFrom(`${currentMonthStr()}-01`)
+    }
+  }
 
   function toggleRole(role: Role) {
     setRoles(prev =>
@@ -71,11 +87,16 @@ export function EmployeeFormPage() {
     setIsLoading(true)
     try {
       const personalFields = { idNumber, phone, bankNumber, bankBranch, bankAccount }
+      const wageFields = {
+        wageFrom: wageFrom || undefined,
+        prevWage: prevWage !== '' ? Number(prevWage) : undefined,
+      }
       const isManager = roles.includes('manager')
       if (isEdit && id) {
         const updates: Parameters<typeof updateEmployee>[1] = {
           name, email, roles,
           hourlyWage: Number(hourlyWage),
+          ...wageFields,
           ...personalFields,
         }
         if (isManager && password) {
@@ -91,6 +112,7 @@ export function EmployeeFormPage() {
           passwordHash,
           roles,
           hourlyWage: Number(hourlyWage),
+          ...wageFields,
           isActive: true,
           ...personalFields,
         })
@@ -164,10 +186,32 @@ export function EmployeeFormPage() {
             type="number"
             placeholder="0"
             value={hourlyWage}
-            onChange={e => setHourlyWage(e.target.value)}
+            onChange={e => handleWageChange(e.target.value)}
             min={0}
             required
           />
+          <div className={styles.wageGrid}>
+            <Input
+              label="בתוקף מתאריך"
+              id="wageFrom"
+              type="date"
+              value={wageFrom}
+              onChange={e => setWageFrom(e.target.value)}
+            />
+            <Input
+              label="שכר קודם"
+              id="prevWage"
+              type="number"
+              placeholder="—"
+              value={prevWage}
+              onChange={e => setPrevWage(e.target.value)}
+              min={0}
+            />
+          </div>
+          <p className={styles.hint}>
+            אם מולאו, השכר הקודם יחול על משמרות שלפני התאריך, והשכר הנוכחי מהתאריך ואילך.
+            להשארה ריקה — השכר הנוכחי חל על כל התקופה.
+          </p>
 
           <div className={styles.sectionTitle}>פרטים אישיים</div>
           <Input

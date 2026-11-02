@@ -1,5 +1,5 @@
 import type { Shift, Employee, HolidaySetting } from '../types'
-import { splitShiftHours, calcSalary } from './utils'
+import { splitShiftHours, salaryFromParts, resolveWage } from './utils'
 
 // Shift types that cannot receive a share of a tip pool (flat-pay / data-only).
 const TIP_INELIGIBLE = new Set<Shift['type']>(['support', 'global', 'taxi', 'cashier', 'nesia'])
@@ -87,6 +87,7 @@ export function aggregateShifts(
 ): EmpStats {
   let regular = 0, shabbat = 0, holiday = 0, support = 0, tips = 0, globalAmt = 0, taxiAmt = 0, shiftCount = 0
   let weekend = 0, holidayAll = 0
+  let regularPay = 0 // Σ regular-hours × wage-effective-on-that-date (handles mid-period raises)
   let nesiaOverride: number | null = null
 
   for (const s of shifts) {
@@ -102,6 +103,7 @@ export function aggregateShifts(
       const { fridayStartMins, saturdayEndMins } = getTimesForDate(s.date)
       const h = splitShiftHours(s.date, s.startTime, s.endTime, s.type, fridayStartMins, saturdayEndMins, holidayPeriods)
       regular  += h.regular
+      regularPay += h.regular * resolveWage(employee, s.date)
       shabbat  += h.shabbat
       holiday  += h.holiday
       support  += h.support
@@ -120,7 +122,7 @@ export function aggregateShifts(
     tips += tipMap.get(date)?.get(employee.id) ?? 0
   }
 
-  const hourlySalary = calcSalary(regular, shabbat, support, tips, employee.hourlyWage, holiday)
+  const hourlySalary = salaryFromParts({ regularPay, regularHours: regular, shabbat, holiday, support, tips })
   const nesia = nesiaOverride !== null ? nesiaOverride : shiftCount * NESIA_RATE
 
   return {

@@ -14,7 +14,7 @@ import { ShabbatSettingsModal } from '../../components/modals/ShabbatSettingsMod
 import { HolidaySettingsModal } from '../../components/modals/HolidaySettingsModal'
 import {
   SHIFT_TYPE_LABELS, formatDateShort, currentMonthStr, monthOptions, formatMonth,
-  splitShiftHours, calcSalary, fmtMoney,
+  splitShiftHours, calcSalary, resolveWage, fmtMoney,
 } from '../../lib/utils'
 import type { Shift } from '../../types'
 import { isWorker } from '../../types'
@@ -315,7 +315,7 @@ export function AllShiftsPage() {
                 const tip = isFlat ? 0 : (tipMap.get(s.date)?.get(s.employeeId) ?? 0)
                 const salary = isFlat
                   ? (s.amount ?? 0)
-                  : calcSalary(h.regular, h.shabbat, h.support, tip, emp?.hourlyWage ?? 0, h.holiday)
+                  : calcSalary(h.regular, h.shabbat, h.support, tip, emp ? resolveWage(emp, s.date) : 0, h.holiday)
                 return { s, h, salary, isFlat }
               })
               const dayTotal = rows.reduce((sum, r) => sum + r.salary, 0)
@@ -383,7 +383,7 @@ export function AllShiftsPage() {
                   const distributedTipForDate = isFlat ? 0 : (tipMap.get(s.date)?.get(selectedEmployee.id) ?? 0)
                   const shiftSalary = isFlat
                     ? (s.amount ?? 0)
-                    : calcSalary(h.regular, h.shabbat, h.support, distributedTipForDate, selectedEmployee.hourlyWage, h.holiday)
+                    : calcSalary(h.regular, h.shabbat, h.support, distributedTipForDate, resolveWage(selectedEmployee, s.date), h.holiday)
                   return (
                     <tr
                       key={s.id}

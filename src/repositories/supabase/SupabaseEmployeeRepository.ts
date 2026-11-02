@@ -10,6 +10,8 @@ interface EmployeeRow {
   password_hash: string | null
   role: string[]   // text[] in DB
   hourly_wage: number
+  wage_from: string | null
+  prev_wage: number | null
   is_active: boolean
   created_at: string
   id_number: string | null
@@ -27,6 +29,8 @@ function toEmployee(row: EmployeeRow): Employee {
     passwordHash: row.password_hash ?? '',
     roles: (Array.isArray(row.role) ? row.role : [row.role]) as Employee['roles'],
     hourlyWage: row.hourly_wage,
+    wageFrom: row.wage_from ?? undefined,
+    prevWage: row.prev_wage ?? undefined,
     isActive: row.is_active,
     createdAt: row.created_at,
     idNumber: row.id_number ?? undefined,
@@ -44,6 +48,8 @@ function toRow(data: Partial<Employee>): Partial<EmployeeRow> {
   if (data.passwordHash !== undefined) row.password_hash = data.passwordHash
   if (data.roles !== undefined) row.role = data.roles
   if (data.hourlyWage !== undefined) row.hourly_wage = data.hourlyWage
+  if (data.wageFrom !== undefined) row.wage_from = data.wageFrom || null
+  if (data.prevWage !== undefined) row.prev_wage = data.prevWage ?? null
   if (data.isActive !== undefined) row.is_active = data.isActive
   if (data.idNumber !== undefined) row.id_number = data.idNumber
   if (data.phone !== undefined) row.phone = data.phone

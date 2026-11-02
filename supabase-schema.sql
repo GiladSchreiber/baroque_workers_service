@@ -11,6 +11,8 @@ create table public.employees (
   password_hash   text,                        -- null for employees; plain-text password for managers
   role            text[] not null default array['employee'],
   hourly_wage     numeric(10,2) not null default 0,
+  wage_from       date,                        -- date the current hourly_wage took effect (null = always)
+  prev_wage       numeric(10,2),               -- wage applied to shifts dated before wage_from
   is_active       boolean not null default true,
   id_number       text,
   phone           text,

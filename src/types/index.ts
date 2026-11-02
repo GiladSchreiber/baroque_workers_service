@@ -21,6 +21,10 @@ export interface Employee {
   passwordHash: string
   roles: Role[]
   hourlyWage: number
+  /** Date (YYYY-MM-DD) the current hourlyWage took effect. Null/undefined = always. */
+  wageFrom?: string
+  /** Wage that applied before wageFrom. Used for shifts dated before wageFrom. */
+  prevWage?: number
   isActive: boolean
   createdAt: string
   idNumber?: string

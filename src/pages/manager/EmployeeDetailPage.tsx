@@ -5,6 +5,7 @@ import { PageHeader } from '../../components/layout/PageHeader'
 import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
+import { formatDateShort } from '../../lib/utils'
 import styles from './EmployeeDetailPage.module.scss'
 
 const ROLE_LABELS: Record<string, string> = {
@@ -56,6 +57,12 @@ export function EmployeeDetailPage() {
           <Row label="שם מלא" value={emp.name} />
           <Row label="תפקיד" value={emp.roles.map(r => ROLE_LABELS[r] ?? r).join(' · ')} />
           <Row label="שכר לשעה" value={`₪${emp.hourlyWage}`} />
+          {emp.wageFrom && emp.prevWage != null && (
+            <>
+              <Row label="בתוקף מתאריך" value={formatDateShort(emp.wageFrom)} />
+              <Row label="שכר קודם" value={`₪${emp.prevWage}`} />
+            </>
+          )}
         </div>
 
         {(emp.idNumber || emp.phone || emp.email) && (
