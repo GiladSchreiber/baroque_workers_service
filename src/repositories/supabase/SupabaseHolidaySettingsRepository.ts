@@ -8,6 +8,15 @@ interface HolidaySettingRow {
   end_date: string
   end_time: string
   rate: string
+  label: string | null
+}
+
+// Only touch the `label` column when a value is explicitly provided (200%
+// holidays). This keeps normal 150% holiday writes working even if the
+// `label` column hasn't been added to the DB yet.
+function labelPatch(input: CreateHolidaySettingInput): { label?: string | null } {
+  if (input.label === undefined) return {}
+  return { label: input.label.trim() || null }
 }
 
 function rowToSetting(row: HolidaySettingRow): HolidaySetting {
@@ -18,6 +27,7 @@ function rowToSetting(row: HolidaySettingRow): HolidaySetting {
     endDate: row.end_date,
     endTime: row.end_time,
     rate: row.rate as HolidaySetting['rate'],
+    label: row.label ?? undefined,
   }
 }
 
@@ -41,6 +51,7 @@ export class SupabaseHolidaySettingsRepository {
         end_date: input.endDate,
         end_time: input.endTime,
         rate: input.rate,
+        ...labelPatch(input),
       })
       .select()
       .single()
@@ -57,6 +68,7 @@ export class SupabaseHolidaySettingsRepository {
         end_date: input.endDate,
         end_time: input.endTime,
         rate: input.rate,
+        ...labelPatch(input),
       })
       .eq('id', id)
       .select()

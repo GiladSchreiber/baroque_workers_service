@@ -29,6 +29,13 @@ function formatDateHe(date: string) {
   return d.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' })
 }
 
+// Keep a free-text label within `max` words (used for the export column name).
+function limitWords(s: string, max = 5): string {
+  const words = s.split(/\s+/).filter(Boolean)
+  if (words.length <= max) return s
+  return words.slice(0, max).join(' ')
+}
+
 const MONTH_OPTIONS = buildMonthOptions()
 
 const EMPTY_FORM: CreateHolidaySettingInput = {
@@ -62,7 +69,7 @@ export function HolidaySettingsModal({ isOpen, initialMonth, onClose }: Props) {
   }
 
   function startEdit(p: HolidaySetting) {
-    setForm({ startDate: p.startDate, startTime: p.startTime, endDate: p.endDate, endTime: p.endTime, rate: p.rate })
+    setForm({ startDate: p.startDate, startTime: p.startTime, endDate: p.endDate, endTime: p.endTime, rate: p.rate, label: p.label })
     setEditingId(p.id)
     setShowForm(true)
     setError('')
@@ -142,6 +149,7 @@ export function HolidaySettingsModal({ isOpen, initialMonth, onClose }: Props) {
                 <div className={styles.itemInfo}>
                   <span className={styles.itemDates}>
                     {formatDateHe(p.startDate)} {p.startTime} — {formatDateHe(p.endDate)} {p.endTime}
+                    {p.rate === '200' && p.label ? ` · ${p.label}` : ''}
                   </span>
                   <span className={`${styles.rateBadge} ${p.rate === '200' ? styles.rate200 : styles.rate150}`}>
                     {p.rate}%
@@ -218,13 +226,23 @@ export function HolidaySettingsModal({ isOpen, initialMonth, onClose }: Props) {
                       name="holiday-rate"
                       value={r}
                       checked={form.rate === r}
-                      onChange={() => setForm(f => ({ ...f, rate: r }))}
+                      onChange={() => setForm(f => ({ ...f, rate: r, label: r === '200' ? f.label : undefined }))}
                     />
                     {r}%
                   </label>
                 ))}
               </div>
             </div>
+            {form.rate === '200' && (
+              <Input
+                label="שם לדוח (עד 5 מילים)"
+                id="hol-label"
+                type="text"
+                placeholder="לדוגמה: ראש השנה"
+                value={form.label ?? ''}
+                onChange={e => setForm(f => ({ ...f, label: limitWords(e.target.value) }))}
+              />
+            )}
             {error && <p className={styles.error}>{error}</p>}
             <div className={styles.formActions}>
               <Button onClick={handleSave} isLoading={isLoading}>שמור</Button>

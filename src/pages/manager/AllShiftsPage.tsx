@@ -16,7 +16,7 @@ import {
   SHIFT_TYPE_LABELS, formatDateShort, currentMonthStr, monthOptions, formatMonth,
   splitShiftHours, calcSalary, resolveWage, fmtMoney,
 } from '../../lib/utils'
-import type { Shift } from '../../types'
+import type { Shift, HolidaySetting } from '../../types'
 import { isWorker } from '../../types'
 import { aggregateShifts, buildTipMap, type EmpStats } from '../../lib/shiftAggregation'
 import styles from './AllShiftsPage.module.scss'
@@ -168,14 +168,42 @@ export function AllShiftsPage() {
 
   function handleDownload() {
     const label = filterMonth ? formatMonth(filterMonth) : 'כל הזמן'
-    // Columns ordered RTL: rightmost first → leftmost last
+
+    // 200% holidays get their own named columns in the export. Group periods by
+    // their label (fallback for unnamed), compute each worker's 200% hours per
+    // group, and drop groups where nobody worked.
+    const byName = new Map<string, HolidaySetting[]>()
+    for (const p of holidayPeriods) {
+      if (p.rate !== '200') continue
+      const name = (p.label && p.label.trim()) || 'חג 200%'
+      if (!byName.has(name)) byName.set(name, [])
+      byName.get(name)!.push(p)
+    }
+    const hoursByName = new Map<string, Map<string, number>>()
+    for (const [name, periods] of byName) {
+      const perEmp = new Map<string, number>()
+      for (const emp of activeEmployees) {
+        let hrs = 0
+        for (const s of monthShifts) {
+          if (s.employeeId !== emp.id) continue
+          const { fridayStartMins, saturdayEndMins } = getTimesForDate(s.date)
+          hrs += splitShiftHours(s.date, s.startTime, s.endTime, s.type, fridayStartMins, saturdayEndMins, periods).holiday
+        }
+        if (hrs > 0) perEmp.set(emp.id, hrs)
+      }
+      if (perEmp.size > 0) hoursByName.set(name, perEmp)
+    }
+    const holiday200Names = [...hoursByName.keys()]
+
+    // Columns ordered RTL: rightmost first → leftmost last.
+    // "שעות חג" is now 150%-only; each 200% holiday is its own named column.
     const headers = [
       'סה"כ',
       'מוניות שבת',
       'נסיעות',
       'גלובאלי',
       'סה"כ שכר שעתי',
-      'שעות חג', 'שעות שבת', 'שעות רגילות',
+      'שעות חג', ...holiday200Names, 'שעות שבת', 'שעות רגילות',
       'משמרות',
       'ת.ז.', 'שם',
     ]
@@ -185,7 +213,8 @@ export function AllShiftsPage() {
       Math.round(d.nesia),
       Math.round(d.global),
       Math.round(d.hourlySalary),
-      Math.round(d.holidayAll * 10) / 10,
+      Math.round((d.holidayAll - d.holiday) * 10) / 10,
+      ...holiday200Names.map(n => Math.round((hoursByName.get(n)?.get(d.employee.id) ?? 0) * 10) / 10),
       Math.round(d.weekend * 10) / 10,
       Math.round((d.regular + d.support) * 10) / 10,
       d.shiftCount,

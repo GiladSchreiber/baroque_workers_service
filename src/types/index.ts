@@ -10,6 +10,8 @@ export interface HolidaySetting {
   endDate: string    // YYYY-MM-DD
   endTime: string    // HH:mm
   rate: HolidayRate
+  /** For 200% holidays: a short name (≤5 words) used as the export column header. */
+  label?: string
 }
 
 export type CreateHolidaySettingInput = Omit<HolidaySetting, 'id'>
