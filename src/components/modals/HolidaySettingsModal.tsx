@@ -235,7 +235,7 @@ export function HolidaySettingsModal({ isOpen, initialMonth, onClose }: Props) {
             </div>
             {form.rate === '200' && (
               <Input
-                label="שם לדוח (עד 5 מילים)"
+                label="שם לדוח"
                 id="hol-label"
                 type="text"
                 placeholder="לדוגמה: ראש השנה"

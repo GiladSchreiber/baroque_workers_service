@@ -195,15 +195,20 @@ export function AllShiftsPage() {
     }
     const holiday200Names = [...hoursByName.keys()]
 
+    // "שעות חג" holds 150%-only hours; drop it entirely when no one has any.
+    const showHoliday150 = summaryData.some(d => d.holidayAll - d.holiday > 0.0001)
+
     // Columns ordered RTL: rightmost first → leftmost last.
-    // "שעות חג" is now 150%-only; each 200% holiday is its own named column.
+    // Each 200% holiday is its own named column.
     const headers = [
       'סה"כ',
       'מוניות שבת',
       'נסיעות',
       'גלובאלי',
       'סה"כ שכר שעתי',
-      'שעות חג', ...holiday200Names, 'שעות שבת', 'שעות רגילות',
+      ...(showHoliday150 ? ['שעות חג'] : []),
+      ...holiday200Names,
+      'שעות שבת', 'שעות רגילות',
       'משמרות',
       'ת.ז.', 'שם',
     ]
@@ -213,7 +218,7 @@ export function AllShiftsPage() {
       Math.round(d.nesia),
       Math.round(d.global),
       Math.round(d.hourlySalary),
-      Math.round((d.holidayAll - d.holiday) * 10) / 10,
+      ...(showHoliday150 ? [Math.round((d.holidayAll - d.holiday) * 10) / 10] : []),
       ...holiday200Names.map(n => Math.round((hoursByName.get(n)?.get(d.employee.id) ?? 0) * 10) / 10),
       Math.round(d.weekend * 10) / 10,
       Math.round((d.regular + d.support) * 10) / 10,
