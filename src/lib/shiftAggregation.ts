@@ -2,7 +2,7 @@ import type { Shift, Employee, HolidaySetting } from '../types'
 import { splitShiftHours, salaryFromParts, regularHourRate } from './utils'
 
 // Shift types that cannot receive a share of a tip pool (flat-pay / data-only).
-const TIP_INELIGIBLE = new Set<Shift['type']>(['support', 'global', 'taxi', 'cashier', 'nesia'])
+const TIP_INELIGIBLE = new Set<Shift['type']>(['support', 'overlap', 'global', 'taxi', 'cashier', 'nesia'])
 
 export const NESIA_RATE = 8 // ₪ per shift
 
