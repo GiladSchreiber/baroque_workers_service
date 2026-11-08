@@ -9,7 +9,7 @@ import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import { EditShiftModal } from '../../components/modals/EditShiftModal'
 import {
   formatDateShort, formatMonth,
-  splitShiftHours, calcSalary, resolveWage, fmtMoney, SHIFT_TYPE_LABELS,
+  splitShiftHours, calcSalary, regularHourRate, fmtMoney, SHIFT_TYPE_LABELS,
 } from '../../lib/utils'
 import { buildTipMap } from '../../lib/shiftAggregation'
 import { useMonthStore } from '../../store/monthStore'
@@ -39,7 +39,7 @@ export function MyShiftsPage() {
   }, [fetchAll, fetchShabbatSettings, fetchHolidaySettings])
 
   const myId = currentUser?.id ?? ''
-  const wageFor = (date: string) => (currentUser ? resolveWage(currentUser, date) : 0)
+  const wageFor = (type: Shift['type'], date: string) => (currentUser ? regularHourRate(type, currentUser, date) : 0)
 
   // All shifts for months the current user has worked (used for tip distribution across workers)
   const myShifts = useMemo(
@@ -76,7 +76,7 @@ export function MyShiftsPage() {
         const { fridayStartMins, saturdayEndMins } = getTimesForDate(s.date)
         const h = splitShiftHours(s.date, s.startTime, s.endTime, s.type, fridayStartMins, saturdayEndMins, holidayPeriods)
         const myTip = tipMap.get(s.date)?.get(myId) ?? 0
-        const wage = currentUser ? resolveWage(currentUser, s.date) : 0
+        const wage = currentUser ? regularHourRate(s.type, currentUser, s.date) : 0
         salary += calcSalary(h.regular, h.shabbat, h.support, myTip, wage, h.holiday)
         shiftCount++
       }
@@ -130,7 +130,7 @@ export function MyShiftsPage() {
                   const myTip = isFlat ? 0 : (tipMap.get(shift.date)?.get(myId) ?? 0)
                   const salary = isFlat
                     ? (shift.amount ?? 0)
-                    : calcSalary(h.regular, h.shabbat, h.support, myTip, wageFor(shift.date), h.holiday)
+                    : calcSalary(h.regular, h.shabbat, h.support, myTip, wageFor(shift.type, shift.date), h.holiday)
                   return (
                     <tr
                       key={shift.id}

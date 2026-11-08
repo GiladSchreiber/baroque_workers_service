@@ -302,6 +302,21 @@ export function resolveWage(
   return emp.hourlyWage
 }
 
+/**
+ * Per-hour rate for a shift's REGULAR hours. חפיפה (overlap) shifts are paid at
+ * minimum wage rather than the worker's personal wage; every other type uses
+ * the worker's (date-resolved) wage. Premium hours (שבת/חג) are unaffected —
+ * they are always minimum-wage multiples regardless of type.
+ */
+export function regularHourRate(
+  type: ShiftType,
+  emp: { hourlyWage: number; wageFrom?: string; prevWage?: number },
+  date: string,
+): number {
+  if (type === 'overlap') return MINIMUM_WAGE
+  return resolveWage(emp, date)
+}
+
 // salary = regularPay + shabbat*SHABBAT_RATE + holiday*HOLIDAY_RATE
 //        + MAX(0, tips - 15*(regularHours+shabbat+holiday)) + support*50
 // regularPay is kept separate from regularHours so callers that span a wage

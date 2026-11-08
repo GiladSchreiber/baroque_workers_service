@@ -1,5 +1,5 @@
 import type { Shift, Employee, HolidaySetting } from '../types'
-import { splitShiftHours, salaryFromParts, resolveWage } from './utils'
+import { splitShiftHours, salaryFromParts, regularHourRate } from './utils'
 
 // Shift types that cannot receive a share of a tip pool (flat-pay / data-only).
 const TIP_INELIGIBLE = new Set<Shift['type']>(['support', 'global', 'taxi', 'cashier', 'nesia'])
@@ -103,7 +103,7 @@ export function aggregateShifts(
       const { fridayStartMins, saturdayEndMins } = getTimesForDate(s.date)
       const h = splitShiftHours(s.date, s.startTime, s.endTime, s.type, fridayStartMins, saturdayEndMins, holidayPeriods)
       regular  += h.regular
-      regularPay += h.regular * resolveWage(employee, s.date)
+      regularPay += h.regular * regularHourRate(s.type, employee, s.date)
       shabbat  += h.shabbat
       holiday  += h.holiday
       support  += h.support
