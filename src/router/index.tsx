@@ -24,6 +24,10 @@ import { FillInventoryPage } from '../pages/inventory/FillInventoryPage'
 import { DefineInventoryPage } from '../pages/inventory/DefineInventoryPage'
 import { OrdersPage } from '../pages/inventory/OrdersPage'
 import { PreparationsPage } from '../pages/inventory/PreparationsPage'
+import { UploadDocumentPage } from '../pages/documents/UploadDocumentPage'
+import { DocumentsPage } from '../pages/documents/DocumentsPage'
+import { DocumentDetailPage } from '../pages/documents/DocumentDetailPage'
+import { ExpensesPage } from '../pages/documents/ExpensesPage'
 
 function RequireAuth({ children, roles }: { children: React.ReactNode; roles?: Role[] }) {
   const currentUser = useAuthStore(s => s.currentUser)
@@ -66,6 +70,7 @@ export const router = createHashRouter([
       { path: 'inventory', element: <Navigate to="/employee/inventory/fill" replace /> },
       { path: 'inventory/fill', element: <FillInventoryPage /> },
       { path: 'inventory/preparations', element: <PreparationsPage /> },
+      { path: 'documents', element: <UploadDocumentPage /> },
     ],
   },
   {
@@ -84,6 +89,7 @@ export const router = createHashRouter([
       { path: 'inventory/preparations', element: <PreparationsPage isKitchen /> },
       { path: 'inventory/define', element: <DefineInventoryPage /> },
       { path: 'inventory/orders', element: <OrdersPage /> },
+      { path: 'documents', element: <UploadDocumentPage /> },
     ],
   },
   {
@@ -99,6 +105,7 @@ export const router = createHashRouter([
       { path: 'inventory', element: <Navigate to="/scheduler/inventory/fill" replace /> },
       { path: 'inventory/fill', element: <FillInventoryPage /> },
       { path: 'inventory/preparations', element: <PreparationsPage /> },
+      { path: 'documents', element: <UploadDocumentPage /> },
       ...schedulingChildren,
     ],
   },
@@ -116,6 +123,10 @@ export const router = createHashRouter([
       { path: 'shifts/:id/edit', element: <ManagerShiftFormPage /> },
       { path: 'income', element: <IncomePage /> },
       { path: 'tasks', element: <TasksPage /> },
+      { path: 'documents', element: <DocumentsPage /> },
+      { path: 'documents/new', element: <UploadDocumentPage isManager /> },
+      { path: 'documents/expenses', element: <ExpensesPage /> },
+      { path: 'documents/:id', element: <DocumentDetailPage /> },
       { path: 'report', element: <ReportShiftPage /> },
       { path: 'scheduling', element: <Navigate to="/manager/scheduling/arrangement" replace /> },
       ...schedulingChildren,

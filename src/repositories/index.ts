@@ -10,6 +10,7 @@ import { SupabaseShabbatSettingsRepository } from './supabase/SupabaseShabbatSet
 import { SupabaseHolidaySettingsRepository } from './supabase/SupabaseHolidaySettingsRepository'
 import { SupabaseTasksRepository } from './supabase/SupabaseTasksRepository'
 import { MockTasksRepository } from './mock/MockTasksRepository'
+import { SupabaseDocumentsRepository } from './supabase/SupabaseDocumentsRepository'
 
 const useSupabase = Boolean(
   import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -38,3 +39,6 @@ export const holidaySettingsRepo = useSupabase
 export const tasksRepo = useSupabase
   ? new SupabaseTasksRepository()
   : new MockTasksRepository()
+
+// Supplier documents require Supabase (storage bucket + Gemini edge function).
+export const documentsRepo = new SupabaseDocumentsRepository()

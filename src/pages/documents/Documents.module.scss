@@ -1,0 +1,468 @@
+@use '../../styles/variables' as v;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding-bottom: 6rem;
+  direction: rtl;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-4;
+  padding: v.$space-4;
+}
+
+.card {
+  background: v.$color-surface;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-lg;
+  padding: v.$space-4;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-3;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: v.$font-size-base;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-text;
+}
+
+.muted {
+  color: v.$color-text-muted;
+  font-size: v.$font-size-sm;
+  margin: 0;
+}
+
+.error {
+  color: v.$color-danger;
+  font-size: v.$font-size-sm;
+  margin: 0;
+}
+
+.success {
+  color: v.$color-success;
+  font-size: v.$font-size-lg;
+  font-weight: v.$font-weight-semibold;
+  margin: 0;
+  text-align: center;
+}
+
+.row {
+  display: flex;
+  gap: v.$space-2;
+  align-items: flex-end;
+  > * { flex: 1; min-width: 0; }
+}
+
+.actions {
+  display: flex;
+  gap: v.$space-2;
+  flex-wrap: wrap;
+  > * { flex: 1; }
+}
+
+// ── Sub-nav (manager) ─────────────────────────────────────────────────────────
+.subNav {
+  display: flex;
+  border-bottom: 1px solid v.$color-border;
+  background: v.$color-surface;
+}
+
+.subTab {
+  flex: 1;
+  padding: v.$space-3 v.$space-4;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: v.$color-text-muted;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-family: v.$font-family;
+}
+
+.subTabActive {
+  color: v.$color-primary;
+  border-bottom-color: v.$color-primary;
+}
+
+// ── Capture ───────────────────────────────────────────────────────────────────
+.captureBtns {
+  display: flex;
+  gap: v.$space-3;
+}
+
+.captureBtn {
+  flex: 1;
+  border: 1.5px dashed v.$color-border;
+  border-radius: v.$radius-lg;
+  background: v.$color-surface;
+  color: v.$color-text;
+  padding: v.$space-6 v.$space-3;
+  font-size: v.$font-size-base;
+  font-family: v.$font-family;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$space-2;
+
+  span:first-child { font-size: 1.75rem; }
+  &:hover { border-color: v.$color-primary; color: v.$color-primary; }
+  &:disabled { opacity: 0.5; cursor: wait; }
+}
+
+.thumbs {
+  display: flex;
+  gap: v.$space-2;
+  flex-wrap: wrap;
+}
+
+.thumb {
+  position: relative;
+  width: 5.5rem;
+  height: 7rem;
+  border-radius: v.$radius-sm;
+  border: 1px solid v.$color-border;
+  overflow: hidden;
+  background: v.$color-surface-raised;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: v.$color-text-muted;
+  font-size: v.$font-size-xs;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.thumbRemove {
+  position: absolute;
+  top: 2px;
+  inset-inline-start: 2px;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: v.$radius-full;
+  border: none;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  cursor: pointer;
+  font-size: v.$font-size-xs;
+}
+
+// ── Checklist ─────────────────────────────────────────────────────────────────
+.checkList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+}
+
+.checkItem {
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-md;
+  padding: v.$space-3;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+  background: v.$color-surface-raised;
+}
+
+.checkItemUnset { border-color: v.$color-warning; }
+
+.checkHead {
+  display: flex;
+  justify-content: space-between;
+  gap: v.$space-2;
+  font-size: v.$font-size-sm;
+}
+
+.checkName { color: v.$color-text; font-weight: v.$font-weight-medium; }
+.checkQty { color: v.$color-text-muted; white-space: nowrap; }
+
+.statusBtns {
+  display: flex;
+  gap: v.$space-2;
+}
+
+.statusBtn {
+  flex: 1;
+  height: 2.25rem;
+  border-radius: v.$radius-sm;
+  border: 1px solid v.$color-border;
+  background: v.$color-surface;
+  color: v.$color-text-muted;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+}
+
+.status_ok.statusActive { background: v.$color-success; border-color: v.$color-success; color: #fff; }
+.status_partial.statusActive { background: v.$color-warning; border-color: v.$color-warning; color: #111; }
+.status_missing.statusActive { background: v.$color-danger; border-color: v.$color-danger; color: #fff; }
+
+.noteInput {
+  width: 100%;
+  height: 2.25rem;
+  padding: 0 v.$space-3;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-sm;
+  background: v.$color-surface;
+  color: v.$color-text;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+}
+
+.linkBtn {
+  background: none;
+  border: none;
+  color: v.$color-primary;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+  padding: 0;
+  align-self: flex-start;
+}
+
+// ── Filters / list (manager) ──────────────────────────────────────────────────
+.filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-2;
+  padding: v.$space-3 v.$space-4 0;
+}
+
+.chips {
+  display: flex;
+  gap: v.$space-2;
+  flex-wrap: wrap;
+  padding: v.$space-3 v.$space-4 0;
+}
+
+.chip {
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-full;
+  background: v.$color-surface;
+  color: v.$color-text-muted;
+  padding: v.$space-1 v.$space-3;
+  font-family: v.$font-family;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+}
+
+.chipActive {
+  border-color: v.$color-primary;
+  color: v.$color-primary;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0 v.$space-4;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+}
+
+.listHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: v.$space-3 v.$space-4 v.$space-2;
+}
+
+.docItem {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-md;
+  background: v.$color-surface;
+  padding: v.$space-3;
+}
+
+.docCheckbox {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: v.$color-primary;
+  flex-shrink: 0;
+}
+
+.docBody {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+  padding: 0;
+  font-family: v.$font-family;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-1;
+}
+
+.docTitle {
+  color: v.$color-text;
+  font-weight: v.$font-weight-semibold;
+  font-size: v.$font-size-base;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.docMeta {
+  color: v.$color-text-muted;
+  font-size: v.$font-size-xs;
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-2;
+}
+
+.docAmount {
+  color: v.$color-text;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  white-space: nowrap;
+}
+
+.badge {
+  display: inline-block;
+  border-radius: v.$radius-full;
+  padding: 0 v.$space-2;
+  font-size: v.$font-size-xs;
+  border: 1px solid v.$color-border;
+}
+
+.badgeSent { color: v.$color-success; border-color: v.$color-success; }
+.badgeIssue { color: v.$color-warning; border-color: v.$color-warning; }
+.badgeCredit { color: v.$color-primary; border-color: v.$color-primary; }
+
+.selectionBar {
+  position: fixed;
+  bottom: calc(#{v.$bottom-nav-height} + #{v.$space-2});
+  left: v.$space-4;
+  right: v.$space-4;
+  max-width: v.$max-content-width;
+  margin: 0 auto;
+  background: v.$color-surface-raised;
+  border: 1px solid v.$color-primary;
+  border-radius: v.$radius-lg;
+  padding: v.$space-3;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+  z-index: 110;
+  box-shadow: v.$shadow-lg;
+}
+
+.addBtn {
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: v.$radius-full;
+  background: v.$color-primary;
+  color: v.$color-text-on-primary;
+  font-size: v.$font-size-xl;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// ── Detail ────────────────────────────────────────────────────────────────────
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+
+  img {
+    width: 100%;
+    border-radius: v.$radius-md;
+    border: 1px solid v.$color-border;
+  }
+}
+
+.pdfLink {
+  color: v.$color-primary;
+  font-size: v.$font-size-sm;
+}
+
+.linesTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: v.$font-size-sm;
+
+  th, td {
+    text-align: start;
+    padding: v.$space-2 v.$space-1;
+    border-bottom: 1px solid v.$color-border;
+    vertical-align: top;
+  }
+
+  th { color: v.$color-text-muted; font-weight: v.$font-weight-medium; }
+  td { color: v.$color-text; }
+}
+
+.num { text-align: end !important; white-space: nowrap; }
+
+.lineNote {
+  display: block;
+  color: v.$color-warning;
+  font-size: v.$font-size-xs;
+}
+
+// ── Expenses ──────────────────────────────────────────────────────────────────
+.monthPicker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: v.$space-4;
+  padding: v.$space-3 v.$space-4;
+  background: v.$color-surface-raised;
+  border-bottom: 1px solid v.$color-border;
+  color: v.$color-text;
+  font-weight: v.$font-weight-semibold;
+}
+
+.monthArrow {
+  background: none;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-md;
+  color: v.$color-text-muted;
+  width: 2rem;
+  height: 2rem;
+  cursor: pointer;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-2;
+}
+
+.kpi {
+  background: v.$color-surface;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-md;
+  padding: v.$space-3;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-1;
+}
+
+.kpiLabel { color: v.$color-text-muted; font-size: v.$font-size-xs; }
+.kpiValue { color: v.$color-text; font-size: v.$font-size-lg; font-weight: v.$font-weight-bold; }
+.kpiDelta { font-size: v.$font-size-xs; }
+.up { color: v.$color-danger; }
+.down { color: v.$color-success; }
+
+.clickRow { cursor: pointer; &:hover td { color: v.$color-primary; } }

@@ -111,6 +111,28 @@ INSERT INTO public.employees (name, email, password_hash, role, hourly_wage, is_
 VALUES ('Your Name', 'your@email.com', 'your-password', 'manager', 45, true);
 ```
 
+### Supplier documents (חשבוניות / תעודות משלוח)
+
+Workers photograph incoming documents under **מסמכים**. Gemini reads them and returns the
+type, supplier, number, date, totals and line items. For delivery notes and invoices the
+worker then ticks off what arrived. The manager sees everything under **מסמכים**, can filter,
+share selected documents to the accountant via WhatsApp, and view **הוצאות** by supplier and item.
+
+One-time setup:
+
+1. Run `supabase-documents.sql` in the SQL Editor (tables + private `documents` storage bucket).
+2. Get a free Gemini API key at https://aistudio.google.com/apikey.
+3. Supabase dashboard → **Edge Functions** → **Deploy a new function** → name it `analyze-document`
+   and paste `supabase/functions/analyze-document/index.ts`.
+   (Or with the CLI: `supabase functions deploy analyze-document`.)
+   If your project uses the new `sb_publishable_…` keys, turn **Verify JWT** off for this function.
+4. Edge Functions → **Secrets** → add `GEMINI_API_KEY`. Optional: `GEMINI_MODEL`
+   (default `gemini-flash-latest`).
+
+Retention: files are kept for the current and previous month. Older files are deleted when the
+manager opens the documents page, but only for documents already marked as sent to the
+accountant. The numbers and line items are always kept for expense comparisons.
+
 ---
 
 ## Deployment

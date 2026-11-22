@@ -8,6 +8,7 @@ const EMPLOYEE_LINKS = [
   { to: '/employee/report',     label: 'דיווח', icon: <PlusIcon /> },
   { to: '/employee/scheduling', label: 'סידור', icon: <SchedulingIcon /> },
   { to: '/employee/inventory',  label: 'מלאי',  icon: <InventoryIcon /> },
+  { to: '/employee/documents', label: 'מסמכים', icon: <DocumentIcon /> },
 ]
 
 const KITCHEN_LINKS = [
@@ -15,6 +16,7 @@ const KITCHEN_LINKS = [
   { to: '/kitchen/report',               label: 'דיווח', icon: <PlusIcon /> },
   { to: '/kitchen/scheduling',           label: 'סידור', icon: <SchedulingIcon /> },
   { to: '/kitchen/inventory',            label: 'מלאי',  icon: <InventoryIcon /> },
+  { to: '/kitchen/documents', label: 'מסמכים', icon: <DocumentIcon /> },
 ]
 
 const SCHEDULER_LINKS = [
@@ -22,6 +24,7 @@ const SCHEDULER_LINKS = [
   { to: '/scheduler/report',                 label: 'דיווח', icon: <PlusIcon /> },
   { to: '/scheduler/scheduling/arrangement', label: 'סידור', icon: <SchedulingIcon /> },
   { to: '/scheduler/inventory',              label: 'מלאי',  icon: <InventoryIcon /> },
+  { to: '/scheduler/documents', label: 'מסמכים', icon: <DocumentIcon /> },
 ]
 
 const MANAGER_LINKS = [
@@ -31,6 +34,7 @@ const MANAGER_LINKS = [
   { to: '/manager/income', label: 'הכנסות', icon: <ClosureIcon /> },
   { to: '/manager/scheduling/arrangement', label: 'סידור', icon: <SchedulingIcon /> },
   { to: '/manager/tasks', label: 'משימות', icon: <TasksIcon /> },
+  { to: '/manager/documents', label: 'מסמכים', icon: <DocumentIcon /> },
 ]
 
 const MANAGER_REPORT_LINK = { to: '/manager/report', label: 'דיווח', icon: <PlusIcon /> }
@@ -149,6 +153,16 @@ function TasksIcon() {
       <path d="M4 6l2 2 3-3" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
       <path d="M4 15l2 2 3-3" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
       <path d="M12 7h7M12 16h7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function DocumentIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <path d="M6 2.75h6.5L17 7.25V18a1.25 1.25 0 01-1.25 1.25h-9.5A1.25 1.25 0 015 18V4a1.25 1.25 0 011-1.25z" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round"/>
+      <path d="M12.5 3v4.5H17" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+      <path d="M8 11.5l1.75 1.75L13.5 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   )
 }
