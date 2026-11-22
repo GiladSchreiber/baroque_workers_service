@@ -9,7 +9,6 @@ import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { documentsRepo } from '../../repositories'
 import {
-  buildShareText,
   docTotals,
   formatDocDate,
   formatMoney,
@@ -58,7 +57,7 @@ export function DocumentsPage() {
 
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [preparing, setPreparing] = useState(false)
-  const [prepared, setPrepared] = useState<{ files: File[]; text: string; ids: string[] } | null>(null)
+  const [prepared, setPrepared] = useState<{ files: File[]; ids: string[] } | null>(null)
   const [confirmSent, setConfirmSent] = useState<string[] | null>(null)
 
   const load = useCallback(() =>
@@ -114,7 +113,7 @@ export function DocumentsPage() {
       const withFiles = selectedDocs.filter(d => d.filePaths.length > 0)
       const files: File[] = []
       for (const d of withFiles) files.push(...await documentsRepo.downloadFiles(d, fileBaseName(d)))
-      setPrepared({ files, text: buildShareText(withFiles), ids: withFiles.map(d => d.id) })
+      setPrepared({ files, ids: withFiles.map(d => d.id) })
       if (withFiles.length < selectedDocs.length) {
         setError(`ל-${selectedDocs.length - withFiles.length} מסמכים אין קובץ שמור (נמחקו אחרי חודשיים) — הם לא יישלחו`)
       }
@@ -129,12 +128,11 @@ export function DocumentsPage() {
     if (!prepared) return
     try {
       if (canShareFiles(prepared.files)) {
-        await navigator.share({ files: prepared.files, text: prepared.text })
+        await navigator.share({ files: prepared.files })
       } else {
-        // Desktop fallback: download the files and copy the summary text
+        // Desktop fallback: download the files to attach in WhatsApp Web
         prepared.files.forEach(downloadFile)
-        await navigator.clipboard?.writeText(prepared.text).catch(() => {})
-        setError('הקבצים הורדו והסיכום הועתק — צרפו אותם ב-WhatsApp Web')
+        setError('הקבצים הורדו — צרפו אותם ב-WhatsApp Web')
       }
       setConfirmSent(prepared.ids)
     } catch (err) {

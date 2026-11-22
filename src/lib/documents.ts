@@ -1,7 +1,6 @@
 // Pure helpers for the supplier documents feature (no browser / Supabase deps).
 
 import {
-  DOC_TYPE_LABELS,
   type DocType,
   type DocumentLine,
   type ExtractionResult,
@@ -134,21 +133,6 @@ export function formatDocDate(d: string | null): string {
   if (!d) return '—'
   const [y, m, day] = d.split('-')
   return `${day}.${m}.${y.slice(2)}`
-}
-
-export function buildShareText(docs: SupplierDocument[]): string {
-  const rows = docs.map(d => {
-    const t = docTotals(d)
-    const parts = [
-      DOC_TYPE_LABELS[d.docType],
-      d.supplierName || 'ללא ספק',
-      d.docNumber ? `מס' ${d.docNumber}` : null,
-      formatDocDate(d.docDate),
-      t.withVat != null ? formatMoney(t.withVat) : null,
-    ].filter(Boolean)
-    return '• ' + parts.join(' | ')
-  })
-  return [`מסמכים (${docs.length}):`, ...rows].join('\n')
 }
 
 /** Strip junk from Gemini output and convert to app types. */
