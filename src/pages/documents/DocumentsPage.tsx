@@ -17,7 +17,7 @@ import {
   shouldPurgeFiles,
 } from '../../lib/documents'
 import { canShareFiles, downloadFile } from '../../lib/documentFiles'
-import { DOC_TYPES, DOC_TYPE_LABELS, type SupplierDocument } from '../../types/documents'
+import { DOC_TYPES, DOC_TYPE_LABELS, isSendableType, type SupplierDocument } from '../../types/documents'
 import { DocumentsSubNav } from './DocumentsSubNav'
 import styles from './Documents.module.scss'
 
@@ -86,8 +86,9 @@ export function DocumentsPage() {
     return true
   }), [docs, sentFilter, typeFilter, supplierFilter, fromDate, toDate, issuesOnly])
 
-  const selectedDocs = filtered.filter(d => selected.has(d.id))
-  const allSelected = filtered.length > 0 && selectedDocs.length === filtered.length
+  const sendable = filtered.filter(d => isSendableType(d.docType))
+  const selectedDocs = sendable.filter(d => selected.has(d.id))
+  const allSelected = sendable.length > 0 && selectedDocs.length === sendable.length
 
   function toggle(id: string) {
     setPrepared(null)
@@ -101,7 +102,7 @@ export function DocumentsPage() {
 
   function toggleAll() {
     setPrepared(null)
-    setSelected(allSelected ? new Set() : new Set(filtered.map(d => d.id)))
+    setSelected(allSelected ? new Set() : new Set(sendable.map(d => d.id)))
   }
 
   // Step 1: download the files (async). Step 2 (separate tap) opens the share sheet —
@@ -203,22 +204,28 @@ export function DocumentsPage() {
       ) : (
         <>
           <div className={styles.listHeader}>
-            <button className={styles.linkBtn} onClick={toggleAll}>
-              {allSelected ? 'בטל בחירה' : `בחר הכל (${filtered.length})`}
-            </button>
+            {sendable.length > 0 && (
+              <button className={styles.linkBtn} onClick={toggleAll}>
+                {allSelected ? 'בטל בחירה' : `בחר הכל (${sendable.length})`}
+              </button>
+            )}
           </div>
           <ul className={styles.list} style={selected.size ? { paddingBottom: '7rem' } : undefined}>
             {filtered.map(d => {
               const t = docTotals(d)
               return (
                 <li key={d.id} className={styles.docItem}>
-                  <input
-                    type="checkbox"
-                    className={styles.docCheckbox}
-                    checked={selected.has(d.id)}
-                    onChange={() => toggle(d.id)}
-                    aria-label="בחירה"
-                  />
+                  {isSendableType(d.docType) ? (
+                    <input
+                      type="checkbox"
+                      className={styles.docCheckbox}
+                      checked={selected.has(d.id)}
+                      onChange={() => toggle(d.id)}
+                      aria-label="בחירה"
+                    />
+                  ) : (
+                    <span className={styles.docCheckboxSpacer} aria-hidden="true" />
+                  )}
                   <button className={styles.docBody} onClick={() => navigate(`/manager/documents/${d.id}`)}>
                     <span className={styles.docTitle}>{d.supplierName || 'ללא ספק'}</span>
                     <span className={styles.docMeta}>

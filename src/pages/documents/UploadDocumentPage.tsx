@@ -19,6 +19,7 @@ import {
 import {
   CHECKLIST_TYPES,
   DOC_TYPE_LABELS,
+  normalizeDocType,
   type DocumentLine,
   type ExtractionResult,
   type PendingFile,
@@ -98,7 +99,7 @@ export function UploadDocumentPage({ isManager = false }: Props) {
   function applyExtraction(ex: ExtractionResult) {
     const exact = supplierNames.find(n => n.trim() === (ex.supplier_name ?? '').trim())
     setFields({
-      docType: ex.doc_type ?? 'other',
+      docType: normalizeDocType(ex.doc_type),
       supplierName: exact ?? ex.supplier_name ?? '',
       docNumber: ex.doc_number ?? '',
       docDate: isValidIsoDate(ex.doc_date) ? ex.doc_date : localIsoDate(),

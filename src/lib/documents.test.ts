@@ -51,7 +51,7 @@ describe('expensesBySupplier', () => {
   it('sums invoices, subtracts credit notes, ignores delivery notes and other months', () => {
     const rows = expensesBySupplier([
       doc({}),
-      doc({ docType: 'tax_invoice_receipt' }),
+      doc({ docType: 'tax_invoice' }),
       doc({ docType: 'credit_note', totalBeforeVat: 10, vatAmount: 1.8, totalWithVat: 11.8 }),
       doc({ docType: 'delivery_note' }),
       doc({ docDate: '2026-10-30' }),
@@ -100,5 +100,11 @@ describe('isChecklistLine', () => {
     expect(isChecklistLine({ description: 'פיקדון בקבוקים' })).toBe(false)
     expect(isChecklistLine({ description: 'פקדון ארגז' })).toBe(false)
     expect(isChecklistLine({ description: 'חלב 3%' })).toBe(true)
+  })
+})
+
+describe('delivery notes', () => {
+  it('are purged on age even though never sent', () => {
+    expect(shouldPurgeFiles(doc({ docType: 'delivery_note', docDate: '2026-09-01' }), '2026-10-01')).toBe(true)
   })
 })

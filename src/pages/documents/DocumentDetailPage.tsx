@@ -7,7 +7,7 @@ import { Textarea } from '../../components/ui/Textarea'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { documentsRepo } from '../../repositories'
 import { amountToString, formatMoney, isValidIsoDate, parseAmount } from '../../lib/documents'
-import { RECEIVED_LABELS, type SupplierDocument } from '../../types/documents'
+import { RECEIVED_LABELS, isSendableType, type SupplierDocument } from '../../types/documents'
 import { DocumentFields, type DocFieldValues } from './DocumentFields'
 import styles from './Documents.module.scss'
 
@@ -147,9 +147,11 @@ export function DocumentDetailPage() {
         </div>
 
         <div className={styles.actions}>
-          <Button variant="secondary" onClick={toggleSent}>
-            {doc.sentToAccountantAt ? 'סמן כלא נשלח' : 'סמן כנשלח לרו״ח'}
-          </Button>
+          {isSendableType(doc.docType) && (
+            <Button variant="secondary" onClick={toggleSent}>
+              {doc.sentToAccountantAt ? 'סמן כלא נשלח' : 'סמן כנשלח לרו״ח'}
+            </Button>
+          )}
           <Button variant="destructive" onClick={() => setConfirmDelete(true)}>מחיקה</Button>
         </div>
       </div>

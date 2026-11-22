@@ -1,6 +1,7 @@
 import { supabase } from '../../lib/supabase'
 import { blobToBase64, extensionFor } from '../../lib/documentFiles'
 import { computeHasIssues, localIsoDate } from '../../lib/documents'
+import { normalizeDocType } from '../../types/documents'
 import type {
   CreateDocumentInput,
   DocumentLine,
@@ -52,7 +53,7 @@ const num = (v: unknown): number | null => (v == null ? null : Number(v))
 function rowToDoc(row: DocRow): SupplierDocument {
   return {
     id: row.id,
-    docType: row.doc_type,
+    docType: normalizeDocType(row.doc_type),
     supplierName: row.supplier_name,
     supplierTaxId: row.supplier_tax_id,
     docNumber: row.doc_number,

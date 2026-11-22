@@ -528,3 +528,8 @@
   background: v.$color-success;
   color: #fff;
 }
+
+.docCheckboxSpacer {
+  width: 1.25rem;
+  flex-shrink: 0;
+}

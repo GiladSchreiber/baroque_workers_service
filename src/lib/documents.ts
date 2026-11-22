@@ -14,7 +14,6 @@ export const DEFAULT_VAT_RATE = 0.18
  *  excluded so the same goods aren't counted twice. Credit notes subtract. */
 const EXPENSE_SIGN: Partial<Record<DocType, 1 | -1>> = {
   tax_invoice: 1,
-  tax_invoice_receipt: 1,
   credit_note: -1,
 }
 
@@ -118,10 +117,11 @@ export function retentionCutoff(today: Date): string {
 }
 
 /** Files are purged only once the document is older than the retention window AND
- *  was already sent to the accountant — an unsent document is never lost. */
+ *  was already sent to the accountant — an unsent document is never lost.
+ *  Delivery notes are never sent, so they're purged on age alone. */
 export function shouldPurgeFiles(doc: SupplierDocument, cutoff: string): boolean {
   if (doc.filePaths.length === 0) return false
-  if (!doc.sentToAccountantAt) return false
+  if (!doc.sentToAccountantAt && doc.docType !== 'delivery_note') return false
   return docMonth(doc) + '-01' < cutoff
 }
 

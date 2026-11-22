@@ -20,8 +20,7 @@ Classify it and extract its data.
 
 doc_type must be one of:
 - "delivery_note"       – תעודת משלוח
-- "tax_invoice"         – חשבונית מס
-- "tax_invoice_receipt" – חשבונית מס / קבלה
+- "tax_invoice"         – חשבונית מס, including חשבונית מס / קבלה
 - "credit_note"         – חשבונית זיכוי / חשבונית מס זיכוי
 - "receipt"             – קבלה only
 - "other"               – anything else
@@ -40,7 +39,7 @@ const SCHEMA = {
   properties: {
     doc_type: {
       type: 'STRING',
-      enum: ['delivery_note', 'tax_invoice', 'tax_invoice_receipt', 'credit_note', 'receipt', 'other'],
+      enum: ['delivery_note', 'tax_invoice', 'credit_note', 'receipt', 'other'],
     },
     supplier_name: { type: 'STRING', nullable: true },
     supplier_tax_id: { type: 'STRING', nullable: true },
