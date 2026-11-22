@@ -45,8 +45,9 @@ interface Draft {
   saved: boolean
 }
 
-/** How many images are sent to Gemini at the same time (free-tier rate limit). */
-const ANALYZE_CONCURRENCY = 2
+/** Images are sent to Gemini one at a time — on the free tier, parallel requests
+ *  slow each other down until they time out. */
+const ANALYZE_CONCURRENCY = 1
 
 const emptyFields = (): DocFieldValues => ({
   docType: 'delivery_note',
@@ -172,6 +173,10 @@ export function UploadDocumentPage({ isManager = false }: Props) {
       f => documentsRepo.analyze([f]).catch(() => null),
       () => setProgress(p => p + 1),
     )
+    // Give the ones that failed one more chance before they go to 'לא נקרא'
+    for (const [i, ex] of extractions.entries()) {
+      if (!ex) extractions[i] = await documentsRepo.analyze([files[i]]).catch(() => null)
+    }
     // Images Gemini couldn't read are saved as 'לא נקרא' — the manager retries later.
     const okIdx: number[] = []
     const manual: Draft[] = []
