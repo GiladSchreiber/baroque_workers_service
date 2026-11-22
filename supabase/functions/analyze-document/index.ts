@@ -98,25 +98,40 @@ Deno.serve(async req => {
     ...files.map(f => ({ inline_data: { mime_type: f.mimeType, data: f.data } })),
   ]
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts }],
-        generationConfig: {
-          temperature: 0,
-          responseMimeType: 'application/json',
-          responseSchema: SCHEMA,
-        },
-      }),
+  const requestBody = JSON.stringify({
+    contents: [{ role: 'user', parts }],
+    generationConfig: {
+      temperature: 0,
+      responseMimeType: 'application/json',
+      responseSchema: SCHEMA,
     },
-  )
+  })
 
-  if (!res.ok) {
-    const detail = await res.text()
-    return json({ error: `Gemini error ${res.status}`, detail }, 502)
+  // The free tier is sometimes overloaded (503) or rate-limited (429):
+  // retry, then fall back to lighter models.
+  const models = [...new Set([model, 'gemini-flash-lite-latest', 'gemini-2.5-flash'])]
+  let res: Response | null = null
+  let lastError = ''
+  outer: for (const m of models) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+          body: requestBody,
+        },
+      )
+      if (res.ok) break outer
+      lastError = `${m}: ${res.status} ${await res.text()}`
+      if (res.status !== 503 && res.status !== 429 && res.status !== 404) break outer
+      if (res.status === 404) break // unknown model name → next model
+      await new Promise(r => setTimeout(r, 1500))
+    }
+  }
+
+  if (!res?.ok) {
+    return json({ error: `Gemini error ${res?.status ?? ''}`, detail: lastError }, 502)
   }
 
   const out = await res.json()
