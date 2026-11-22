@@ -167,15 +167,21 @@ export function UploadDocumentPage({ isManager = false }: Props) {
     setStep('analyzing')
     setProgress(0)
     setError('')
+    const failReasons: string[] = []
+    const tryAnalyze = (i: number) =>
+      documentsRepo.analyze([files[i]]).catch(err => {
+        failReasons[i] = err instanceof Error ? err.message : String(err)
+        return null
+      })
     const extractions = await mapWithConcurrency(
-      files,
+      files.map((_, i) => i),
       ANALYZE_CONCURRENCY,
-      f => documentsRepo.analyze([f]).catch(() => null),
+      tryAnalyze,
       () => setProgress(p => p + 1),
     )
     // Give the ones that failed one more chance before they go to 'לא נקרא'
     for (const [i, ex] of extractions.entries()) {
-      if (!ex) extractions[i] = await documentsRepo.analyze([files[i]]).catch(() => null)
+      if (!ex) extractions[i] = await tryAnalyze(i)
     }
     // Images Gemini couldn't read are saved as 'לא נקרא' — the manager retries later.
     const okIdx: number[] = []
@@ -193,7 +199,7 @@ export function UploadDocumentPage({ isManager = false }: Props) {
           totalBeforeVat: null,
           vatAmount: null,
           totalWithVat: null,
-          notes: '',
+          notes: `לא נקרא: ${failReasons[i] ?? 'שגיאה לא ידועה'}`,
           source: isManager ? 'manager' : 'worker',
           uploadedById: currentUser?.id ?? null,
           uploadedByName: currentUser?.name ?? null,

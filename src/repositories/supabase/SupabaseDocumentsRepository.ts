@@ -111,8 +111,17 @@ export class SupabaseDocumentsRepository {
       files.map(async f => ({ mimeType: f.mimeType, data: await blobToBase64(f.blob) })),
     )
     const { data, error } = await supabase.functions.invoke('analyze-document', { body: { files: payload } })
-    if (error) throw new Error('זיהוי המסמך נכשל')
-    if (data?.error) throw new Error('זיהוי המסמך נכשל: ' + data.error)
+    if (error) {
+      // Surface the function's own error body (e.g. "TimeoutError after 20001ms")
+      let detail = error.message
+      const ctx = (error as { context?: Response }).context
+      if (ctx && typeof ctx.json === 'function') {
+        const body = await ctx.json().catch(() => null)
+        if (body) detail = [body.error, body.detail].filter(Boolean).join(': ')
+      }
+      throw new Error(detail.slice(0, 300))
+    }
+    if (data?.error) throw new Error([data.error, data.detail].filter(Boolean).join(': ').slice(0, 300))
     return data as ExtractionResult
   }
 
@@ -286,6 +295,8 @@ export class SupabaseDocumentsRepository {
       vat_amount: f.vatAmount,
       total_with_vat: f.totalWithVat,
       extraction: ex,
+      // Drop the auto-written failure reason once the document is read
+      notes: doc.notes.startsWith('לא נקרא:') ? '' : doc.notes,
     }).eq('id', doc.id)
     if (error) throw new Error(error.message)
     await supabase.from('document_lines').delete().eq('document_id', doc.id)
