@@ -10,9 +10,11 @@ import {
   absOrNull,
   amountToString,
   extractionToLines,
+  groupPages,
   isChecklistLine,
   isValidIsoDate,
   localIsoDate,
+  mergeExtractions,
   parseAmount,
 } from '../../lib/documents'
 import {
@@ -30,6 +32,21 @@ import styles from './Documents.module.scss'
 
 type Step = 'capture' | 'analyzing' | 'review' | 'done'
 
+/** One document in the batch (may span several images). */
+interface Draft {
+  key: string
+  files: PendingFile[]
+  extraction: ExtractionResult | null
+  fields: DocFieldValues
+  lines: DocumentLine[]
+  notes: string
+  duplicate: SupplierDocument | null
+  highlightUnset: boolean
+  saved: boolean
+}
+
+/** How many images are sent to Gemini at the same time (free-tier rate limit). */
+const ANALYZE_CONCURRENCY = 2
 
 const emptyFields = (): DocFieldValues => ({
   docType: 'delivery_note',
@@ -40,6 +57,54 @@ const emptyFields = (): DocFieldValues => ({
   vatAmount: '',
   totalWithVat: '',
 })
+
+function draftFromExtraction(files: PendingFile[], ex: ExtractionResult | null, supplierNames: string[]): Draft {
+  const base: Draft = {
+    key: files[0].previewUrl,
+    files,
+    extraction: ex,
+    fields: emptyFields(),
+    lines: [],
+    notes: '',
+    duplicate: null,
+    highlightUnset: false,
+    saved: false,
+  }
+  if (!ex) return base
+  const exact = supplierNames.find(n => n.trim() === (ex.supplier_name ?? '').trim())
+  return {
+    ...base,
+    fields: {
+      docType: normalizeDocType(ex.doc_type),
+      supplierName: exact ?? ex.supplier_name ?? '',
+      docNumber: ex.doc_number ?? '',
+      docDate: isValidIsoDate(ex.doc_date) ? ex.doc_date : localIsoDate(),
+      totalBeforeVat: amountToString(absOrNull(ex.total_before_vat)),
+      vatAmount: amountToString(absOrNull(ex.vat_amount)),
+      totalWithVat: amountToString(absOrNull(ex.total_with_vat)),
+    },
+    lines: extractionToLines(ex).map(l => ({
+      ...l,
+      quantity: absOrNull(l.quantity),
+      lineTotal: absOrNull(l.lineTotal),
+      unitPrice: absOrNull(l.unitPrice),
+    })),
+  }
+}
+
+async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>, onDone: () => void): Promise<R[]> {
+  const results = new Array<R>(items.length)
+  let next = 0
+  async function worker() {
+    while (next < items.length) {
+      const i = next++
+      results[i] = await fn(items[i])
+      onDone()
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
+  return results
+}
 
 interface Props {
   /** Manager uploads (e.g. documents received by mail) */
@@ -52,16 +117,13 @@ export function UploadDocumentPage({ isManager = false }: Props) {
 
   const [step, setStep] = useState<Step>('capture')
   const [files, setFiles] = useState<PendingFile[]>([])
-  const [fields, setFields] = useState<DocFieldValues>(emptyFields)
-  const [lines, setLines] = useState<DocumentLine[]>([])
-  const [notes, setNotes] = useState('')
-  const [extraction, setExtraction] = useState<ExtractionResult | null>(null)
+  const [drafts, setDrafts] = useState<Draft[]>([])
+  const [current, setCurrent] = useState(0)
+  const [progress, setProgress] = useState(0)
   const [supplierNames, setSupplierNames] = useState<string[]>([])
   const [error, setError] = useState('')
   const [preparing, setPreparing] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [highlightUnset, setHighlightUnset] = useState(false)
-  const [duplicate, setDuplicate] = useState<SupplierDocument | null>(null)
 
   const cameraRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -70,7 +132,7 @@ export function UploadDocumentPage({ isManager = false }: Props) {
     documentsRepo.getSupplierNames().then(setSupplierNames).catch(() => {})
   }, [])
 
-  // Release object URLs when files are dropped / page unmounts
+  // Release object URLs when the page unmounts
   const filesRef = useRef(files)
   useEffect(() => { filesRef.current = files }, [files])
   useEffect(() => () => filesRef.current.forEach(f => URL.revokeObjectURL(f.previewUrl)), [])
@@ -96,72 +158,78 @@ export function UploadDocumentPage({ isManager = false }: Props) {
     setFiles(prev => prev.filter((_, j) => j !== i))
   }
 
-  function applyExtraction(ex: ExtractionResult) {
-    const exact = supplierNames.find(n => n.trim() === (ex.supplier_name ?? '').trim())
-    setFields({
-      docType: normalizeDocType(ex.doc_type),
-      supplierName: exact ?? ex.supplier_name ?? '',
-      docNumber: ex.doc_number ?? '',
-      docDate: isValidIsoDate(ex.doc_date) ? ex.doc_date : localIsoDate(),
-      totalBeforeVat: amountToString(absOrNull(ex.total_before_vat)),
-      vatAmount: amountToString(absOrNull(ex.vat_amount)),
-      totalWithVat: amountToString(absOrNull(ex.total_with_vat)),
-    })
-    setLines(extractionToLines(ex).map(l => ({
-      ...l,
-      quantity: absOrNull(l.quantity),
-      lineTotal: absOrNull(l.lineTotal),
-      unitPrice: absOrNull(l.unitPrice),
-    })))
-  }
-
+  // Each image is read on its own; images with the same type + number + supplier
+  // are then merged into one multi-page document.
   async function handleAnalyze() {
     if (!files.length) return
     setStep('analyzing')
+    setProgress(0)
     setError('')
-    try {
-      const ex = await documentsRepo.analyze(files)
-      setExtraction(ex)
-      applyExtraction(ex)
-      setDuplicate(await documentsRepo.findDuplicate({
-        docType: normalizeDocType(ex.doc_type),
-        docNumber: ex.doc_number,
-        supplierName: ex.supplier_name ?? '',
-        supplierTaxId: ex.supplier_tax_id,
-      }).catch(() => null))
-      setStep('review')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'זיהוי המסמך נכשל')
-      setStep('capture')
-    }
-  }
-
-  function handleManualEntry() {
-    setExtraction(null)
-    setFields(emptyFields())
-    setLines([])
-    setError('')
+    const extractions = await mapWithConcurrency(
+      files,
+      ANALYZE_CONCURRENCY,
+      f => documentsRepo.analyze([f]).catch(() => null),
+      () => setProgress(p => p + 1),
+    )
+    const groups = groupPages(extractions)
+    const built = await Promise.all(groups.map(async idxs => {
+      const pageEx = idxs.map(i => extractions[i]).filter((e): e is ExtractionResult => e !== null)
+      const ex = pageEx.length ? mergeExtractions(pageEx) : null
+      const draft = draftFromExtraction(idxs.map(i => files[i]), ex, supplierNames)
+      draft.duplicate = await documentsRepo.findDuplicate({
+        docType: draft.fields.docType,
+        docNumber: draft.fields.docNumber,
+        supplierName: draft.fields.supplierName,
+        supplierTaxId: ex?.supplier_tax_id ?? null,
+      }).catch(() => null)
+      return draft
+    }))
+    if (extractions.every(e => e === null)) setError('זיהוי המסמכים נכשל — אפשר למלא את הפרטים ידנית')
+    setDrafts(built)
+    setCurrent(0)
     setStep('review')
   }
 
-  function handleFieldsChange(next: DocFieldValues) {
-    if (next.docType !== fields.docType || next.docNumber !== fields.docNumber || next.supplierName !== fields.supplierName) {
-      setDuplicate(null)
-    }
-    setFields(next)
+  const draft = drafts[current] as Draft | undefined
+
+  function updateDraft(patch: Partial<Draft>) {
+    setDrafts(prev => prev.map((d, i) => (i === current ? { ...d, ...patch } : d)))
   }
 
-  const checklistCount = lines.filter(isChecklistLine).length
-  const needsChecklist = CHECKLIST_TYPES.includes(fields.docType) && checklistCount > 0
+  function handleFieldsChange(next: DocFieldValues) {
+    if (!draft) return
+    const f = draft.fields
+    const identityChanged = next.docType !== f.docType || next.docNumber !== f.docNumber || next.supplierName !== f.supplierName
+    updateDraft({ fields: next, ...(identityChanged ? { duplicate: null } : {}) })
+  }
+
+  function goTo(i: number) {
+    setError('')
+    setCurrent(i)
+    window.scrollTo({ top: 0 })
+  }
+
+  function removeCurrent() {
+    const remaining = drafts.filter((_, i) => i !== current)
+    setDrafts(remaining)
+    if (!remaining.length) { reset(); return }
+    if (remaining.every(d => d.saved)) { setStep('done'); return }
+    setCurrent(Math.min(current, remaining.length - 1))
+  }
+
+  const checklistCount = draft ? draft.lines.filter(isChecklistLine).length : 0
+  const needsChecklist = !!draft && CHECKLIST_TYPES.includes(draft.fields.docType) && checklistCount > 0
 
   async function handleSave() {
+    if (!draft) return
+    const { fields, lines, extraction } = draft
     setError('')
     if (fields.docType !== 'other' && !fields.supplierName.trim()) {
       setError('יש להזין שם ספק')
       return
     }
     if (needsChecklist && lines.some(l => isChecklistLine(l) && !l.receivedStatus)) {
-      setHighlightUnset(true)
+      updateDraft({ highlightUnset: true })
       setError('יש לסמן לכל פריט אם הגיע')
       return
     }
@@ -174,7 +242,7 @@ export function UploadDocumentPage({ isManager = false }: Props) {
         supplierTaxId: extraction?.supplier_tax_id ?? null,
       })
       if (dup) {
-        setDuplicate(dup)
+        updateDraft({ duplicate: dup })
         window.scrollTo({ top: 0, behavior: 'smooth' })
         return
       }
@@ -187,17 +255,23 @@ export function UploadDocumentPage({ isManager = false }: Props) {
         totalBeforeVat: parseAmount(fields.totalBeforeVat),
         vatAmount: parseAmount(fields.vatAmount),
         totalWithVat: parseAmount(fields.totalWithVat),
-        notes: notes.trim(),
+        notes: draft.notes.trim(),
         source: isManager ? 'manager' : 'worker',
         uploadedById: currentUser?.id ?? null,
         uploadedByName: currentUser?.name ?? null,
         lines: CHECKLIST_TYPES.includes(fields.docType)
           ? lines
           : lines.map(l => ({ ...l, receivedStatus: null, receivedNote: '' })),
-        files,
+        files: draft.files,
         extraction,
       })
-      setStep('done')
+      const next = drafts.map((d, i) => (i === current ? { ...d, saved: true } : d))
+      setDrafts(next)
+      // Move on to the next unsaved document (after this one, then wrap around)
+      const order = [...next.keys()].slice(current + 1).concat([...next.keys()].slice(0, current))
+      const nextIdx = order.find(i => !next[i].saved)
+      if (nextIdx === undefined) setStep('done')
+      else goTo(nextIdx)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'שגיאה בשמירה')
     } finally {
@@ -208,141 +282,186 @@ export function UploadDocumentPage({ isManager = false }: Props) {
   function reset() {
     files.forEach(f => URL.revokeObjectURL(f.previewUrl))
     setFiles([])
-    setFields(emptyFields())
-    setLines([])
-    setNotes('')
-    setExtraction(null)
-    setHighlightUnset(false)
-    setDuplicate(null)
+    setDrafts([])
+    setCurrent(0)
     setError('')
     setStep('capture')
   }
 
+  const savedCount = drafts.filter(d => d.saved).length
+
   return (
     <div className={styles.page}>
-      <PageHeader title={isManager ? 'העלאת מסמך' : 'קבלת סחורה / מסמך'} showBack={isManager} />
+      <PageHeader title={isManager ? 'העלאת מסמכים' : 'קבלת סחורה / מסמכים'} showBack={isManager} />
 
       <div className={styles.body}>
         {step === 'capture' && (
           <>
             <p className={styles.muted}>
-              צלמו את החשבונית / תעודת המשלוח. מסמך עם כמה עמודים — הוסיפו תמונה לכל עמוד.
+              צלמו או בחרו את כל המסמכים — אפשר כמה מסמכים ביחד. מסמך עם כמה עמודים — צלמו כל עמוד, הם יאוחדו אוטומטית.
             </p>
             <div className={styles.captureBtns}>
               <button className={styles.captureBtn} onClick={() => cameraRef.current?.click()} disabled={preparing}>
                 <span>📷</span><span>צילום</span>
               </button>
               <button className={styles.captureBtn} onClick={() => fileRef.current?.click()} disabled={preparing}>
-                <span>📎</span><span>{isManager ? 'קובץ / PDF' : 'מהגלריה'}</span>
+                <span>📎</span><span>{isManager ? 'קבצים / PDF' : 'מהגלריה'}</span>
               </button>
             </div>
             <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={handleFiles} />
             <input ref={fileRef} type="file" accept="image/*,application/pdf" multiple hidden onChange={handleFiles} />
 
             {files.length > 0 && (
-              <div className={styles.thumbs}>
-                {files.map((f, i) => (
-                  <div key={f.previewUrl} className={styles.thumb}>
-                    {f.mimeType === 'application/pdf' ? <span>PDF</span> : <img src={f.previewUrl} alt={`עמוד ${i + 1}`} />}
-                    <button className={styles.thumbRemove} onClick={() => removeFile(i)} aria-label="הסר">✕</button>
-                  </div>
-                ))}
-              </div>
+              <>
+                <p className={styles.muted}>{files.length} תמונות</p>
+                <div className={styles.thumbs}>
+                  {files.map((f, i) => (
+                    <div key={f.previewUrl} className={styles.thumb}>
+                      {f.mimeType === 'application/pdf' ? <span>PDF</span> : <img src={f.previewUrl} alt={`תמונה ${i + 1}`} />}
+                      <button className={styles.thumbRemove} onClick={() => removeFile(i)} aria-label="הסר">✕</button>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
 
             {error && <p className={styles.error}>{error}</p>}
 
             <Button fullWidth onClick={handleAnalyze} disabled={!files.length || preparing}>
-              המשך — זיהוי המסמך
+              המשך — זיהוי המסמכים
             </Button>
-            {error && files.length > 0 && (
-              <Button fullWidth variant="ghost" onClick={handleManualEntry}>מילוי ידני</Button>
-            )}
           </>
         )}
 
         {step === 'analyzing' && (
           <div className={styles.card}>
-            <p className={styles.cardTitle}>מזהה את המסמך…</p>
-            <p className={styles.muted}>זה לוקח כמה שניות.</p>
+            <p className={styles.cardTitle}>מזהה את המסמכים… {progress}/{files.length}</p>
+            <p className={styles.muted}>זה לוקח כמה שניות לכל תמונה.</p>
           </div>
         )}
 
-        {step === 'review' && (
+        {step === 'review' && draft && (
           <>
-            {duplicate && (
-              <div className={`${styles.card} ${styles.duplicateCard}`}>
-                <p className={styles.cardTitle}>המסמך הזה כבר הועלה</p>
-                <p className={styles.muted}>
-                  {DOC_TYPE_LABELS[duplicate.docType]} מס' {duplicate.docNumber} של {duplicate.supplierName || 'ספק לא ידוע'}
-                  {' '}הועלה{duplicate.uploadedByName ? ` על ידי ${duplicate.uploadedByName}` : ''}
-                  {' '}ב-{new Date(duplicate.uploadedAt).toLocaleDateString('he-IL')}. אין צורך להעלות אותו שוב.
-                </p>
-                <div className={styles.actions}>
-                  {isManager && (
-                    <Button onClick={() => navigate(`/manager/documents/${duplicate.id}`)}>פתיחת המסמך הקיים</Button>
-                  )}
-                  <Button variant={isManager ? 'ghost' : 'primary'} onClick={reset}>מסמך אחר</Button>
-                </div>
-                <p className={styles.muted}>זה מסמך אחר? תקנו את מספר המסמך או הספק למטה.</p>
+            {drafts.length > 1 && (
+              <div className={styles.batchNav}>
+                <button className={styles.monthArrow} onClick={() => goTo(current - 1)} disabled={current === 0} aria-label="הקודם">›</button>
+                <span className={styles.batchCounter}>
+                  {current + 1}/{drafts.length}
+                  {draft.saved && <span className={styles.batchSaved}> ✓</span>}
+                </span>
+                <button className={styles.monthArrow} onClick={() => goTo(current + 1)} disabled={current === drafts.length - 1} aria-label="הבא">‹</button>
               </div>
             )}
 
-            <div className={styles.card}>
-              <p className={styles.cardTitle}>פרטי המסמך</p>
-              <p className={styles.muted}>בדקו שהפרטים נכונים ותקנו במידת הצורך.</p>
-              <DocumentFields
-                values={fields}
-                onChange={handleFieldsChange}
-                supplierNames={supplierNames}
-                showAmounts={isManager || fields.docType !== 'delivery_note'}
-              />
+            <div className={styles.thumbs}>
+              {draft.files.map((f, i) => (
+                <a key={f.previewUrl} href={f.previewUrl} target="_blank" rel="noreferrer" className={styles.thumb}>
+                  {f.mimeType === 'application/pdf' ? <span>PDF</span> : <img src={f.previewUrl} alt={`עמוד ${i + 1}`} />}
+                </a>
+              ))}
             </div>
+            {draft.files.length > 1 && <p className={styles.muted}>{draft.files.length} עמודים אוחדו למסמך אחד</p>}
 
-            {needsChecklist && !duplicate && (
+            {draft.saved ? (
               <div className={styles.card}>
-                <ReceivingChecklist
-                  title={`מה הגיע? (${checklistCount} פריטים)`}
-                  lines={lines}
-                  onChange={setLines}
-                  highlightUnset={highlightUnset}
-                />
+                <p className={styles.success}>✓ המסמך נשמר</p>
+                <p className={styles.muted}>
+                  {DOC_TYPE_LABELS[draft.fields.docType]} · {draft.fields.supplierName}
+                  {draft.fields.docNumber ? ` · מס' ${draft.fields.docNumber}` : ''}
+                </p>
               </div>
+            ) : (
+              <>
+                {draft.duplicate && (
+                  <div className={`${styles.card} ${styles.duplicateCard}`}>
+                    <p className={styles.cardTitle}>המסמך הזה כבר הועלה</p>
+                    <p className={styles.muted}>
+                      {DOC_TYPE_LABELS[draft.duplicate.docType]} מס' {draft.duplicate.docNumber} של {draft.duplicate.supplierName || 'ספק לא ידוע'}
+                      {' '}הועלה{draft.duplicate.uploadedByName ? ` על ידי ${draft.duplicate.uploadedByName}` : ''}
+                      {' '}ב-{new Date(draft.duplicate.uploadedAt).toLocaleDateString('he-IL')}. אין צורך להעלות אותו שוב.
+                    </p>
+                    <div className={styles.actions}>
+                      {isManager && (
+                        <Button onClick={() => navigate(`/manager/documents/${draft.duplicate!.id}`)}>פתיחת המסמך הקיים</Button>
+                      )}
+                      <Button variant={isManager ? 'ghost' : 'primary'} onClick={removeCurrent}>
+                        {drafts.length > 1 ? 'הסרה מהרשימה' : 'מסמך אחר'}
+                      </Button>
+                    </div>
+                    <p className={styles.muted}>זה מסמך אחר? תקנו את מספר המסמך או הספק למטה.</p>
+                  </div>
+                )}
+
+                {!draft.extraction && (
+                  <p className={styles.error}>לא הצלחנו לזהות את המסמך — מלאו את הפרטים ידנית.</p>
+                )}
+
+                <div className={styles.card}>
+                  <p className={styles.cardTitle}>פרטי המסמך</p>
+                  <p className={styles.muted}>בדקו שהפרטים נכונים ותקנו במידת הצורך.</p>
+                  <DocumentFields
+                    values={draft.fields}
+                    onChange={handleFieldsChange}
+                    supplierNames={supplierNames}
+                    showAmounts={isManager || draft.fields.docType !== 'delivery_note'}
+                  />
+                </div>
+
+                {needsChecklist && !draft.duplicate && (
+                  <div className={styles.card}>
+                    <ReceivingChecklist
+                      title={`מה הגיע? (${checklistCount} פריטים)`}
+                      lines={draft.lines}
+                      onChange={lines => updateDraft({ lines })}
+                      highlightUnset={draft.highlightUnset}
+                    />
+                  </div>
+                )}
+
+                {CHECKLIST_TYPES.includes(draft.fields.docType) && checklistCount === 0 && (
+                  <p className={styles.muted}>לא זוהו פריטים במסמך — אם משהו חסר, כתבו בהערות.</p>
+                )}
+
+                <Textarea
+                  label="הערות (אופציונלי)"
+                  id="doc-notes"
+                  rows={3}
+                  value={draft.notes}
+                  onChange={e => updateDraft({ notes: e.target.value })}
+                  placeholder="למשל: הארגז של העגבניות הגיע פתוח"
+                />
+
+                {error && <p className={styles.error}>{error}</p>}
+
+                <div className={styles.actions}>
+                  <Button onClick={handleSave} isLoading={saving} disabled={!!draft.duplicate}>
+                    {drafts.length - savedCount > 1 ? 'שמירה והבא' : 'שמירה'}
+                  </Button>
+                  {drafts.length > 1 && !draft.duplicate && (
+                    <Button variant="ghost" onClick={removeCurrent} disabled={saving}>הסרה מהרשימה</Button>
+                  )}
+                </div>
+              </>
             )}
 
-            {CHECKLIST_TYPES.includes(fields.docType) && checklistCount === 0 && (
-              <p className={styles.muted}>לא זוהו פריטים במסמך — אם משהו חסר, כתבו בהערות.</p>
+            {savedCount === 0 && (
+              <Button variant="ghost" fullWidth onClick={reset} disabled={saving}>התחלה מחדש</Button>
             )}
-
-            <Textarea
-              label="הערות (אופציונלי)"
-              id="doc-notes"
-              rows={3}
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              placeholder="למשל: הארגז של העגבניות הגיע פתוח"
-            />
-
-            {error && <p className={styles.error}>{error}</p>}
-
-            <div className={styles.actions}>
-              <Button onClick={() => handleSave()} isLoading={saving} disabled={!!duplicate}>שמירה</Button>
-              <Button variant="ghost" onClick={() => setStep('capture')} disabled={saving}>חזרה</Button>
-            </div>
           </>
         )}
 
         {step === 'done' && (
           <div className={styles.card}>
-            <p className={styles.success}>✓ המסמך נשמר</p>
+            <p className={styles.success}>
+              ✓ {savedCount > 1 ? `${savedCount} מסמכים נשמרו` : 'המסמך נשמר'}
+            </p>
             <div className={styles.actions}>
-              <Button onClick={reset}>מסמך נוסף</Button>
+              <Button onClick={reset}>מסמכים נוספים</Button>
               {isManager && <Button variant="ghost" onClick={() => navigate('/manager/documents')}>לרשימת המסמכים</Button>}
             </div>
           </div>
         )}
       </div>
-
     </div>
   )
 }

@@ -538,3 +538,23 @@
   border-color: v.$color-warning;
   background: rgba(245, 158, 11, 0.08);
 }
+
+.batchNav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: v.$space-4;
+
+  button:disabled { opacity: 0.3; cursor: default; }
+}
+
+.batchCounter {
+  font-size: v.$font-size-lg;
+  font-weight: v.$font-weight-bold;
+  color: v.$color-text;
+  min-width: 3.5rem;
+  text-align: center;
+  direction: ltr;
+}
+
+.batchSaved { color: v.$color-success; }

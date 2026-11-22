@@ -231,3 +231,55 @@ export function isSameDocument(
   if (!na || na !== normalizeDocNumber(b.docNumber)) return false
   return sameSupplier(a, b)
 }
+
+// ── Batch upload: grouping pages into documents ──────────────────────────────
+
+function extractionKey(ex: ExtractionResult) {
+  return {
+    docType: normalizeType(ex.doc_type),
+    docNumber: ex.doc_number,
+    supplierName: ex.supplier_name ?? '',
+    supplierTaxId: ex.supplier_tax_id,
+  }
+}
+
+function normalizeType(t: ExtractionResult['doc_type']): DocType {
+  return t === 'tax_invoice_receipt' ? 'tax_invoice' : t
+}
+
+/** Group uploaded images into documents: images whose extraction has the same
+ *  type + number + supplier are pages of one document. Images that couldn't be
+ *  read (null) or have no number stay on their own. Keeps first-seen order. */
+export function groupPages(extractions: (ExtractionResult | null)[]): number[][] {
+  const groups: number[][] = []
+  extractions.forEach((ex, i) => {
+    if (ex && normalizeDocNumber(ex.doc_number)) {
+      const g = groups.find(g => {
+        const first = extractions[g[0]]
+        return first && isSameDocument(extractionKey(first), extractionKey(ex))
+      })
+      if (g) { g.push(i); return }
+    }
+    groups.push([i])
+  })
+  return groups
+}
+
+/** Combine the per-page extractions of one document. Header fields come from the
+ *  first page that has them; totals from the last page that has them (totals
+ *  are printed at the end); line items are concatenated. */
+export function mergeExtractions(pages: ExtractionResult[]): ExtractionResult {
+  const first = <K extends keyof ExtractionResult>(k: K) => pages.find(p => p[k] != null && p[k] !== '')?.[k] ?? null
+  const last = <K extends keyof ExtractionResult>(k: K) => [...pages].reverse().find(p => p[k] != null)?.[k] ?? null
+  return {
+    doc_type: pages[0].doc_type,
+    supplier_name: first('supplier_name') as string | null,
+    supplier_tax_id: first('supplier_tax_id') as string | null,
+    doc_number: first('doc_number') as string | null,
+    doc_date: first('doc_date') as string | null,
+    total_before_vat: last('total_before_vat') as number | null,
+    vat_amount: last('vat_amount') as number | null,
+    total_with_vat: last('total_with_vat') as number | null,
+    lines: pages.flatMap(p => p.lines ?? []),
+  }
+}

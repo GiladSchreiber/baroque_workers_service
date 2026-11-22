@@ -9,8 +9,10 @@ import {
   shiftMonth,
   isChecklistLine,
   isSameDocument,
+  groupPages,
+  mergeExtractions,
 } from './documents'
-import type { SupplierDocument } from '../types/documents'
+import type { ExtractionResult, SupplierDocument } from '../types/documents'
 
 let seq = 0
 function doc(o: Partial<SupplierDocument>): SupplierDocument {
@@ -135,5 +137,32 @@ describe('isSameDocument', () => {
     expect(isSameDocument(base, { ...base, docNumber: '124' })).toBe(false)
     expect(isSameDocument(base, { ...base, docType: 'delivery_note' })).toBe(false)
     expect(isSameDocument({ ...base, docNumber: '' }, { ...base, docNumber: '' })).toBe(false)
+  })
+})
+
+describe('batch grouping', () => {
+  const ex = (o: Partial<ExtractionResult>): ExtractionResult => ({
+    doc_type: 'tax_invoice', supplier_name: 'תנובה', supplier_tax_id: null, doc_number: '100',
+    doc_date: '2026-11-01', total_before_vat: null, vat_amount: null, total_with_vat: null, lines: [], ...o,
+  })
+  it('groups pages of the same document, keeps others separate', () => {
+    expect(groupPages([
+      ex({}),                                     // doc A p1
+      ex({ supplier_name: 'שטראוס' }),            // doc B
+      ex({ doc_number: '0100' }),                 // doc A p2
+      null,                                       // unreadable
+      ex({ doc_number: null }),                   // no number
+      ex({ doc_number: null }),                   // no number
+    ])).toEqual([[0, 2], [1], [3], [4], [5]])
+  })
+  it('merges header from first page, totals from last, all lines', () => {
+    const line = (d: string) => ({ description: d, quantity: 1, unit: null, unit_price: null, line_total: 1 })
+    const m = mergeExtractions([
+      ex({ lines: [line('a')] }),
+      ex({ supplier_name: null, lines: [line('b')], total_with_vat: 118, total_before_vat: 100 }),
+    ])
+    expect(m.supplier_name).toBe('תנובה')
+    expect(m.total_with_vat).toBe(118)
+    expect(m.lines.map(l => l.description)).toEqual(['a', 'b'])
   })
 })
