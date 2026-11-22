@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { Button } from '../../components/ui/Button'
 import { Textarea } from '../../components/ui/Textarea'
@@ -114,9 +114,6 @@ interface Props {
 export function UploadDocumentPage({ isManager = false }: Props) {
   const currentUser = useAuthStore(s => s.currentUser)
   const navigate = useNavigate()
-  // Testing aid: ?simulateFail=1 behaves as if Gemini were unavailable
-  const [searchParams] = useSearchParams()
-  const simulateFail = searchParams.get('simulateFail') === '1'
 
   const [step, setStep] = useState<Step>('capture')
   const [files, setFiles] = useState<PendingFile[]>([])
@@ -172,7 +169,7 @@ export function UploadDocumentPage({ isManager = false }: Props) {
     const extractions = await mapWithConcurrency(
       files,
       ANALYZE_CONCURRENCY,
-      f => (simulateFail ? Promise.resolve(null) : documentsRepo.analyze([f]).catch(() => null)),
+      f => documentsRepo.analyze([f]).catch(() => null),
       () => setProgress(p => p + 1),
     )
     // Images Gemini couldn't read are saved as 'לא נקרא' — the manager retries later.
