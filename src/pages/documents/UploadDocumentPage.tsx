@@ -179,7 +179,9 @@ export function UploadDocumentPage({ isManager = false }: Props) {
       tryAnalyze,
       () => setProgress(p => p + 1),
     )
-    // Give the ones that failed one more chance before they go to 'לא נקרא'
+    // Give the ones that failed one more chance before they go to 'לא נקרא'.
+    // Gemini's "busy" (503) spikes are short, so wait a few seconds first.
+    if (extractions.some(e => !e)) await new Promise(r => setTimeout(r, 5000))
     for (const [i, ex] of extractions.entries()) {
       if (!ex) extractions[i] = await tryAnalyze(i)
     }

@@ -107,11 +107,14 @@ Deno.serve(async req => {
   })
 
   // One model only. The free tier is occasionally overloaded (503), rate-limited
-  // (429) or slow, so try up to twice. A full invoice can take ~20s to read.
-  // (Supabase allows 150s per request; 2 × 45s stays well inside that.)
+  // (429) or slow. "Busy" answers come back within ~2s, so wait a little and
+  // try again (up to 3 attempts). A full invoice can take ~20s to read.
+  // (Supabase allows 150s per request; worst case here ≈ 3 × 45s.)
   let res: Response | null = null
   const errors: string[] = []
-  for (let attempt = 0; attempt < 2; attempt++) {
+  const BACKOFF_MS = [0, 2000, 5000]
+  for (let attempt = 0; attempt < BACKOFF_MS.length; attempt++) {
+    if (BACKOFF_MS[attempt]) await new Promise(r => setTimeout(r, BACKOFF_MS[attempt]))
     const m = model
     const started = Date.now()
     try {
@@ -121,7 +124,7 @@ Deno.serve(async req => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
           body: requestBody,
-          signal: AbortSignal.timeout(45_000),
+          signal: AbortSignal.timeout(40_000),
         },
       )
       if (r.ok) { res = r; break }

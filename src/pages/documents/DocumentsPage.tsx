@@ -168,16 +168,6 @@ export function DocumentsPage() {
     <div className={styles.page}>
       <PageHeader
         title="מסמכים"
-        titleAddon={unsentSendable.length > 0 && (
-          <input
-            type="checkbox"
-            className={styles.docCheckbox}
-            checked={allUnsentSelected}
-            onChange={toggleAll}
-            aria-label="בחירת כל המסמכים שלא נשלחו"
-            title="בחירת כל המסמכים שלא נשלחו"
-          />
-        )}
         action={<button className={styles.addBtn} onClick={() => navigate('/manager/documents/new')} aria-label="העלאת מסמך">+</button>}
       />
       <DocumentsSubNav />
@@ -239,6 +229,17 @@ export function DocumentsPage() {
         <EmptyState title="אין מסמכים" description="לחצו על + כדי להעלות מסמך שהגיע במייל." />
       ) : (
         <>
+          {unsentSendable.length > 0 && (
+            <label className={styles.selectAll}>
+              <input
+                type="checkbox"
+                className={styles.docCheckbox}
+                checked={allUnsentSelected}
+                onChange={toggleAll}
+              />
+              <span>סמן הכל</span>
+            </label>
+          )}
           <ul className={styles.list} style={selected.size ? { paddingBottom: '7rem' } : undefined}>
             {filtered.map(d => {
               const t = docTotals(d)

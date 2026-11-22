@@ -568,3 +568,15 @@
   color: v.$color-text;
   font-size: v.$font-size-sm;
 }
+
+.selectAll {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+  margin: v.$space-3 v.$space-4 v.$space-2;
+  padding: v.$space-3;
+  color: v.$color-text;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  cursor: pointer;
+}
