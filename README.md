@@ -127,7 +127,7 @@ One-time setup:
    (Or with the CLI: `supabase functions deploy analyze-document`.)
    If your project uses the new `sb_publishable_…` keys, turn **Verify JWT** off for this function.
 4. Edge Functions → **Secrets** → add `GEMINI_API_KEY`. Optional: `GEMINI_MODEL`
-   (default `gemini-flash-latest`).
+   (default `gemini-flash-lite-latest`).
 
 Retention: files are kept for the current and previous month. Older files are deleted when the
 manager opens the documents page, but only for documents already marked as sent to the

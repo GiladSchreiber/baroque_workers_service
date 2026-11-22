@@ -4,7 +4,7 @@
 //
 // Secrets (Supabase dashboard → Edge Functions → Secrets):
 //   GEMINI_API_KEY  – from https://aistudio.google.com/apikey (free tier)
-//   GEMINI_MODEL    – optional, defaults to "gemini-flash-latest"
+//   GEMINI_MODEL    – optional, defaults to "gemini-flash-lite-latest"
 
 // Setup type definitions for built-in Supabase Runtime APIs
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
@@ -81,7 +81,7 @@ Deno.serve(async req => {
 
   const apiKey = Deno.env.get('GEMINI_API_KEY')
   if (!apiKey) return json({ error: 'GEMINI_API_KEY is not configured' }, 500)
-  const model = Deno.env.get('GEMINI_MODEL') || 'gemini-flash-latest'
+  const model = Deno.env.get('GEMINI_MODEL') || 'gemini-flash-lite-latest'
 
   let files: InputFile[]
   try {
@@ -106,13 +106,12 @@ Deno.serve(async req => {
     },
   })
 
-  // The free tier is sometimes overloaded (503), rate-limited (429) or slow:
-  // give each model a short time budget and move straight on to the next one.
-  const models = [...new Set([model, 'gemini-2.5-flash', 'gemini-flash-lite-latest', 'gemini-2.5-flash-lite'])]
+  // One model only. The free tier is occasionally overloaded (503) or
+  // rate-limited (429), so try up to twice with a short time budget.
   let res: Response | null = null
-  let usedModel = ''
   const errors: string[] = []
-  for (const m of models) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const m = model
     const started = Date.now()
     try {
       const r = await fetch(
@@ -124,10 +123,10 @@ Deno.serve(async req => {
           signal: AbortSignal.timeout(20_000),
         },
       )
-      if (r.ok) { res = r; usedModel = m; break }
+      if (r.ok) { res = r; break }
       const text = await r.text()
       errors.push(`${m}: ${r.status} after ${Date.now() - started}ms ${text.slice(0, 200)}`)
-      if (r.status === 400 || r.status === 401 || r.status === 403) break // bad key/request – no point retrying
+      if (r.status !== 503 && r.status !== 429) break // only retry when busy
     } catch (e) {
       errors.push(`${m}: ${e instanceof Error ? e.name : 'error'} after ${Date.now() - started}ms`)
     }
@@ -142,7 +141,7 @@ Deno.serve(async req => {
   if (!text) return json({ error: 'Empty response from Gemini' }, 502)
 
   try {
-    return json({ ...JSON.parse(text), _model: usedModel, _skipped: errors })
+    return json(JSON.parse(text))
   } catch {
     return json({ error: 'Gemini returned invalid JSON', detail: text }, 502)
   }
