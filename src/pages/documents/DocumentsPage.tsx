@@ -228,7 +228,7 @@ export function DocumentsPage() {
                       {d.docNumber && <span>#{d.docNumber}</span>}
                       <span>{formatDocDate(d.docDate)}</span>
                       {d.hasIssues && <span className={`${styles.badge} ${styles.badgeIssue}`}>חוסרים</span>}
-                      {d.notes && <span>📝</span>}
+                      {d.notes && <span className={`${styles.badge} ${styles.badgeIssue}`}>הערה</span>}
                       {d.sentToAccountantAt && <span className={`${styles.badge} ${styles.badgeSent}`}>נשלח</span>}
                     </span>
                   </button>
