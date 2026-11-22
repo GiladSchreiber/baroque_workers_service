@@ -496,3 +496,35 @@
 .mark_ok { color: v.$color-success !important; font-weight: v.$font-weight-bold; text-align: center !important; }
 .mark_partial { color: v.$color-warning !important; font-weight: v.$font-weight-bold; text-align: center !important; }
 .mark_missing { color: v.$color-danger !important; font-weight: v.$font-weight-bold; text-align: center !important; }
+
+.checkHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-2;
+}
+
+.markAllBtn {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: v.$radius-full;
+  border: 2px solid v.$color-success;
+  background: transparent;
+  color: v.$color-success;
+  font-family: v.$font-family;
+  font-size: v.$font-size-lg;
+  font-weight: v.$font-weight-bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background v.$transition-fast, color v.$transition-fast;
+
+  &:active { transform: scale(0.95); }
+}
+
+.markAllDone {
+  background: v.$color-success;
+  color: #fff;
+}

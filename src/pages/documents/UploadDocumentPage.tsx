@@ -268,8 +268,12 @@ export function UploadDocumentPage({ isManager = false }: Props) {
 
             {needsChecklist && (
               <div className={styles.card}>
-                <p className={styles.cardTitle}>מה הגיע? ({checklistCount} פריטים)</p>
-                <ReceivingChecklist lines={lines} onChange={setLines} highlightUnset={highlightUnset} />
+                <ReceivingChecklist
+                  title={`מה הגיע? (${checklistCount} פריטים)`}
+                  lines={lines}
+                  onChange={setLines}
+                  highlightUnset={highlightUnset}
+                />
               </div>
             )}
 

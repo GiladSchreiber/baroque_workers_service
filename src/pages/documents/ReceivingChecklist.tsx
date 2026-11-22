@@ -6,24 +6,32 @@ interface Props {
   lines: DocumentLine[]
   onChange: (lines: DocumentLine[]) => void
   highlightUnset?: boolean
+  title: string
 }
 
 const STATUSES: ReceivedStatus[] = ['ok', 'partial', 'missing']
 
-export function ReceivingChecklist({ lines, onChange, highlightUnset }: Props) {
+export function ReceivingChecklist({ lines, onChange, highlightUnset, title }: Props) {
+  const allMarked = lines.every(l => !isChecklistLine(l) || l.receivedStatus)
+
   function update(i: number, patch: Partial<DocumentLine>) {
     onChange(lines.map((l, j) => (j === i ? { ...l, ...patch } : l)))
   }
 
   return (
     <>
-      <button
-        type="button"
-        className={styles.linkBtn}
-        onClick={() => onChange(lines.map(l => (l.receivedStatus || !isChecklistLine(l) ? l : { ...l, receivedStatus: 'ok' })))}
-      >
-        ✓ סמן את כל השאר כ"הגיע"
-      </button>
+      <div className={styles.checkHeader}>
+        <p className={styles.cardTitle}>{title}</p>
+        <button
+          type="button"
+          className={`${styles.markAllBtn} ${allMarked ? styles.markAllDone : ''}`}
+          onClick={() => onChange(lines.map(l => (l.receivedStatus || !isChecklistLine(l) ? l : { ...l, receivedStatus: 'ok' })))}
+          aria-label="סמן את כל השאר כהגיע"
+          title="סמן את כל השאר כהגיע"
+        >
+          V
+        </button>
+      </div>
       <ul className={styles.checkList}>
         {lines.map((line, i) => isChecklistLine(line) && (
           <li
