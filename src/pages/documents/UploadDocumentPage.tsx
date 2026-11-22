@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { Button } from '../../components/ui/Button'
 import { Textarea } from '../../components/ui/Textarea'
-import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { useAuthStore } from '../../store/authStore'
 import { documentsRepo } from '../../repositories'
 import { prepareFile } from '../../lib/documentFiles'
@@ -23,6 +22,7 @@ import {
   type DocumentLine,
   type ExtractionResult,
   type PendingFile,
+  type SupplierDocument,
 } from '../../types/documents'
 import { DocumentFields, type DocFieldValues } from './DocumentFields'
 import { ReceivingChecklist } from './ReceivingChecklist'
@@ -61,7 +61,7 @@ export function UploadDocumentPage({ isManager = false }: Props) {
   const [preparing, setPreparing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [highlightUnset, setHighlightUnset] = useState(false)
-  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null)
+  const [duplicate, setDuplicate] = useState<SupplierDocument | null>(null)
 
   const cameraRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -123,6 +123,12 @@ export function UploadDocumentPage({ isManager = false }: Props) {
       const ex = await documentsRepo.analyze(files)
       setExtraction(ex)
       applyExtraction(ex)
+      setDuplicate(await documentsRepo.findDuplicate({
+        docType: normalizeDocType(ex.doc_type),
+        docNumber: ex.doc_number,
+        supplierName: ex.supplier_name ?? '',
+        supplierTaxId: ex.supplier_tax_id,
+      }).catch(() => null))
       setStep('review')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'זיהוי המסמך נכשל')
@@ -138,10 +144,17 @@ export function UploadDocumentPage({ isManager = false }: Props) {
     setStep('review')
   }
 
+  function handleFieldsChange(next: DocFieldValues) {
+    if (next.docType !== fields.docType || next.docNumber !== fields.docNumber || next.supplierName !== fields.supplierName) {
+      setDuplicate(null)
+    }
+    setFields(next)
+  }
+
   const checklistCount = lines.filter(isChecklistLine).length
   const needsChecklist = CHECKLIST_TYPES.includes(fields.docType) && checklistCount > 0
 
-  async function handleSave(skipDuplicateCheck = false) {
+  async function handleSave() {
     setError('')
     if (fields.docType !== 'other' && !fields.supplierName.trim()) {
       setError('יש להזין שם ספק')
@@ -154,16 +167,16 @@ export function UploadDocumentPage({ isManager = false }: Props) {
     }
     setSaving(true)
     try {
-      if (!skipDuplicateCheck && fields.docNumber.trim() && fields.supplierName.trim()) {
-        const dup = await documentsRepo.findDuplicate(fields.supplierName, fields.docNumber, fields.docType)
-        if (dup) {
-          setDuplicateWarning(
-            `${DOC_TYPE_LABELS[dup.docType]} מס' ${dup.docNumber} של ${dup.supplierName} כבר הועלתה` +
-            (dup.uploadedByName ? ` על ידי ${dup.uploadedByName}` : '') + '.',
-          )
-          setSaving(false)
-          return
-        }
+      const dup = await documentsRepo.findDuplicate({
+        docType: fields.docType,
+        docNumber: fields.docNumber,
+        supplierName: fields.supplierName,
+        supplierTaxId: extraction?.supplier_tax_id ?? null,
+      })
+      if (dup) {
+        setDuplicate(dup)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        return
       }
       await documentsRepo.create({
         docType: fields.docType,
@@ -200,6 +213,7 @@ export function UploadDocumentPage({ isManager = false }: Props) {
     setNotes('')
     setExtraction(null)
     setHighlightUnset(false)
+    setDuplicate(null)
     setError('')
     setStep('capture')
   }
@@ -256,18 +270,36 @@ export function UploadDocumentPage({ isManager = false }: Props) {
 
         {step === 'review' && (
           <>
+            {duplicate && (
+              <div className={`${styles.card} ${styles.duplicateCard}`}>
+                <p className={styles.cardTitle}>המסמך הזה כבר הועלה</p>
+                <p className={styles.muted}>
+                  {DOC_TYPE_LABELS[duplicate.docType]} מס' {duplicate.docNumber} של {duplicate.supplierName || 'ספק לא ידוע'}
+                  {' '}הועלה{duplicate.uploadedByName ? ` על ידי ${duplicate.uploadedByName}` : ''}
+                  {' '}ב-{new Date(duplicate.uploadedAt).toLocaleDateString('he-IL')}. אין צורך להעלות אותו שוב.
+                </p>
+                <div className={styles.actions}>
+                  {isManager && (
+                    <Button onClick={() => navigate(`/manager/documents/${duplicate.id}`)}>פתיחת המסמך הקיים</Button>
+                  )}
+                  <Button variant={isManager ? 'ghost' : 'primary'} onClick={reset}>מסמך אחר</Button>
+                </div>
+                <p className={styles.muted}>זה מסמך אחר? תקנו את מספר המסמך או הספק למטה.</p>
+              </div>
+            )}
+
             <div className={styles.card}>
               <p className={styles.cardTitle}>פרטי המסמך</p>
               <p className={styles.muted}>בדקו שהפרטים נכונים ותקנו במידת הצורך.</p>
               <DocumentFields
                 values={fields}
-                onChange={setFields}
+                onChange={handleFieldsChange}
                 supplierNames={supplierNames}
                 showAmounts={isManager || fields.docType !== 'delivery_note'}
               />
             </div>
 
-            {needsChecklist && (
+            {needsChecklist && !duplicate && (
               <div className={styles.card}>
                 <ReceivingChecklist
                   title={`מה הגיע? (${checklistCount} פריטים)`}
@@ -294,7 +326,7 @@ export function UploadDocumentPage({ isManager = false }: Props) {
             {error && <p className={styles.error}>{error}</p>}
 
             <div className={styles.actions}>
-              <Button onClick={() => handleSave()} isLoading={saving}>שמירה</Button>
+              <Button onClick={() => handleSave()} isLoading={saving} disabled={!!duplicate}>שמירה</Button>
               <Button variant="ghost" onClick={() => setStep('capture')} disabled={saving}>חזרה</Button>
             </div>
           </>
@@ -311,16 +343,6 @@ export function UploadDocumentPage({ isManager = false }: Props) {
         )}
       </div>
 
-      <ConfirmDialog
-        isOpen={duplicateWarning !== null}
-        title="המסמך כבר קיים"
-        message={duplicateWarning ? duplicateWarning + ' לשמור בכל זאת?' : undefined}
-        confirmLabel="שמור בכל זאת"
-        cancelLabel="ביטול"
-        variant="primary"
-        onConfirm={() => { setDuplicateWarning(null); handleSave(true) }}
-        onCancel={() => setDuplicateWarning(null)}
-      />
     </div>
   )
 }

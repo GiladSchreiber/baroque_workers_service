@@ -190,3 +190,44 @@ const NON_GOODS_RE = /פי?קדון|פי?קדונות/
 export function isChecklistLine(line: Pick<DocumentLine, 'description'>): boolean {
   return !NON_GOODS_RE.test(line.description)
 }
+
+// ── Duplicate detection ───────────────────────────────────────────────────────
+
+/** "00123", "123 " and "12-3" are all the same document number. */
+export function normalizeDocNumber(s: string | null | undefined): string {
+  return (s ?? '').toLowerCase().replace(/[^0-9a-z֐-׿]/g, '').replace(/^0+(?=.)/, '')
+}
+
+/** Strip quotes, punctuation, spaces and company suffixes (בע"מ). */
+export function normalizeSupplierName(s: string | null | undefined): string {
+  return (s ?? '')
+    .replace(/בע["'״׳]?\s?מ/g, '')
+    .replace(/[^0-9a-zA-Z֐-׿]/g, '')
+    .toLowerCase()
+}
+
+export function sameSupplier(
+  a: { supplierName: string; supplierTaxId: string | null },
+  b: { supplierName: string; supplierTaxId: string | null },
+): boolean {
+  const ta = (a.supplierTaxId ?? '').replace(/\D/g, '')
+  const tb = (b.supplierTaxId ?? '').replace(/\D/g, '')
+  if (ta && tb) return ta === tb
+  const na = normalizeSupplierName(a.supplierName)
+  const nb = normalizeSupplierName(b.supplierName)
+  if (!na || !nb) return false
+  if (na === nb) return true
+  const [short, long] = na.length < nb.length ? [na, nb] : [nb, na]
+  return short.length >= 3 && long.includes(short)
+}
+
+/** Same type + same document number + same supplier (by ח.פ, or by name). */
+export function isSameDocument(
+  a: Pick<SupplierDocument, 'docType' | 'docNumber' | 'supplierName' | 'supplierTaxId'>,
+  b: Pick<SupplierDocument, 'docType' | 'docNumber' | 'supplierName' | 'supplierTaxId'>,
+): boolean {
+  if (a.docType !== b.docType) return false
+  const na = normalizeDocNumber(a.docNumber)
+  if (!na || na !== normalizeDocNumber(b.docNumber)) return false
+  return sameSupplier(a, b)
+}

@@ -8,6 +8,7 @@ import {
   computeHasIssues,
   shiftMonth,
   isChecklistLine,
+  isSameDocument,
 } from './documents'
 import type { SupplierDocument } from '../types/documents'
 
@@ -115,5 +116,24 @@ describe('delivery notes in expenses', () => {
     const docs = [doc({ docType: 'delivery_note', lines })]
     expect(expensesBySupplier(docs, '2026-11')).toEqual([])
     expect(expensesByItem(docs, '2026-11')).toEqual([])
+  })
+})
+
+describe('isSameDocument', () => {
+  const base = { docType: 'tax_invoice' as const, docNumber: '00123', supplierName: 'תנובה בע"מ', supplierTaxId: null }
+  it('matches across number formatting and company suffix', () => {
+    expect(isSameDocument(base, { ...base, docNumber: '123', supplierName: 'תנובה' })).toBe(true)
+  })
+  it('matches by tax id even if the names differ', () => {
+    expect(isSameDocument(
+      { ...base, supplierTaxId: '512345678', supplierName: 'תנובה מרכז שיווק' },
+      { ...base, supplierTaxId: '51-234567-8', supplierName: 'Tnuva' },
+    )).toBe(true)
+  })
+  it('does not match a different supplier, number or type', () => {
+    expect(isSameDocument(base, { ...base, supplierName: 'שטראוס' })).toBe(false)
+    expect(isSameDocument(base, { ...base, docNumber: '124' })).toBe(false)
+    expect(isSameDocument(base, { ...base, docType: 'delivery_note' })).toBe(false)
+    expect(isSameDocument({ ...base, docNumber: '' }, { ...base, docNumber: '' })).toBe(false)
   })
 })

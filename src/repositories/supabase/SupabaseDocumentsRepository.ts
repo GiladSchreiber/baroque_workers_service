@@ -1,6 +1,6 @@
 import { supabase } from '../../lib/supabase'
 import { blobToBase64, extensionFor } from '../../lib/documentFiles'
-import { computeHasIssues, localIsoDate } from '../../lib/documents'
+import { computeHasIssues, isSameDocument, localIsoDate, normalizeDocNumber } from '../../lib/documents'
 import { normalizeDocType } from '../../types/documents'
 import type {
   CreateDocumentInput,
@@ -143,16 +143,20 @@ export class SupabaseDocumentsRepository {
     return [...names].sort((a, b) => a.localeCompare(b, 'he'))
   }
 
-  async findDuplicate(supplierName: string, docNumber: string, docType: string): Promise<SupplierDocument | null> {
+  /** Find an already-uploaded copy of this document (same type, number and supplier). */
+  async findDuplicate(
+    candidate: Pick<SupplierDocument, 'docType' | 'docNumber' | 'supplierName' | 'supplierTaxId'>,
+  ): Promise<SupplierDocument | null> {
+    if (!normalizeDocNumber(candidate.docNumber)) return null
+    const types = candidate.docType === 'tax_invoice' ? ['tax_invoice', 'tax_invoice_receipt'] : [candidate.docType]
     const { data, error } = await supabase
       .from('documents')
       .select('*')
-      .eq('doc_type', docType)
-      .eq('doc_number', docNumber.trim())
-      .ilike('supplier_name', supplierName.trim().replace(/[\\%_]/g, m => '\\' + m))
-      .limit(1)
+      .in('doc_type', types)
+      .not('doc_number', 'is', null)
     if (error) throw new Error(error.message)
-    return data?.length ? rowToDoc(data[0] as DocRow) : null
+    const match = (data as DocRow[]).map(rowToDoc).find(d => isSameDocument(candidate, d))
+    return match ?? null
   }
 
   async create(input: CreateDocumentInput): Promise<SupplierDocument> {
