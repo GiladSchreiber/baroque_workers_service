@@ -102,7 +102,8 @@ export function DocumentsPage() {
 
   const sendable = filtered.filter(d => isSendableType(d.docType))
   const selectedDocs = sendable.filter(d => selected.has(d.id))
-  const allSelected = sendable.length > 0 && selectedDocs.length === sendable.length
+  const unsentSendable = sendable.filter(d => !d.sentToAccountantAt)
+  const allUnsentSelected = unsentSendable.length > 0 && unsentSendable.every(d => selected.has(d.id))
 
   function toggle(id: string) {
     setPrepared(null)
@@ -116,7 +117,7 @@ export function DocumentsPage() {
 
   function toggleAll() {
     setPrepared(null)
-    setSelected(allSelected ? new Set() : new Set(sendable.map(d => d.id)))
+    setSelected(allUnsentSelected ? new Set() : new Set(unsentSendable.map(d => d.id)))
   }
 
   // Step 1: download the files (async). Step 2 (separate tap) opens the share sheet —
@@ -229,10 +230,16 @@ export function DocumentsPage() {
       ) : (
         <>
           <div className={styles.listHeader}>
-            {sendable.length > 0 && (
-              <button className={styles.linkBtn} onClick={toggleAll}>
-                {allSelected ? 'בטל בחירה' : `בחר הכל (${sendable.length})`}
-              </button>
+            {unsentSendable.length > 0 && (
+              <label className={styles.selectAll}>
+                <input
+                  type="checkbox"
+                  className={styles.docCheckbox}
+                  checked={allUnsentSelected}
+                  onChange={toggleAll}
+                />
+                <span>כל שלא נשלחו ({unsentSendable.length})</span>
+              </label>
             )}
           </div>
           <ul className={styles.list} style={selected.size ? { paddingBottom: '7rem' } : undefined}>
