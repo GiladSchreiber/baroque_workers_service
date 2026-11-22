@@ -362,6 +362,7 @@ export function UploadDocumentPage({ isManager = false }: Props) {
             </div>
             <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={handleFiles} />
             <input ref={fileRef} type="file" accept="image/*,application/pdf" multiple hidden onChange={handleFiles} />
+            {preparing && <p className={styles.muted}>מכין תמונות ובודק כיוון טקסט…</p>}
 
             {files.length > 0 && (
               <>
@@ -370,7 +371,7 @@ export function UploadDocumentPage({ isManager = false }: Props) {
                   {files.map((f, i) => (
                     <div key={f.previewUrl} className={styles.thumb}>
                       {f.mimeType === 'application/pdf' ? <span>PDF</span> : <img src={f.previewUrl} alt={`תמונה ${i + 1}`} />}
-                      <button className={styles.thumbRemove} onClick={() => removeFile(i)} aria-label="הסר">✕</button>
+                      <button className={styles.thumbRemove} onClick={() => removeFile(i)} disabled={preparing} aria-label="הסר">✕</button>
                     </div>
                   ))}
                 </div>

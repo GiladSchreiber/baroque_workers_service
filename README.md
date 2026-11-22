@@ -118,6 +118,14 @@ type, supplier, number, date, totals and line items. For delivery notes and invo
 worker then ticks off what arrived. The manager sees everything under **מסמכים**, can filter,
 share selected documents to the accountant via WhatsApp, and view **הוצאות** by supplier and item.
 
+Camera EXIF orientation is applied before compression. Landscape photos additionally
+run local Tesseract orientation detection in a browser worker; confident 90°/270°
+corrections are baked into both the preview and the uploaded JPEG before Gemini reads
+it. Portrait images and PDFs skip detection. Uncertain results, timeouts and offline
+failures leave the image unchanged.
+This adds no external AI request. OCR assets are self-hosted, loaded only for landscape
+images, and generated from npm dependencies by `predev` / `prebuild`.
+
 One-time setup:
 
 1. Run `supabase-documents.sql` in the SQL Editor (tables + private `documents` storage bucket).
