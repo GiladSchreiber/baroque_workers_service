@@ -8,9 +8,11 @@ interface PageHeaderProps {
   title: string
   showBack?: boolean
   action?: React.ReactNode
+  /** Rendered right next to the title (e.g. a select-all checkbox) */
+  titleAddon?: React.ReactNode
 }
 
-export function PageHeader({ title, showBack = false, action }: PageHeaderProps) {
+export function PageHeader({ title, showBack = false, action, titleAddon }: PageHeaderProps) {
   const navigate = useNavigate()
   const currentUser = useAuthStore(s => s.currentUser)
   const logout = useAuthStore(s => s.logout)
@@ -29,6 +31,7 @@ export function PageHeader({ title, showBack = false, action }: PageHeaderProps)
           </button>
         )}
         <h1 className={styles.title}>{title}</h1>
+        {titleAddon}
       </div>
       <div className={styles.right}>
         {action && <div className={styles.action}>{action}</div>}
