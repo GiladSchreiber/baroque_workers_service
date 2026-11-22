@@ -107,31 +107,35 @@ Deno.serve(async req => {
     },
   })
 
-  // The free tier is sometimes overloaded (503) or rate-limited (429):
-  // retry, then fall back to lighter models.
-  const models = [...new Set([model, 'gemini-flash-lite-latest', 'gemini-2.5-flash'])]
+  // The free tier is sometimes overloaded (503), rate-limited (429) or slow:
+  // give each model a short time budget and move straight on to the next one.
+  const models = [...new Set([model, 'gemini-2.5-flash', 'gemini-flash-lite-latest', 'gemini-2.5-flash-lite'])]
   let res: Response | null = null
-  let lastError = ''
-  outer: for (const m of models) {
-    for (let attempt = 0; attempt < 2; attempt++) {
-      res = await fetch(
+  let usedModel = ''
+  const errors: string[] = []
+  for (const m of models) {
+    const started = Date.now()
+    try {
+      const r = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
           body: requestBody,
+          signal: AbortSignal.timeout(20_000),
         },
       )
-      if (res.ok) break outer
-      lastError = `${m}: ${res.status} ${await res.text()}`
-      if (res.status !== 503 && res.status !== 429 && res.status !== 404) break outer
-      if (res.status === 404) break // unknown model name → next model
-      await new Promise(r => setTimeout(r, 1500))
+      if (r.ok) { res = r; usedModel = m; break }
+      const text = await r.text()
+      errors.push(`${m}: ${r.status} after ${Date.now() - started}ms ${text.slice(0, 200)}`)
+      if (r.status === 400 || r.status === 401 || r.status === 403) break // bad key/request – no point retrying
+    } catch (e) {
+      errors.push(`${m}: ${e instanceof Error ? e.name : 'error'} after ${Date.now() - started}ms`)
     }
   }
 
-  if (!res?.ok) {
-    return json({ error: `Gemini error ${res?.status ?? ''}`, detail: lastError }, 502)
+  if (!res) {
+    return json({ error: 'Gemini unavailable', detail: errors.join(' | ') }, 502)
   }
 
   const out = await res.json()
@@ -139,7 +143,7 @@ Deno.serve(async req => {
   if (!text) return json({ error: 'Empty response from Gemini' }, 502)
 
   try {
-    return json(JSON.parse(text))
+    return json({ ...JSON.parse(text), _model: usedModel, _skipped: errors })
   } catch {
     return json({ error: 'Gemini returned invalid JSON', detail: text }, 502)
   }
