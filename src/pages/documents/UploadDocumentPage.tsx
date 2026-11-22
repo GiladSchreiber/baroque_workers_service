@@ -11,6 +11,7 @@ import {
   absOrNull,
   amountToString,
   extractionToLines,
+  isChecklistLine,
   isValidIsoDate,
   localIsoDate,
   parseAmount,
@@ -136,7 +137,8 @@ export function UploadDocumentPage({ isManager = false }: Props) {
     setStep('review')
   }
 
-  const needsChecklist = CHECKLIST_TYPES.includes(fields.docType) && lines.length > 0
+  const checklistCount = lines.filter(isChecklistLine).length
+  const needsChecklist = CHECKLIST_TYPES.includes(fields.docType) && checklistCount > 0
 
   async function handleSave(skipDuplicateCheck = false) {
     setError('')
@@ -144,7 +146,7 @@ export function UploadDocumentPage({ isManager = false }: Props) {
       setError('יש להזין שם ספק')
       return
     }
-    if (needsChecklist && lines.some(l => !l.receivedStatus)) {
+    if (needsChecklist && lines.some(l => isChecklistLine(l) && !l.receivedStatus)) {
       setHighlightUnset(true)
       setError('יש לסמן לכל פריט אם הגיע')
       return
@@ -266,12 +268,12 @@ export function UploadDocumentPage({ isManager = false }: Props) {
 
             {needsChecklist && (
               <div className={styles.card}>
-                <p className={styles.cardTitle}>מה הגיע? ({lines.length} פריטים)</p>
+                <p className={styles.cardTitle}>מה הגיע? ({checklistCount} פריטים)</p>
                 <ReceivingChecklist lines={lines} onChange={setLines} highlightUnset={highlightUnset} />
               </div>
             )}
 
-            {CHECKLIST_TYPES.includes(fields.docType) && lines.length === 0 && (
+            {CHECKLIST_TYPES.includes(fields.docType) && checklistCount === 0 && (
               <p className={styles.muted}>לא זוהו פריטים במסמך — אם משהו חסר, כתבו בהערות.</p>
             )}
 

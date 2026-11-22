@@ -1,4 +1,5 @@
 import { RECEIVED_LABELS, type DocumentLine, type ReceivedStatus } from '../../types/documents'
+import { isChecklistLine } from '../../lib/documents'
 import styles from './Documents.module.scss'
 
 interface Props {
@@ -19,12 +20,12 @@ export function ReceivingChecklist({ lines, onChange, highlightUnset }: Props) {
       <button
         type="button"
         className={styles.linkBtn}
-        onClick={() => onChange(lines.map(l => (l.receivedStatus ? l : { ...l, receivedStatus: 'ok' })))}
+        onClick={() => onChange(lines.map(l => (l.receivedStatus || !isChecklistLine(l) ? l : { ...l, receivedStatus: 'ok' })))}
       >
         ✓ סמן את כל השאר כ"הגיע"
       </button>
       <ul className={styles.checkList}>
-        {lines.map((line, i) => (
+        {lines.map((line, i) => isChecklistLine(line) && (
           <li
             key={i}
             className={`${styles.checkItem} ${highlightUnset && !line.receivedStatus ? styles.checkItemUnset : ''}`}

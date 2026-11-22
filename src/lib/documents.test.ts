@@ -7,6 +7,7 @@ import {
   shouldPurgeFiles,
   computeHasIssues,
   shiftMonth,
+  isChecklistLine,
 } from './documents'
 import type { SupplierDocument } from '../types/documents'
 
@@ -91,5 +92,13 @@ describe('misc', () => {
   })
   it('shiftMonth wraps years', () => {
     expect(shiftMonth('2026-01', -1)).toBe('2025-12')
+  })
+})
+
+describe('isChecklistLine', () => {
+  it('hides deposit lines from the checklist', () => {
+    expect(isChecklistLine({ description: 'פיקדון בקבוקים' })).toBe(false)
+    expect(isChecklistLine({ description: 'פקדון ארגז' })).toBe(false)
+    expect(isChecklistLine({ description: 'חלב 3%' })).toBe(true)
   })
 })

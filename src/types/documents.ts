@@ -25,9 +25,9 @@ export const CHECKLIST_TYPES: DocType[] = ['delivery_note', 'tax_invoice', 'tax_
 export type ReceivedStatus = 'ok' | 'partial' | 'missing'
 
 export const RECEIVED_LABELS: Record<ReceivedStatus, string> = {
-  ok: 'הגיע',
-  partial: 'חלקי',
-  missing: 'חסר',
+  ok: 'V',
+  partial: '~',
+  missing: 'X',
 }
 
 export interface DocumentLine {

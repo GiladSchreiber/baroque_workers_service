@@ -104,13 +104,13 @@ export function DocumentDetailPage() {
           {doc.sentToAccountantAt ? ` · נשלח לרו״ח ${new Date(doc.sentToAccountantAt).toLocaleDateString('he-IL')}` : ''}
         </p>
 
-        <div className={styles.preview}>
-          {doc.filesPurgedAt && <p className={styles.muted}>הקובץ נמחק (מסמך ישן) — נשמרו רק הנתונים.</p>}
-          {urls.map((u, i) =>
-            doc.fileTypes[i] === 'application/pdf'
-              ? <a key={u} href={u} target="_blank" rel="noreferrer" className={styles.pdfLink}>📄 פתיחת PDF {urls.length > 1 ? i + 1 : ''}</a>
-              : <a key={u} href={u} target="_blank" rel="noreferrer"><img src={u} alt={`עמוד ${i + 1}`} /></a>,
-          )}
+        <div className={styles.card}>
+          <p className={styles.cardTitle}>פרטים</p>
+          <DocumentFields values={fields} onChange={setFields} supplierNames={supplierNames} />
+          <Textarea label="הערות" id="detail-notes" rows={3} value={notes} onChange={e => setNotes(e.target.value)} />
+          {error && <p className={styles.error}>{error}</p>}
+          {savedMsg && <p className={styles.muted}>{savedMsg}</p>}
+          <Button onClick={save} isLoading={saving}>שמירת שינויים</Button>
         </div>
 
         {doc.lines.length > 0 && (
@@ -129,7 +129,7 @@ export function DocumentDetailPage() {
                     </td>
                     <td className={styles.num}>{l.quantity ?? '—'} {l.unit ?? ''}</td>
                     <td className={styles.num}>{formatMoney(l.lineTotal)}</td>
-                    <td>{l.receivedStatus ? RECEIVED_LABELS[l.receivedStatus] : '—'}</td>
+                    <td className={l.receivedStatus ? styles[`mark_${l.receivedStatus}`] : undefined}>{l.receivedStatus ? RECEIVED_LABELS[l.receivedStatus] : '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -137,13 +137,13 @@ export function DocumentDetailPage() {
           </div>
         )}
 
-        <div className={styles.card}>
-          <p className={styles.cardTitle}>פרטים</p>
-          <DocumentFields values={fields} onChange={setFields} supplierNames={supplierNames} />
-          <Textarea label="הערות" id="detail-notes" rows={3} value={notes} onChange={e => setNotes(e.target.value)} />
-          {error && <p className={styles.error}>{error}</p>}
-          {savedMsg && <p className={styles.muted}>{savedMsg}</p>}
-          <Button onClick={save} isLoading={saving}>שמירת שינויים</Button>
+        <div className={styles.preview}>
+          {doc.filesPurgedAt && <p className={styles.muted}>הקובץ נמחק (מסמך ישן) — נשמרו רק הנתונים.</p>}
+          {urls.map((u, i) =>
+            doc.fileTypes[i] === 'application/pdf'
+              ? <a key={u} href={u} target="_blank" rel="noreferrer" className={styles.pdfLink}>📄 פתיחת PDF {urls.length > 1 ? i + 1 : ''}</a>
+              : <a key={u} href={u} target="_blank" rel="noreferrer"><img src={u} alt={`עמוד ${i + 1}`} /></a>,
+          )}
         </div>
 
         <div className={styles.actions}>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -31,7 +31,7 @@ export function ExpensesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [month, setMonth] = useState(() => localIsoDate().slice(0, 7))
-  const [supplier, setSupplier] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     documentsRepo.getAll()
@@ -43,11 +43,20 @@ export function ExpensesPage() {
   const prevMonth = shiftMonth(month, -1)
   const bySupplier = useMemo(() => expensesBySupplier(docs, month), [docs, month])
   const bySupplierPrev = useMemo(() => expensesBySupplier(docs, prevMonth), [docs, prevMonth])
-  const items = useMemo(() => expensesByItem(docs, month, supplier ?? undefined), [docs, month, supplier])
+  const items = useMemo(() => expensesByItem(docs, month), [docs, month])
 
   const total = bySupplier.reduce((s, r) => ({ before: s.before + r.beforeVat, with: s.with + r.withVat }), { before: 0, with: 0 })
   const totalPrev = bySupplierPrev.reduce((s, r) => ({ before: s.before + r.beforeVat, with: s.with + r.withVat }), { before: 0, with: 0 })
   const prevBySupplier = new Map(bySupplierPrev.map(r => [r.supplier, r]))
+
+  function toggleSupplier(name: string) {
+    setExpanded(prev => {
+      const next = new Set(prev)
+      if (next.has(name)) next.delete(name)
+      else next.add(name)
+      return next
+    })
+  }
 
   return (
     <div className={styles.page}>
@@ -55,9 +64,9 @@ export function ExpensesPage() {
       <DocumentsSubNav />
 
       <div className={styles.monthPicker}>
-        <button className={styles.monthArrow} onClick={() => { setMonth(m => shiftMonth(m, 1)); setSupplier(null) }} aria-label="חודש הבא">‹</button>
+        <button className={styles.monthArrow} onClick={() => { setMonth(m => shiftMonth(m, 1)); setExpanded(new Set()) }} aria-label="חודש הבא">‹</button>
         <span>{formatMonthHe(month)}</span>
-        <button className={styles.monthArrow} onClick={() => { setMonth(m => shiftMonth(m, -1)); setSupplier(null) }} aria-label="חודש קודם">›</button>
+        <button className={styles.monthArrow} onClick={() => { setMonth(m => shiftMonth(m, -1)); setExpanded(new Set()) }} aria-label="חודש קודם">›</button>
       </div>
 
       {loading ? <LoadingSpinner /> : error ? <p className={styles.error} style={{ padding: '1rem' }}>{error}</p> : (
@@ -74,15 +83,13 @@ export function ExpensesPage() {
               <Delta current={total.with} previous={totalPrev.with} />
             </div>
           </div>
-          <p className={styles.muted}>
-            מחושב מחשבוניות מס וחשבוניות מס/קבלה, בניכוי חשבוניות זיכוי. תעודות משלוח וקבלות לא נספרות.
-          </p>
 
           {bySupplier.length === 0 ? (
             <EmptyState title="אין הוצאות בחודש הזה" />
           ) : (
             <div className={styles.card}>
               <p className={styles.cardTitle}>לפי ספק</p>
+              <p className={styles.muted}>לחצו על ספק כדי לראות את הפריטים.</p>
               <table className={styles.linesTable}>
                 <thead>
                   <tr>
@@ -93,45 +100,53 @@ export function ExpensesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {bySupplier.map(r => (
-                    <tr
-                      key={r.supplier}
-                      className={styles.clickRow}
-                      onClick={() => setSupplier(s => (s === r.supplier ? null : r.supplier))}
-                    >
-                      <td>{supplier === r.supplier ? '▾ ' : ''}{r.supplier} <span className={styles.muted}>({r.count})</span></td>
-                      <td className={styles.num}>{formatMoney(r.beforeVat)}</td>
-                      <td className={styles.num}>{formatMoney(r.withVat)}</td>
-                      <td className={styles.num}>{formatMoney(prevBySupplier.get(r.supplier)?.withVat ?? 0)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {items.length > 0 && (
-            <div className={styles.card}>
-              <p className={styles.cardTitle}>לפי פריט{supplier ? ` — ${supplier}` : ''}</p>
-              {!supplier && <p className={styles.muted}>לחצו על ספק כדי לסנן.</p>}
-              <table className={styles.linesTable}>
-                <thead>
-                  <tr>
-                    <th>פריט</th>
-                    <th className={styles.num}>כמות</th>
-                    <th className={styles.num}>לפני מע״מ</th>
-                    <th className={styles.num}>כולל מע״מ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map(r => (
-                    <tr key={`${r.supplier}|${r.description}`}>
-                      <td>{r.description}{!supplier && <span className={styles.lineNote} style={{ color: 'inherit', opacity: 0.6 }}>{r.supplier}</span>}</td>
-                      <td className={styles.num}>{r.quantity} {r.unit ?? ''}</td>
-                      <td className={styles.num}>{formatMoney(r.beforeVat)}</td>
-                      <td className={styles.num}>{formatMoney(r.withVat)}</td>
-                    </tr>
-                  ))}
+                  {bySupplier.map(r => {
+                    const open = expanded.has(r.supplier)
+                    const supplierItems = open ? items.filter(i => i.supplier === r.supplier) : []
+                    return (
+                      <Fragment key={r.supplier}>
+                        <tr className={styles.clickRow} onClick={() => toggleSupplier(r.supplier)}>
+                          <td>
+                            <span className={styles.chevron}>{open ? '▾' : '◂'}</span>
+                            {r.supplier} <span className={styles.muted}>({r.count})</span>
+                          </td>
+                          <td className={styles.num}>{formatMoney(r.beforeVat)}</td>
+                          <td className={styles.num}>{formatMoney(r.withVat)}</td>
+                          <td className={styles.num}>{formatMoney(prevBySupplier.get(r.supplier)?.withVat ?? 0)}</td>
+                        </tr>
+                        {open && (
+                          <tr className={styles.itemsRow}>
+                            <td colSpan={4}>
+                              {supplierItems.length === 0 ? (
+                                <p className={styles.muted}>לא זוהו פריטים במסמכים של הספק הזה.</p>
+                              ) : (
+                                <table className={styles.itemsTable}>
+                                  <thead>
+                                    <tr>
+                                      <th>פריט</th>
+                                      <th className={styles.num}>כמות</th>
+                                      <th className={styles.num}>לפני מע״מ</th>
+                                      <th className={styles.num}>כולל מע״מ</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {supplierItems.map(it => (
+                                      <tr key={it.description}>
+                                        <td>{it.description}</td>
+                                        <td className={styles.num}>{it.quantity} {it.unit ?? ''}</td>
+                                        <td className={styles.num}>{formatMoney(it.beforeVat)}</td>
+                                        <td className={styles.num}>{formatMoney(it.withVat)}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              )}
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

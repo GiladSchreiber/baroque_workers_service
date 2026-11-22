@@ -198,3 +198,11 @@ export const amountToString = (n: number | null | undefined) => (n == null ? '' 
 export function localIsoDate(d = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
+
+/** Lines that aren't goods (bottle/crate deposits) — kept for expenses but not
+ *  shown in the worker's receiving checklist. */
+const NON_GOODS_RE = /פי?קדון|פי?קדונות/
+
+export function isChecklistLine(line: Pick<DocumentLine, 'description'>): boolean {
+  return !NON_GOODS_RE.test(line.description)
+}

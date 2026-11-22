@@ -466,3 +466,33 @@
 .down { color: v.$color-success; }
 
 .clickRow { cursor: pointer; &:hover td { color: v.$color-primary; } }
+
+.chevron {
+  display: inline-block;
+  width: 1rem;
+  color: v.$color-primary;
+}
+
+.itemsRow > td {
+  padding: 0 0 v.$space-2 !important;
+  background: v.$color-surface-raised;
+}
+
+.itemsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: v.$font-size-xs;
+
+  th, td {
+    text-align: start;
+    padding: v.$space-2 v.$space-2;
+    border-bottom: 1px solid v.$color-border;
+  }
+
+  th { color: v.$color-text-muted; font-weight: v.$font-weight-medium; }
+  td:first-child, th:first-child { padding-inline-start: v.$space-5; }
+}
+
+.mark_ok { color: v.$color-success !important; font-weight: v.$font-weight-bold; text-align: center !important; }
+.mark_partial { color: v.$color-warning !important; font-weight: v.$font-weight-bold; text-align: center !important; }
+.mark_missing { color: v.$color-danger !important; font-weight: v.$font-weight-bold; text-align: center !important; }
