@@ -59,6 +59,7 @@ export function DocumentsPage() {
   const [preparing, setPreparing] = useState(false)
   const [prepared, setPrepared] = useState<{ files: File[]; ids: string[] } | null>(null)
   const [confirmSent, setConfirmSent] = useState<string[] | null>(null)
+  const [retryProgress, setRetryProgress] = useState<string | null>(null)
 
   const load = useCallback(() =>
     fetchDocuments()
@@ -67,6 +68,20 @@ export function DocumentsPage() {
       .finally(() => setLoading(false)), [])
 
   useEffect(() => { load() }, [load])
+
+  const unreadDocs = docs.filter(d => d.docType === 'unread')
+
+  async function retryUnread() {
+    let ok = 0
+    let failed = 0
+    for (const [i, d] of unreadDocs.entries()) {
+      setRetryProgress(`${i + 1}/${unreadDocs.length}`)
+      try { await documentsRepo.reanalyze(d); ok++ } catch { failed++ }
+    }
+    setRetryProgress(null)
+    setError(failed ? `${ok} זוהו, ${failed} עדיין לא נקראו (Gemini לא זמין)` : '')
+    await load()
+  }
 
   const suppliers = useMemo(
     () => [...new Set(docs.map(d => d.supplierName).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'he')),
@@ -192,6 +207,18 @@ export function DocumentsPage() {
         <Input id="filter-from" type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} aria-label="מתאריך" />
         <Input id="filter-to" type="date" value={toDate} onChange={e => setToDate(e.target.value)} aria-label="עד תאריך" />
       </div>
+
+      {unreadDocs.length > 0 && (
+        <div className={`${styles.card} ${styles.duplicateCard}`} style={{ margin: '0.75rem 1rem 0' }}>
+          <p className={styles.cardTitle}>
+            {unreadDocs.length === 1 ? 'מסמך אחד לא נקרא' : `${unreadDocs.length} מסמכים לא נקראו`}
+          </p>
+          <Button size="sm" onClick={retryUnread} isLoading={retryProgress !== null} disabled={retryProgress !== null}>
+            ניסיון חוזר לזיהוי
+          </Button>
+          {retryProgress && <p className={styles.muted}>מזהה {retryProgress}…</p>}
+        </div>
+      )}
 
       {error && <p className={styles.error} style={{ padding: '0.75rem 1rem 0' }}>{error}</p>}
 

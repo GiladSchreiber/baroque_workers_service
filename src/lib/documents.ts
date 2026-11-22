@@ -283,3 +283,23 @@ export function mergeExtractions(pages: ExtractionResult[]): ExtractionResult {
     lines: pages.flatMap(p => p.lines ?? []),
   }
 }
+
+/** Document fields from a Gemini extraction (types normalized, amounts positive). */
+export function extractionToFields(ex: ExtractionResult) {
+  return {
+    docType: normalizeType(ex.doc_type),
+    supplierName: (ex.supplier_name ?? '').trim(),
+    supplierTaxId: ex.supplier_tax_id,
+    docNumber: ex.doc_number?.trim() || null,
+    docDate: isValidIsoDate(ex.doc_date) ? ex.doc_date : null,
+    totalBeforeVat: absOrNull(ex.total_before_vat),
+    vatAmount: absOrNull(ex.vat_amount),
+    totalWithVat: absOrNull(ex.total_with_vat),
+    lines: extractionToLines(ex).map(l => ({
+      ...l,
+      quantity: absOrNull(l.quantity),
+      lineTotal: absOrNull(l.lineTotal),
+      unitPrice: absOrNull(l.unitPrice),
+    })),
+  }
+}

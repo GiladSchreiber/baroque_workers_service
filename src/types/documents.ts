@@ -6,6 +6,7 @@ export type DocType =
   | 'credit_note'
   | 'receipt'
   | 'other'
+  | 'unread'
 
 export const DOC_TYPE_LABELS: Record<DocType, string> = {
   delivery_note: 'תעודת משלוח',
@@ -13,6 +14,7 @@ export const DOC_TYPE_LABELS: Record<DocType, string> = {
   credit_note: 'חשבונית זיכוי',
   receipt: 'קבלה',
   other: 'אחר',
+  unread: 'לא נקרא',
 }
 
 export const DOC_TYPES = Object.keys(DOC_TYPE_LABELS) as DocType[]
@@ -20,8 +22,9 @@ export const DOC_TYPES = Object.keys(DOC_TYPE_LABELS) as DocType[]
 /** Document types where the worker checks off what actually arrived. */
 export const CHECKLIST_TYPES: DocType[] = ['delivery_note', 'tax_invoice']
 
-/** Delivery notes are internal only — never sent to the accountant. */
-export const isSendableType = (t: DocType) => t !== 'delivery_note'
+/** Delivery notes are internal only, and unread documents aren't identified yet —
+ *  neither can be sent to the accountant. */
+export const isSendableType = (t: DocType) => t !== 'delivery_note' && t !== 'unread'
 
 /** Older rows / extractions may still use the merged-away type
  *  'tax_invoice_receipt' (חשבונית מס/קבלה) — treat it as a tax invoice. */

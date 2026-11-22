@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { Button } from '../../components/ui/Button'
 import { Textarea } from '../../components/ui/Textarea'
@@ -114,6 +114,9 @@ interface Props {
 export function UploadDocumentPage({ isManager = false }: Props) {
   const currentUser = useAuthStore(s => s.currentUser)
   const navigate = useNavigate()
+  // Testing aid: ?simulateFail=1 behaves as if Gemini were unavailable
+  const [searchParams] = useSearchParams()
+  const simulateFail = searchParams.get('simulateFail') === '1'
 
   const [step, setStep] = useState<Step>('capture')
   const [files, setFiles] = useState<PendingFile[]>([])
@@ -124,6 +127,7 @@ export function UploadDocumentPage({ isManager = false }: Props) {
   const [error, setError] = useState('')
   const [preparing, setPreparing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
 
   const cameraRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -168,23 +172,60 @@ export function UploadDocumentPage({ isManager = false }: Props) {
     const extractions = await mapWithConcurrency(
       files,
       ANALYZE_CONCURRENCY,
-      f => documentsRepo.analyze([f]).catch(() => null),
+      f => (simulateFail ? Promise.resolve(null) : documentsRepo.analyze([f]).catch(() => null)),
       () => setProgress(p => p + 1),
     )
-    const groups = groupPages(extractions)
-    const built = await Promise.all(groups.map(async idxs => {
+    // Images Gemini couldn't read are saved as 'לא נקרא' — the manager retries later.
+    const okIdx: number[] = []
+    const manual: Draft[] = []
+    let unread = 0
+    for (const [i, ex] of extractions.entries()) {
+      if (ex) { okIdx.push(i); continue }
+      try {
+        await documentsRepo.create({
+          docType: 'unread',
+          supplierName: '',
+          supplierTaxId: null,
+          docNumber: null,
+          docDate: localIsoDate(),
+          totalBeforeVat: null,
+          vatAmount: null,
+          totalWithVat: null,
+          notes: '',
+          source: isManager ? 'manager' : 'worker',
+          uploadedById: currentUser?.id ?? null,
+          uploadedByName: currentUser?.name ?? null,
+          lines: [],
+          files: [files[i]],
+          extraction: null,
+        })
+        unread++
+      } catch {
+        // Couldn't even save (e.g. offline) — fall back to filling it in by hand
+        manual.push(draftFromExtraction([files[i]], null, supplierNames))
+      }
+    }
+    setUnreadCount(unread)
+
+    const groups = groupPages(okIdx.map(i => extractions[i])).map(g => g.map(j => okIdx[j]))
+    const read = await Promise.all(groups.map(async idxs => {
       const pageEx = idxs.map(i => extractions[i]).filter((e): e is ExtractionResult => e !== null)
-      const ex = pageEx.length ? mergeExtractions(pageEx) : null
+      const ex = mergeExtractions(pageEx)
       const draft = draftFromExtraction(idxs.map(i => files[i]), ex, supplierNames)
       draft.duplicate = await documentsRepo.findDuplicate({
         docType: draft.fields.docType,
         docNumber: draft.fields.docNumber,
         supplierName: draft.fields.supplierName,
-        supplierTaxId: ex?.supplier_tax_id ?? null,
+        supplierTaxId: ex.supplier_tax_id,
       }).catch(() => null)
       return draft
     }))
-    if (extractions.every(e => e === null)) setError('זיהוי המסמכים נכשל — אפשר למלא את הפרטים ידנית')
+    const built = [...read, ...manual]
+    if (!built.length) {
+      setDrafts([])
+      setStep('done')
+      return
+    }
     setDrafts(built)
     setCurrent(0)
     setStep('review')
@@ -284,6 +325,7 @@ export function UploadDocumentPage({ isManager = false }: Props) {
     setFiles([])
     setDrafts([])
     setCurrent(0)
+    setUnreadCount(0)
     setError('')
     setStep('capture')
   }
@@ -342,6 +384,11 @@ export function UploadDocumentPage({ isManager = false }: Props) {
 
         {step === 'review' && draft && (
           <>
+            {unreadCount > 0 && (
+              <p className={styles.unreadNote}>
+                {unreadCount === 1 ? 'תמונה אחת לא נקראה' : `${unreadCount} תמונות לא נקראו`} ונשמרו תחת "לא נקרא" — המנהל ינסה לזהות אותן שוב מאוחר יותר.
+              </p>
+            )}
             {drafts.length > 1 && (
               <div className={styles.batchNav}>
                 <button className={styles.monthArrow} onClick={() => goTo(current - 1)} disabled={current === 0} aria-label="הקודם">›</button>
@@ -453,8 +500,13 @@ export function UploadDocumentPage({ isManager = false }: Props) {
         {step === 'done' && (
           <div className={styles.card}>
             <p className={styles.success}>
-              ✓ {savedCount > 1 ? `${savedCount} מסמכים נשמרו` : 'המסמך נשמר'}
+              ✓ {savedCount + unreadCount > 1 ? `${savedCount + unreadCount} מסמכים נשמרו` : 'המסמך נשמר'}
             </p>
+            {unreadCount > 0 && (
+              <p className={styles.unreadNote}>
+                {unreadCount === 1 ? 'תמונה אחת לא נקראה' : `${unreadCount} תמונות לא נקראו`} ונשמרו תחת "לא נקרא" — המנהל ינסה לזהות אותן שוב מאוחר יותר.
+              </p>
+            )}
             <div className={styles.actions}>
               <Button onClick={reset}>מסמכים נוספים</Button>
               {isManager && <Button variant="ghost" onClick={() => navigate('/manager/documents')}>לרשימת המסמכים</Button>}

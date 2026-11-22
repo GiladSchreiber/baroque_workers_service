@@ -36,11 +36,15 @@ export function DocumentDetailPage() {
   const [error, setError] = useState('')
   const [savedMsg, setSavedMsg] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [duplicate, setDuplicate] = useState<SupplierDocument | null>(null)
+  const [retrying, setRetrying] = useState(false)
 
   const load = useCallback(() =>
     documentsRepo.getById(id ?? '')
       .then(async d => {
         const signed = d ? await documentsRepo.getSignedUrls(d.filePaths) : []
+        const dup = d ? await documentsRepo.findDuplicate(d, d.id).catch(() => null) : null
+        setDuplicate(dup)
         setDoc(d)
         if (d) {
           setFields(toFields(d))
@@ -79,6 +83,20 @@ export function DocumentDetailPage() {
     }
   }
 
+  async function retry() {
+    if (!doc) return
+    setRetrying(true)
+    setError('')
+    try {
+      await documentsRepo.reanalyze(doc)
+      await load()
+    } catch {
+      setError('Gemini עדיין לא זמין — נסו שוב מאוחר יותר')
+    } finally {
+      setRetrying(false)
+    }
+  }
+
   async function toggleSent() {
     if (!doc) return
     await documentsRepo.setSent([doc.id], !doc.sentToAccountantAt)
@@ -103,6 +121,29 @@ export function DocumentDetailPage() {
           {doc.uploadedByName ? ` על ידי ${doc.uploadedByName}` : ''}
           {doc.sentToAccountantAt ? ` · נשלח לרו״ח ${new Date(doc.sentToAccountantAt).toLocaleDateString('he-IL')}` : ''}
         </p>
+
+        {doc.docType === 'unread' && (
+          <div className={`${styles.card} ${styles.duplicateCard}`}>
+            <p className={styles.cardTitle}>המסמך עדיין לא נקרא</p>
+            <p className={styles.muted}>Gemini לא היה זמין בזמן ההעלאה.</p>
+            {error && <p className={styles.error}>{error}</p>}
+            <Button onClick={retry} isLoading={retrying}>ניסיון חוזר לזיהוי</Button>
+          </div>
+        )}
+
+        {duplicate && (
+          <div className={`${styles.card} ${styles.duplicateCard}`}>
+            <p className={styles.cardTitle}>נראה שזה מסמך כפול</p>
+            <p className={styles.muted}>
+              אותו מסמך כבר קיים — הועלה ב-{new Date(duplicate.uploadedAt).toLocaleDateString('he-IL')}
+              {duplicate.uploadedByName ? ` על ידי ${duplicate.uploadedByName}` : ''}.
+            </p>
+            <div className={styles.actions}>
+              <Button onClick={() => navigate(`/manager/documents/${duplicate.id}`)}>פתיחת המסמך הקיים</Button>
+              <Button variant="destructive" onClick={() => setConfirmDelete(true)}>מחיקת הכפול</Button>
+            </div>
+          </div>
+        )}
 
         <div className={styles.card}>
           <p className={styles.cardTitle}>פרטים</p>

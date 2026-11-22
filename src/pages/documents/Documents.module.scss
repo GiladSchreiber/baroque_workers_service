@@ -558,3 +558,13 @@
 }
 
 .batchSaved { color: v.$color-success; }
+
+.unreadNote {
+  margin: 0;
+  padding: v.$space-3;
+  border: 1px solid v.$color-warning;
+  border-radius: v.$radius-md;
+  background: rgba(245, 158, 11, 0.08);
+  color: v.$color-text;
+  font-size: v.$font-size-sm;
+}

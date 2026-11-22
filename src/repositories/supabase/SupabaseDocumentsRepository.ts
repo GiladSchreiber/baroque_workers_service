@@ -1,6 +1,6 @@
 import { supabase } from '../../lib/supabase'
 import { blobToBase64, extensionFor } from '../../lib/documentFiles'
-import { computeHasIssues, isSameDocument, localIsoDate, normalizeDocNumber } from '../../lib/documents'
+import { computeHasIssues, extractionToFields, isSameDocument, localIsoDate, normalizeDocNumber } from '../../lib/documents'
 import { normalizeDocType } from '../../types/documents'
 import type {
   CreateDocumentInput,
@@ -106,7 +106,7 @@ export type DocumentPatch = Partial<Pick<SupplierDocument,
 
 export class SupabaseDocumentsRepository {
   /** Run the Gemini extraction (edge function `analyze-document`). */
-  async analyze(files: PendingFile[]): Promise<ExtractionResult> {
+  async analyze(files: Pick<PendingFile, 'blob' | 'mimeType'>[]): Promise<ExtractionResult> {
     const payload = await Promise.all(
       files.map(async f => ({ mimeType: f.mimeType, data: await blobToBase64(f.blob) })),
     )
@@ -146,6 +146,7 @@ export class SupabaseDocumentsRepository {
   /** Find an already-uploaded copy of this document (same type, number and supplier). */
   async findDuplicate(
     candidate: Pick<SupplierDocument, 'docType' | 'docNumber' | 'supplierName' | 'supplierTaxId'>,
+    excludeId?: string,
   ): Promise<SupplierDocument | null> {
     if (!normalizeDocNumber(candidate.docNumber)) return null
     const types = candidate.docType === 'tax_invoice' ? ['tax_invoice', 'tax_invoice_receipt'] : [candidate.docType]
@@ -155,7 +156,7 @@ export class SupabaseDocumentsRepository {
       .in('doc_type', types)
       .not('doc_number', 'is', null)
     if (error) throw new Error(error.message)
-    const match = (data as DocRow[]).map(rowToDoc).find(d => isSameDocument(candidate, d))
+    const match = (data as DocRow[]).map(rowToDoc).find(d => d.id !== excludeId && isSameDocument(candidate, d))
     return match ?? null
   }
 
@@ -267,5 +268,33 @@ export class SupabaseDocumentsRepository {
       files.push(new File([data], `${baseName}${suffix}.${extensionFor(type)}`, { type }))
     }
     return files
+  }
+
+  /** Read an 'unread' document again with Gemini and fill in its details.
+   *  Throws if Gemini is still unavailable (the document stays unread). */
+  async reanalyze(doc: SupplierDocument): Promise<SupplierDocument> {
+    const files = await this.downloadFiles(doc, 'page')
+    const ex = await this.analyze(files.map(f => ({ blob: f, mimeType: f.type })))
+    const f = extractionToFields(ex)
+    const { error } = await supabase.from('documents').update({
+      doc_type: f.docType,
+      supplier_name: f.supplierName,
+      supplier_tax_id: f.supplierTaxId,
+      doc_number: f.docNumber,
+      doc_date: f.docDate ?? doc.docDate ?? doc.uploadedAt.slice(0, 10),
+      total_before_vat: f.totalBeforeVat,
+      vat_amount: f.vatAmount,
+      total_with_vat: f.totalWithVat,
+      extraction: ex,
+    }).eq('id', doc.id)
+    if (error) throw new Error(error.message)
+    await supabase.from('document_lines').delete().eq('document_id', doc.id)
+    if (f.lines.length) {
+      const { error: lineErr } = await supabase.from('document_lines').insert(linesToRows(doc.id, f.lines))
+      if (lineErr) throw new Error(lineErr.message)
+    }
+    const updated = await this.getById(doc.id)
+    if (!updated) throw new Error('המסמך לא נמצא')
+    return updated
   }
 }

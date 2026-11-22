@@ -7,7 +7,7 @@ create table public.documents (
   id                 uuid primary key default gen_random_uuid(),
   doc_type           text not null check (doc_type in
                        ('delivery_note', 'tax_invoice', 'tax_invoice_receipt',
-                        'credit_note', 'receipt', 'other')),
+                        'credit_note', 'receipt', 'other', 'unread')),
   supplier_name      text not null default '',
   supplier_tax_id    text,
   doc_number         text,
@@ -63,3 +63,9 @@ create policy "documents bucket insert" on storage.objects for insert
   to anon, authenticated with check (bucket_id = 'documents');
 create policy "documents bucket delete" on storage.objects for delete
   to anon, authenticated using (bucket_id = 'documents');
+
+-- ── Migration: 'unread' document type (Gemini was unavailable at upload) ──
+-- Run once if the tables already exist:
+-- alter table public.documents drop constraint if exists documents_doc_type_check;
+-- alter table public.documents add constraint documents_doc_type_check check (doc_type in
+--   ('delivery_note', 'tax_invoice', 'tax_invoice_receipt', 'credit_note', 'receipt', 'other', 'unread'));
