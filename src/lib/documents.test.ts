@@ -108,3 +108,12 @@ describe('delivery notes', () => {
     expect(shouldPurgeFiles(doc({ docType: 'delivery_note', docDate: '2026-09-01' }), '2026-10-01')).toBe(true)
   })
 })
+
+describe('delivery notes in expenses', () => {
+  it('are excluded from supplier and item totals', () => {
+    const lines = [{ description: 'עגבניות', quantity: 10, unit: 'קג', unitPrice: 5, lineTotal: 50, receivedStatus: null, receivedNote: '' }]
+    const docs = [doc({ docType: 'delivery_note', lines })]
+    expect(expensesBySupplier(docs, '2026-11')).toEqual([])
+    expect(expensesByItem(docs, '2026-11')).toEqual([])
+  })
+})
